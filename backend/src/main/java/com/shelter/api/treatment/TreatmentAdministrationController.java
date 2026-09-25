@@ -32,8 +32,8 @@ public class TreatmentAdministrationController {
         if(days<1||days>90)throw new IllegalArgumentException("days must be between 1 and 90");
         Duration interval=parseFrequency(treatment.getFrequency());
         LocalDate end=treatment.getEndDate()!=null?treatment.getEndDate():treatment.getStartDate().plusDays(days-1);
-        OffsetDateTime cursor=treatment.getStartDate().atStartOfDay(ZoneOffset.UTC);
-        OffsetDateTime limit=end.plusDays(1).atStartOfDay(ZoneOffset.UTC);
+        OffsetDateTime cursor=treatment.getStartDate().atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+        OffsetDateTime limit=end.plusDays(1).atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
         var existing=administrations.findByTreatmentIdOrderByScheduledAtAsc(treatmentId);
         var existingTimes=existing.stream().map(TreatmentAdministration::getScheduledAt).collect(java.util.stream.Collectors.toSet());
         java.util.ArrayList<TreatmentAdministration> created=new java.util.ArrayList<>();
