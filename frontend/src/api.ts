@@ -27,6 +27,7 @@ export async function createDeworming(id:string,a:Omit<Deworming,'id'>):Promise<
 export type MedicalDocument={id:string;documentType:string;title:string;fileUrl:string;documentDate?:string;notes?:string;uploadedBy?:string;createdAt?:string}
 export async function getDocuments(id:string):Promise<MedicalDocument[]>{return json(await fetch('/api/animals/'+id+'/documents',{headers:headers()}))}
 export async function createDocument(id:string,a:Omit<MedicalDocument,'id'|'uploadedBy'|'createdAt'>):Promise<MedicalDocument>{return json(await fetch('/api/animals/'+id+'/documents',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
+export async function uploadDocument(id:string,file:File,meta:{documentType:string;title:string;documentDate?:string;notes?:string}):Promise<MedicalDocument>{const form=new FormData();form.append('file',file);form.append('documentType',meta.documentType);form.append('title',meta.title);if(meta.documentDate)form.append('documentDate',meta.documentDate);if(meta.notes)form.append('notes',meta.notes);return json(await fetch('/api/animals/'+id+'/documents/upload',{method:'POST',headers:headers(),body:form}))}
 
 export type Task={id:string;animal?:{id:string;name:string};taskType:string;title:string;dueAt:string;status:'OPEN'|'COMPLETED'|'SKIPPED';priority:'LOW'|'NORMAL'|'HIGH'|'URGENT';assignedTo?:string;notes?:string}
 export async function getTasks(status='OPEN'):Promise<Task[]>{return json(await fetch('/api/tasks?status='+encodeURIComponent(status),{headers:headers()}))}
