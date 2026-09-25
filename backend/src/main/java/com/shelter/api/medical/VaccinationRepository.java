@@ -1,0 +1,1 @@
+package com.shelter.api.medical; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface VaccinationRepository extends JpaRepository<Vaccination,UUID>{List<Vaccination> findByAnimalIdOrderByAdministeredDateDesc(UUID animalId);}
