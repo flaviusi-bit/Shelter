@@ -1,0 +1,12 @@
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    username VARCHAR(80) NOT NULL UNIQUE,
+    display_name VARCHAR(120) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(30) NOT NULL,
+    active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_user_role CHECK (role IN ('ADMIN','VETERINARIAN','COORDINATOR','VOLUNTEER','VIEWER'))
+);
+
+CREATE INDEX idx_users_active ON users(active);
