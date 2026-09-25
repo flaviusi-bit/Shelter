@@ -31,7 +31,7 @@ public class MedicalDocumentController {
     @PostMapping
     public MedicalDocument create(@PathVariable UUID animalId,@RequestBody MedicalDocument input,Authentication auth){
         var animal=animals.findById(animalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Animal not found"));
-        input.setAnimal(animal); input.setUploadedBy(auth.getName()); input.setId(null);
+        input.setAnimal(animal); input.setUploadedBy(auth.getName());
         return documents.save(input);
     }
 
