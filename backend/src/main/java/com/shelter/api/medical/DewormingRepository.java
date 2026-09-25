@@ -1,0 +1,1 @@
+package com.shelter.api.medical; import org.springframework.data.jpa.repository.JpaRepository; import java.util.*; public interface DewormingRepository extends JpaRepository<Deworming,UUID>{List<Deworming> findByAnimalIdOrderByAdministeredDateDesc(UUID animalId);}
