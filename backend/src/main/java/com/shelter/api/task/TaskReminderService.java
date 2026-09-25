@@ -45,6 +45,7 @@ public class TaskReminderService {
         t.setDueAt(date.atStartOfDay(zone).plusHours(9).toOffsetDateTime());
         t.setPriority("NORMAL");
         t.setNotes(notes);
+        t.setCreatedBy("SYSTEM");
         t.setSourceKey(key);
         t.setStatus("OPEN");
         tasks.save(t);
