@@ -17,5 +17,28 @@ services:
       timeout: 5s
       retries: 10
 
+  backend:
+    build:
+      context: ./backend
+    container_name: shelter-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-shelter}
+      DATABASE_USERNAME: ${POSTGRES_USER:-shelter}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      SHELTER_ADMIN_USERNAME: ${SHELTER_ADMIN_USERNAME:-admin}
+      SHELTER_ADMIN_DISPLAY_NAME: ${SHELTER_ADMIN_DISPLAY_NAME:-Shelter Administrator}
+      SHELTER_ADMIN_PASSWORD: ${SHELTER_ADMIN_PASSWORD:-change-me-now}
+      SHELTER_DOCUMENTS_PATH: /app/data/documents
+      SHELTER_TIMEZONE: ${SHELTER_TIMEZONE:-Europe/Bucharest}
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    volumes:
+      - shelter-documents-data:/app/data/documents
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   shelter-postgres-data:
+  shelter-documents-data:
