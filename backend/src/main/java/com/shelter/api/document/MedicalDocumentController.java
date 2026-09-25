@@ -50,7 +50,9 @@ public class MedicalDocumentController {
             doc.setContentType(stored.contentType());doc.setFileSize(stored.size());
             if(documentDate!=null&&!documentDate.isBlank()) doc.setDocumentDate(java.time.LocalDate.parse(documentDate));
             doc.setNotes(notes);doc.setUploadedBy(auth.getName());
-            doc = documents.save(doc);\n            doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());\n            return documents.save(doc);
+            doc = documents.save(doc);
+            doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
+            return documents.save(doc);
         }catch(IOException|IllegalArgumentException e){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,e.getMessage(),e);
         }
