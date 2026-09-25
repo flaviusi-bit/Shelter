@@ -45,7 +45,7 @@ public class MedicalDocumentController {
             var stored=storage.store(animalId,file);
             var doc=new MedicalDocument();
             doc.setAnimal(animal);doc.setDocumentType(documentType);doc.setTitle(title);
-            doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+stored.storageKey());
+            doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
             doc.setStorageKey(stored.storageKey());doc.setOriginalFileName(stored.originalFileName());
             doc.setContentType(stored.contentType());doc.setFileSize(stored.size());
             if(documentDate!=null&&!documentDate.isBlank()) doc.setDocumentDate(java.time.LocalDate.parse(documentDate));
@@ -56,10 +56,10 @@ public class MedicalDocumentController {
         }
     }
 
-    @GetMapping("/files/{storageKey:.+}")
-    public ResponseEntity<PathResource> download(@PathVariable UUID animalId,@PathVariable String storageKey){
-        var doc=documents.findByAnimalIdOrderByDocumentDateDescCreatedAtDesc(animalId).stream()
-            .filter(d->storageKey.equals(d.getStorageKey())).findFirst()
+    @GetMapping("/files/{documentId}")
+    public ResponseEntity<PathResource> download(@PathVariable UUID animalId,@PathVariable UUID documentId){
+        var doc=documents.findById(documentId)
+            .filter(d -> d.getAnimal().getId().equals(animalId))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Document not found"));
         try{
             PathResource resource=new PathResource(storage.resolve(doc.getStorageKey()));
