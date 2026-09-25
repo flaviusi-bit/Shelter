@@ -1,0 +1,8 @@
+package com.shelter.api.medical;
+import com.shelter.api.animal.AnimalRepository; import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*; import java.time.LocalDate; import java.util.*; import org.springframework.security.core.Authentication;
+@RestController @RequestMapping("/api/animals/{animalId}/vaccinations") public class VaccinationController {
+ private final VaccinationRepository repo; private final AnimalRepository animals; public VaccinationController(VaccinationRepository r,AnimalRepository a){repo=r;animals=a;}
+ @GetMapping public List<Vaccination> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByAdministeredDateDesc(animalId);}
+ @PostMapping public Vaccination create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){Vaccination v=new Vaccination();v.setAnimal(animals.findById(animalId).orElseThrow());v.setVaccineName(r.vaccineName());v.setVaccineType(r.vaccineType());v.setAdministeredDate(r.administeredDate());v.setNextDueDate(r.nextDueDate());v.setBatchNumber(r.batchNumber());v.setVeterinarian(r.veterinarian());v.setNotes(r.notes());v.setCreatedBy(auth.getName());return repo.save(v);}
+ public record Request(@NotBlank @Size(max=160) String vaccineName,@Size(max=100) String vaccineType,@NotNull LocalDate administeredDate,LocalDate nextDueDate,@Size(max=100) String batchNumber,@Size(max=160) String veterinarian,String notes){}
+}
