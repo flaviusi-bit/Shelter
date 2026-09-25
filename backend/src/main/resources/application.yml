@@ -22,5 +22,11 @@ management:
       probes:
         enabled: true
 
+shelter:
+  storage:
+    documents-path: ${SHELTER_DOCUMENTS_PATH:./data/documents}
+
 server:
   port: 8080
+  tomcat:
+    max-swallow-size: 25MB
