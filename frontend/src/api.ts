@@ -22,3 +22,14 @@ export async function getVaccinations(id:string):Promise<Vaccination[]>{return j
 export async function createVaccination(id:string,a:Omit<Vaccination,'id'>):Promise<Vaccination>{return json(await fetch('/api/animals/'+id+'/vaccinations',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
 export async function getDewormings(id:string):Promise<Deworming[]>{return json(await fetch('/api/animals/'+id+'/dewormings',{headers:headers()}))}
 export async function createDeworming(id:string,a:Omit<Deworming,'id'>):Promise<Deworming>{return json(await fetch('/api/animals/'+id+'/dewormings',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
+
+
+export type MedicalDocument={id:string;documentType:string;title:string;fileUrl:string;documentDate?:string;notes?:string;uploadedBy?:string;createdAt?:string}
+export async function getDocuments(id:string):Promise<MedicalDocument[]>{return json(await fetch('/api/animals/'+id+'/documents',{headers:headers()}))}
+export async function createDocument(id:string,a:Omit<MedicalDocument,'id'|'uploadedBy'|'createdAt'>):Promise<MedicalDocument>{return json(await fetch('/api/animals/'+id+'/documents',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
+
+export type Task={id:string;animal?:{id:string;name:string};taskType:string;title:string;dueAt:string;status:'OPEN'|'COMPLETED'|'SKIPPED';priority:'LOW'|'NORMAL'|'HIGH'|'URGENT';assignedTo?:string;notes?:string}
+export async function getTasks(status='OPEN'):Promise<Task[]>{return json(await fetch('/api/tasks?status='+encodeURIComponent(status),{headers:headers()}))}
+export async function createTask(a:Omit<Task,'id'|'status'>):Promise<Task>{return json(await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
+export async function completeTask(id:string):Promise<Task>{return json(await fetch('/api/tasks/'+id+'/complete',{method:'POST',headers:headers()}))}
+export async function skipTask(id:string):Promise<Task>{return json(await fetch('/api/tasks/'+id+'/skip',{method:'POST',headers:headers()}))}
