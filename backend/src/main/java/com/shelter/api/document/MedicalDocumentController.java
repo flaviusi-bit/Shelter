@@ -66,7 +66,7 @@ public class MedicalDocumentController {
             if(!resource.exists()||!resource.isReadable()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File not found");
             MediaType type=MediaType.parseMediaType(doc.getContentType()==null?"application/octet-stream":doc.getContentType());
             return ResponseEntity.ok().contentType(type)
-                .header(HttpHeaders.CONTENT_DISPOSITION,"inline; filename=""+doc.getOriginalFileName()+""")
+                .header(HttpHeaders.CONTENT_DISPOSITION,"inline; filename=\"" + doc.getOriginalFileName() + "\"")
                 .body(resource);
         }catch(IOException|InvalidMediaTypeException e){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable",e);
