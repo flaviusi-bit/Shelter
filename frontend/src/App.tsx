@@ -1,6 +1,7 @@
 import {useEffect,useState} from 'react'
 import type {FormEvent,ReactNode} from 'react'
-import {DashboardItem,getDashboard} from './dashboard'
+import type {DashboardItem} from './dashboard'
+import {getDashboard} from './dashboard'
 import type {Animal,AnimalInput,Treatment,Administration,MedicalEvent,Vaccination,Deworming,MedicalDocument} from './api'
 import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask} from './api'
 
