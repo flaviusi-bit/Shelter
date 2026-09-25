@@ -3,7 +3,7 @@ export type AnimalInput=Omit<Animal,'id'|'animalCode'>
 export type Treatment={id:string;medication:string;dose:string;route:string;frequency:string;startDate:string;endDate?:string;status:string;instructions?:string;prescribedBy?:string}
 export type Administration={id:string;scheduledAt:string;administeredAt?:string;administeredBy?:string;status:'SCHEDULED'|'ADMINISTERED'|'MISSED'|'SKIPPED';notes?:string}
 async function json(r:Response){if(r.status===401){localStorage.removeItem('shelterAuth');window.dispatchEvent(new Event('shelter-auth-required'));throw new Error('Authentication required')}if(!r.ok)throw new Error(await r.text());return r.json()}
-function headers(){const auth=localStorage.getItem('shelterAuth');return auth?{Authorization:'Basic '+auth}:{}}
+function headers():Record<string,string>{const auth=localStorage.getItem('shelterAuth');return auth?{Authorization:'Basic '+auth}:{} }
 export async function getAnimals(q=''):Promise<Animal[]>{return json(await fetch('/api/animals'+(q?'?q='+encodeURIComponent(q):''),{headers:headers()}))}
 export async function createAnimal(a:AnimalInput):Promise<Animal>{return json(await fetch('/api/animals',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
 export async function updateAnimal(id:string,a:AnimalInput):Promise<Animal>{return json(await fetch('/api/animals/'+id,{method:'PUT',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
