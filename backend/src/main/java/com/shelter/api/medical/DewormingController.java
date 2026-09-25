@@ -1,0 +1,8 @@
+package com.shelter.api.medical;
+import com.shelter.api.animal.AnimalRepository; import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*; import java.time.LocalDate; import java.util.*; import org.springframework.security.core.Authentication;
+@RestController @RequestMapping("/api/animals/{animalId}/dewormings") public class DewormingController {
+ private final DewormingRepository repo; private final AnimalRepository animals; public DewormingController(DewormingRepository r,AnimalRepository a){repo=r;animals=a;}
+ @GetMapping public List<Deworming> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByAdministeredDateDesc(animalId);}
+ @PostMapping public Deworming create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){Deworming d=new Deworming();d.setAnimal(animals.findById(animalId).orElseThrow());d.setProductName(r.productName());d.setTreatmentType(r.treatmentType());d.setAdministeredDate(r.administeredDate());d.setNextDueDate(r.nextDueDate());d.setDose(r.dose());d.setVeterinarian(r.veterinarian());d.setNotes(r.notes());d.setCreatedBy(auth.getName());return repo.save(d);}
+ public record Request(@NotBlank @Size(max=160) String productName,@Size(max=100) String treatmentType,@NotNull LocalDate administeredDate,LocalDate nextDueDate,@Size(max=100) String dose,@Size(max=160) String veterinarian,String notes){}
+}
