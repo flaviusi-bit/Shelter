@@ -10,6 +10,9 @@ RUN mvn -B -DskipTests package
 
 # Small runtime image containing only the built application.
 FROM eclipse-temurin:21-jre
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 
 COPY --from=build /workspace/target/shelter-api-0.1.0-SNAPSHOT.jar app.jar
