@@ -33,6 +33,7 @@ public class TaskController {
         input.setStatus("OPEN");
         input.setCompletedAt(null);
         input.setCompletedBy(null);
+        input.setSourceKey(null);
         return tasks.save(input);
     }
 
