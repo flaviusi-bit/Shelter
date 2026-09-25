@@ -73,3 +73,10 @@ Documents currently store a URL rather than binary file content. This keeps Post
 ### Current task/reminder note
 
 Tasks can be created manually and completed or skipped from the dashboard. Automatic generation from vaccination/deworming due dates is a planned enhancement.
+
+
+### Document file storage
+
+Medical documents can now be uploaded directly from the PWA. The backend stores file bytes on the configured filesystem path (SHELTER_DOCUMENTS_PATH, default ./data/documents) and keeps document metadata in PostgreSQL. Uploads are limited to 25 MB and restricted to common PDF/image/document MIME types. File access is authenticated and scoped to the animal that owns the document.
+
+For VPS deployment, mount the document directory on persistent storage and include it in the backup strategy.
