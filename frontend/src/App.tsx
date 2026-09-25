@@ -77,7 +77,7 @@ function AnimalProfile({animal,treatments,onEdit}:{animal:Animal;treatments:Trea
  {showDeworm&&<DewormingForm animalId={animal.id} onCancel={()=>setShowDeworm(false)} onSaved={()=>{setShowDeworm(false);loadMedical()}}/>}{showDocument&&<DocumentForm animalId={animal.id} onCancel={()=>setShowDocument(false)} onSaved={()=>{setShowDocument(false);loadMedical()}}/>}
  </div>
 }
-function TreatmentCardfunction TreatmentCard({animalId,treatment,expanded=false}:{animalId:string;treatment:Treatment;expanded?:boolean}){
+function TreatmentCard({animalId,treatment,expanded=false}:{animalId:string;treatment:Treatment;expanded?:boolean}){
  const [administrations,setAdministrations]=useState<Administration[]>([]),[busy,setBusy]=useState(false),[error,setError]=useState('')
  async function load(){try{setAdministrations(await getAdministrations(animalId,treatment.id));setError('')}catch{setError('Could not load schedule')}} useEffect(()=>{load()},[animalId,treatment.id])
  async function generate(){setBusy(true);try{await generateAdministrations(animalId,treatment.id,14);await load()}catch(e){setError(e instanceof Error?e.message:'Could not generate schedule')}finally{setBusy(false)}}
