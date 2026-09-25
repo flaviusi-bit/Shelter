@@ -17,31 +17,22 @@ public class AnimalController {
 
     @GetMapping public List<Animal> list(@RequestParam(required=false) String q){
         if(q==null||q.isBlank()) return repository.findAll(org.springframework.data.domain.Sort.by("name").ascending());
-        return repository.findByNameContainingIgnoreCaseOrMicrochipNumberContainingIgnoreCaseOrderByNameAsc(q,q);
+        return repository.findByNameContainingIgnoreCaseOrMicrochipNumberContainingIgnoreCaseOrAnimalCodeContainingIgnoreCaseOrderByNameAsc(q,q,q);
     }
-    @GetMapping("/{id}") public Animal get(@PathVariable UUID id){
-        return repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id));
-    }
-    @PostMapping @ResponseStatus(HttpStatus.CREATED) public Animal create(@Valid @RequestBody AnimalRequest r){
-        Animal a=new Animal(); apply(a,r); return repository.save(a);
-    }
-    @PutMapping("/{id}") public Animal update(@PathVariable UUID id,@Valid @RequestBody AnimalRequest r){
-        Animal a=repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); apply(a,r); return repository.save(a);
-    }
+    @GetMapping("/{id}") public Animal get(@PathVariable UUID id){ return repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); }
+    @PostMapping @ResponseStatus(HttpStatus.CREATED) public Animal create(@Valid @RequestBody AnimalRequest r){ Animal a=new Animal(); apply(a,r); return repository.save(a); }
+    @PutMapping("/{id}") public Animal update(@PathVariable UUID id,@Valid @RequestBody AnimalRequest r){ Animal a=repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); apply(a,r); return repository.save(a); }
     private void apply(Animal a,AnimalRequest r){
         a.setName(r.name()); a.setAnimalType(r.animalType()); a.setSex(r.sex()); a.setDateOfBirth(r.dateOfBirth());
         a.setWeightKg(r.weightKg()); a.setMicrochipNumber(r.microchipNumber()); a.setIntakeDate(r.intakeDate());
-        a.setRescueSource(r.rescueSource()); a.setLocation(r.location());
-        a.setStatus(r.status()==null||r.status().isBlank()?"ACTIVE":r.status()); a.setNotes(r.notes());
+        a.setRescueSource(r.rescueSource()); a.setLocation(r.location()); a.setStatus(r.status()==null||r.status().isBlank()?"ACTIVE":r.status());
+        a.setNotes(r.notes()); a.setPhotoUrl(r.photoUrl());
     }
     public record AnimalRequest(
-        @NotBlank @Size(max=120) String name,
-        @NotBlank @Size(max=30) String animalType,
-        @NotBlank @Size(max=20) String sex,
-        LocalDate dateOfBirth,@DecimalMin("0.001") BigDecimal weightKg,
-        @Size(max=80) String microchipNumber,@NotNull LocalDate intakeDate,
-        @Size(max=255) String rescueSource,@Size(max=120) String location,
-        @Size(max=30) String status,String notes){}
+        @NotBlank @Size(max=120) String name,@NotBlank @Size(max=30) String animalType,@NotBlank @Size(max=20) String sex,
+        LocalDate dateOfBirth,@DecimalMin("0.001") BigDecimal weightKg,@Size(max=80) String microchipNumber,
+        @NotNull LocalDate intakeDate,@Size(max=255) String rescueSource,@Size(max=120) String location,
+        @Size(max=30) String status,String notes,@Size(max=1000) String photoUrl){}
     @ResponseStatus(HttpStatus.NOT_FOUND)
     static class AnimalNotFoundException extends RuntimeException{AnimalNotFoundException(UUID id){super("Animal not found: "+id);}}
 }
