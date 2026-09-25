@@ -42,3 +42,5 @@ services:
 volumes:
   shelter-postgres-data:
   shelter-documents-data:
+
+# The backend image is built from backend/Dockerfile, including Maven compilation.
