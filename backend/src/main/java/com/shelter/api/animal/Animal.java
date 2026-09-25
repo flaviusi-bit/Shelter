@@ -10,6 +10,7 @@ import java.util.UUID;
 @Table(name = "animals")
 public class Animal {
     @Id private UUID id;
+    @Column(name="animal_code",nullable=false,length=40,unique=true) private String animalCode;
     @Column(nullable=false,length=120) private String name;
     @Column(name="animal_type",nullable=false,length=30) private String animalType;
     @Column(nullable=false,length=20) private String sex;
@@ -21,13 +22,15 @@ public class Animal {
     @Column(length=120) private String location;
     @Column(nullable=false,length=30) private String status="ACTIVE";
     @Column(columnDefinition="TEXT") private String notes;
+    @Column(name="photo_url",length=1000) private String photoUrl;
     @Column(nullable=false) private OffsetDateTime createdAt;
     @Column(nullable=false) private OffsetDateTime updatedAt;
 
-    @PrePersist void onCreate(){ if(id==null) id=UUID.randomUUID(); var now=OffsetDateTime.now(); if(createdAt==null)createdAt=now; updatedAt=now; }
+    @PrePersist void onCreate(){ if(id==null) id=UUID.randomUUID(); if(animalCode==null||animalCode.isBlank()) animalCode="A-"+id.toString().replace("-","").substring(0,8).toUpperCase(); var now=OffsetDateTime.now(); if(createdAt==null)createdAt=now; updatedAt=now; }
     @PreUpdate void onUpdate(){updatedAt=OffsetDateTime.now();}
 
     public UUID getId(){return id;} public void setId(UUID v){id=v;}
+    public String getAnimalCode(){return animalCode;} public void setAnimalCode(String v){animalCode=v;}
     public String getName(){return name;} public void setName(String v){name=v;}
     public String getAnimalType(){return animalType;} public void setAnimalType(String v){animalType=v;}
     public String getSex(){return sex;} public void setSex(String v){sex=v;}
@@ -39,5 +42,6 @@ public class Animal {
     public String getLocation(){return location;} public void setLocation(String v){location=v;}
     public String getStatus(){return status;} public void setStatus(String v){status=v;}
     public String getNotes(){return notes;} public void setNotes(String v){notes=v;}
+    public String getPhotoUrl(){return photoUrl;} public void setPhotoUrl(String v){photoUrl=v;}
     public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;}
 }
