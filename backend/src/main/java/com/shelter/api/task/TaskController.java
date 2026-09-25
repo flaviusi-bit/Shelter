@@ -15,8 +15,9 @@ import java.util.UUID;
 public class TaskController {
     private final TaskRepository tasks;
     private final AnimalRepository animals;
+    private final TaskReminderService reminders;
 
-    public TaskController(TaskRepository tasks, AnimalRepository animals){this.tasks=tasks;this.animals=animals;}
+    public TaskController(TaskRepository tasks, AnimalRepository animals, TaskReminderService reminders){this.tasks=tasks;this.animals=animals;this.reminders=reminders;}
 
     @GetMapping
     public List<Task> list(@RequestParam(defaultValue="OPEN") String status){
@@ -36,6 +37,9 @@ public class TaskController {
         input.setSourceKey(null);
         return tasks.save(input);
     }
+
+    @PostMapping("/sync-medical-reminders")
+    public java.util.Map<String,Integer> syncMedicalReminders(){ return java.util.Map.of("created", reminders.syncAll()); }
 
     @PostMapping("/{id}/complete")
     public Task complete(@PathVariable UUID id, Authentication auth){
