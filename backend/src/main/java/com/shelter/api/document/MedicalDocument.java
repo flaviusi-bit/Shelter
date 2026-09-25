@@ -30,6 +30,10 @@ public class MedicalDocument {
     private String uploadedBy;
     @Column(name="created_at", nullable=false)
     private OffsetDateTime createdAt;
+    @Column(name="storage_key",length=500) private String storageKey;
+    @Column(name="original_file_name",length=255) private String originalFileName;
+    @Column(name="content_type",length=120) private String contentType;
+    @Column(name="file_size") private Long fileSize;
 
     @PrePersist void prePersist(){ if(createdAt==null) createdAt=OffsetDateTime.now(); }
 
@@ -49,4 +53,8 @@ public class MedicalDocument {
     public String getUploadedBy(){return uploadedBy;}
     public void setUploadedBy(String v){uploadedBy=v;}
     public OffsetDateTime getCreatedAt(){return createdAt;}
+    public String getStorageKey(){return storageKey;} public void setStorageKey(String v){storageKey=v;}
+    public String getOriginalFileName(){return originalFileName;} public void setOriginalFileName(String v){originalFileName=v;}
+    public String getContentType(){return contentType;} public void setContentType(String v){contentType=v;}
+    public Long getFileSize(){return fileSize;} public void setFileSize(Long v){fileSize=v;}
 }
