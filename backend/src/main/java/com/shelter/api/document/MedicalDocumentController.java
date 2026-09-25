@@ -68,7 +68,7 @@ public class MedicalDocumentController {
             return ResponseEntity.ok().contentType(type)
                 .header(HttpHeaders.CONTENT_DISPOSITION,"inline; filename=\"" + doc.getOriginalFileName() + "\"")
                 .body(resource);
-        }catch(IOException|InvalidMediaTypeException e){
+        }catch(InvalidMediaTypeException e){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable",e);
         }
     }
