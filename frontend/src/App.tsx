@@ -1,4 +1,5 @@
 import {useEffect,useState} from 'react'
+import {DashboardItem,getDashboard} from './dashboard'
 import {Animal,Treatment,Administration,getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus} from './api'
 
 export default function App(){
@@ -12,6 +13,39 @@ function Login({onLogin}:{onLogin:()=>void}){
  return <main className="login-shell"><form className="login-card" onSubmit={submit}><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Sign in</h1><p className="muted">Access the animal care system.</p><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username" autoComplete="username"/><input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" autoComplete="current-password"/>{error&&<div className="inline-error">{error}</div>}<button className="primary" type="submit">Sign in</button></form></main>
 }
 function ShelterApp({onLogout}:{onLogout:()=>void}){
+ const [view,setView]=useState<'dashboard'|'animals'>('dashboard')
+ if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onLogout={onLogout}/>
+ return <Animals onBack={()=>setView('dashboard')} onLogout={onLogout}/>
+}
+function Dashboard({onOpenAnimals,onLogout}:{onOpenAnimals:()=>void;onLogout:()=>void}){
+ const [data,setData]=useState<{items:DashboardItem[];overdue:number;remaining:number;administered:number}|null>(null),[error,setError]=useState('')
+ async function load(){try{setData(await getDashboard());setError('')}catch(e){setError(e instanceof Error?e.message:'Could not load dashboard')}}
+ useEffect(()=>{load();const t=setInterval(load,60000);return()=>clearInterval(t)},[])
+ const pending=data?.items.filter(x=>x.status==='SCHEDULED')||[]
+ const overdue=pending.filter(x=>new Date(x.scheduledAt)<new Date())
+ return <main className="shell">
+  <header className="topbar"><div><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Today</h1><p className="muted">Operational care dashboard</p></div><div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button><button className="secondary" onClick={onLogout}>Sign out</button></div></header>
+  {error&&<div className="error">{error}</div>}
+  <section className="dashboard-stats"><Stat label="Overdue" value={data?.overdue??'—'} danger/><Stat label="Remaining" value={data?.remaining??'—'}/><Stat label="Administered" value={data?.administered??'—'}/></section>
+  <section className="panel dashboard-panel"><div className="section-head"><div><p className="eyebrow">ACTION QUEUE</p><h2>{overdue.length?'Overdue administrations':'Upcoming administrations'}</h2></div><span className="muted">{overdue.length?'Needs attention':'Today'}</span></div>
+   {(overdue.length?overdue:pending).length===0?<p className="muted">No scheduled administrations for today.</p>:<div className="dashboard-list">{(overdue.length?overdue:pending).slice(0,20).map(x=><div className="dashboard-item" key={x.id}><div><strong>{x.animalName}</strong><span>{x.medication} · {x.dose} · {x.route}</span></div><div className="dashboard-time">{new Date(x.scheduledAt).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}{overdue.includes(x)&&<span className="overdue-badge">OVERDUE</span>}</div></div>)}</div>}
+  </section>
+  <section className="panel dashboard-panel"><div className="section-head"><div><p className="eyebrow">TODAY</p><h2>Administration timeline</h2></div></div><div className="dashboard-list">{(data?.items||[]).slice(0,30).map(x=><div className="dashboard-item" key={x.id}><div><strong>{x.animalName}</strong><span>{x.medication} · {x.dose}</span></div><span className={'status status-'+x.status.toLowerCase()}>{x.status}</span></div>)}</div></section>
+ </main>
+}
+function Stat({label,value,danger=false}:{label:string;value:string|number;danger?:boolean}){return <article className={'stat '+(danger?'stat-danger':'')}><span>{label}</span><strong>{value}</strong></article>}
+function Animals({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
+ const [animals,setAnimals]=useState<Animal[]>([]),[selected,setSelected]=useState<Animal|null>(null),[treatments,setTreatments]=useState<Treatment[]>([]),[query,setQuery]=useState(''),[error,setError]=useState('')
+ async function load(){try{setAnimals(await getAnimals(query));setError('')}catch(e){if(e instanceof Error&&e.message!=='Authentication required')setError('Could not load animals')}}
+ useEffect(()=>{load()},[])
+ useEffect(()=>{const t=setTimeout(load,250);return()=>clearTimeout(t)},[query])
+ async function select(a:Animal){setSelected(a);try{setTreatments(await getTreatments(a.id))}catch{setTreatments([])}}
+ return <main className="shell">
+  <header className="topbar"><div><p className="eyebrow">SHELTER MANAGEMENT</p><h1>{selected?selected.name:'Animals'}</h1><p className="muted">{selected?'Animal profile':'Every animal, its history and care.'}</p></div><div className="top-actions"><button className="secondary" onClick={onBack}>Dashboard</button>{selected&&<button className="secondary" onClick={()=>setSelected(null)}>← All animals</button>}<button className="secondary" onClick={onLogout}>Sign out</button></div></header>
+  {!selected?<><section className="toolbar"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by name or microchip…" /><span className="muted">{animals.length} animals</span></section>{error&&<div className="error">{error}</div>}<section className="animal-list">{animals.map(a=><button className="animal-card clickable" key={a.id} onClick={()=>select(a)}><div className="avatar">{a.name.charAt(0).toUpperCase()}</div><div className="animal-main"><h2>{a.name}</h2><p>{a.animalType} · {a.sex} · {a.weightKg?a.weightKg+' kg':'weight not recorded'}</p><p className="muted">{a.location||'No location'} · {a.status}</p></div><span className="chip">{a.microchipNumber||'No chip'}</span></button>)}{animals.length===0&&<div className="empty">No animals registered yet.</div>}</section></>:<AnimalProfile animal={selected} treatments={treatments}/>}
+ </main>
+}
+
  const [animals,setAnimals]=useState<Animal[]>([]),[selected,setSelected]=useState<Animal|null>(null),[treatments,setTreatments]=useState<Treatment[]>([]),[query,setQuery]=useState(''),[error,setError]=useState('')
  async function load(){try{setAnimals(await getAnimals(query));setError('')}catch(e){if(e instanceof Error&&e.message!=='Authentication required')setError('Could not load animals')}}
  useEffect(()=>{load()},[])
@@ -42,7 +76,7 @@ function TreatmentCard({animalId,treatment,expanded=false}:{animalId:string;trea
  async function load(){try{setAdministrations(await getAdministrations(animalId,treatment.id));setError('')}catch{setError('Could not load schedule')}}
  useEffect(()=>{load()},[animalId,treatment.id])
  async function generate(){setBusy(true);try{await generateAdministrations(animalId,treatment.id,14);await load()}catch(e){setError(e instanceof Error?e.message:'Could not generate schedule')}finally{setBusy(false)}}
- async function act(a:Administration){setBusy(true);try{await administer(animalId,treatment.id,a.id,'Current user');await load()}catch(e){setError(e instanceof Error?e.message:'Could not record administration')}finally{setBusy(false)}}
+ async function act(a:Administration){setBusy(true);try{await administer(animalId,treatment.id,a.id,'');await load()}catch(e){setError(e instanceof Error?e.message:'Could not record administration')}finally{setBusy(false)}}
  async function mark(a:Administration,status:'MISSED'|'SKIPPED'){setBusy(true);try{await setAdministrationStatus(animalId,treatment.id,a.id,status);await load()}catch(e){setError(e instanceof Error?e.message:'Could not update administration')}finally{setBusy(false)}}
  return <div className="treatment">
   <div className="treatment-head"><div><strong>{treatment.medication}</strong><span>{treatment.dose} · {treatment.route} · {treatment.frequency}</span><small>{treatment.startDate}{treatment.endDate?' → '+treatment.endDate:''}</small></div><button className="secondary small" disabled={busy} onClick={generate}>{busy?'…':'Generate schedule'}</button></div>
