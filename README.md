@@ -80,3 +80,35 @@ Tasks can be created manually and completed or skipped from the dashboard. Autom
 Medical documents can now be uploaded directly from the PWA. The backend stores file bytes on the configured filesystem path (SHELTER_DOCUMENTS_PATH, default ./data/documents) and keeps document metadata in PostgreSQL. Uploads are limited to 25 MB and restricted to common PDF/image/document MIME types. File access is authenticated and scoped to the animal that owns the document.
 
 For VPS deployment, mount the document directory on persistent storage and include it in the backup strategy.
+
+### Production backup and restore
+
+PostgreSQL data and uploaded documents use separate persistent Docker volumes. The repository also includes disaster-recovery scripts under scripts/.
+
+Create a backup from the project root:
+
+~~~bash
+chmod +x scripts/backup.sh scripts/restore.sh
+./scripts/backup.sh
+~~~
+
+A backup contains:
+- a PostgreSQL custom-format dump
+- a compressed archive of uploaded documents
+- SHA-256 checksums
+
+Backups are timestamped in ./backups/<UTC timestamp>/ by default. Set BACKUP_DIR to a separate mounted disk or remote backup target.
+
+Restore is deliberately destructive and requires an explicit confirmation:
+
+~~~bash
+./scripts/restore.sh --confirm ./backups/<UTC timestamp>
+~~~
+
+Stop the application before restore. The restore replaces the database contents and document directory. Keep backups outside the VPS whenever possible and periodically perform a test restore.
+
+### Docker Compose production shape
+
+docker compose up -d --build starts PostgreSQL and the Spring Boot backend. PostgreSQL persists to shelter-postgres-data; uploaded documents persist to shelter-documents-data.
+
+For a VPS, these volumes should be backed by reliable persistent storage and included in the disaster-recovery plan. Cloudflare can later sit in front of the VPS without changing the application storage model.
