@@ -2,6 +2,8 @@ package com.shelter.api.task;
 
 import com.shelter.api.animal.Animal;
 import com.shelter.api.medical.Deworming;
+import com.shelter.api.medical.DewormingRepository;
+import com.shelter.api.medical.VaccinationRepository;
 import com.shelter.api.medical.Vaccination;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +15,8 @@ import java.time.ZoneOffset;
 @Service
 public class TaskReminderService {
     private final TaskRepository tasks;
+    private final VaccinationRepository vaccinations;
+    private final DewormingRepository dewormings;
     private final ZoneId zone;
 
     public TaskReminderService(TaskRepository tasks) {
@@ -20,7 +24,7 @@ public class TaskReminderService {
         this.zone = ZoneId.of(System.getenv().getOrDefault("SHELTER_TIMEZONE", "Europe/Bucharest"));
     }
 
-    public void syncVaccination(Vaccination v) {
+    public int syncAll() {\n        int created = 0;\n        for (Vaccination v : vaccinations.findAll()) {\n            if (v.getNextDueDate() != null && tasks.findBySourceKey("VACCINATION_DUE:"+v.getId()).isEmpty()) { syncVaccination(v); created++; }\n        }\n        for (Deworming d : dewormings.findAll()) {\n            if (d.getNextDueDate() != null && tasks.findBySourceKey("DEWORMING_DUE:"+d.getId()).isEmpty()) { syncDeworming(d); created++; }\n        }\n        return created;\n    }\n\n    public void syncVaccination(Vaccination v) {
         if (v.getNextDueDate() == null) return;
         Animal animal=v.getAnimal();
         String key="VACCINATION_DUE:"+v.getId();
