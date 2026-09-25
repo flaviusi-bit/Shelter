@@ -22,6 +22,7 @@ public class Task {
     @Column(name="assigned_to",length=120) private String assignedTo;
     private String notes;
     @Column(name="created_by",length=120) private String createdBy;
+    @Column(name="source_key",length=180,unique=true) private String sourceKey;
     @Column(name="completed_at") private OffsetDateTime completedAt;
     @Column(name="completed_by",length=120) private String completedBy;
     @Column(name="created_at",nullable=false) private OffsetDateTime createdAt;
@@ -38,6 +39,7 @@ public class Task {
     public String getAssignedTo(){return assignedTo;} public void setAssignedTo(String v){assignedTo=v;}
     public String getNotes(){return notes;} public void setNotes(String v){notes=v;}
     public String getCreatedBy(){return createdBy;} public void setCreatedBy(String v){createdBy=v;}
+    public String getSourceKey(){return sourceKey;} public void setSourceKey(String v){sourceKey=v;}
     public OffsetDateTime getCompletedAt(){return completedAt;} public void setCompletedAt(OffsetDateTime v){completedAt=v;}
     public String getCompletedBy(){return completedBy;} public void setCompletedBy(String v){completedBy=v;}
     public OffsetDateTime getCreatedAt(){return createdAt;}
