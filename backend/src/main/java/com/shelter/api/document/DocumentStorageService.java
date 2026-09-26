@@ -6,6 +6,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.nio.file.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.util.UUID;
 
 @Service
@@ -32,29 +34,38 @@ public class DocumentStorageService {
     private boolean contentMatchesType(MultipartFile file,String type) throws IOException {
         if(type.equals("text/plain")) return true;
         byte[] header;
-        try(var in=file.getInputStream()){
-            header=in.readNBytes(12);
-        }
+        try(var in=file.getInputStream()){ header=in.readNBytes(12); }
         return switch(type) {
             case "application/pdf" -> startsWith(header,new byte[]{0x25,0x50,0x44,0x46,0x2D});
             case "image/jpeg" -> startsWith(header,new byte[]{(byte)0xFF,(byte)0xD8,(byte)0xFF});
             case "image/png" -> startsWith(header,new byte[]{(byte)0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A});
             case "image/gif" -> startsWith(header,new byte[]{0x47,0x49,0x46,0x38});
-            case "image/webp" -> startsWith(header,new byte[]{0x52,0x49,0x46,0x46}) && header.length>=12
-                    && header[8]==0x57 && header[9]==0x45 && header[10]==0x42 && header[11]==0x50;
+            case "image/webp" -> startsWith(header,new byte[]{0x52,0x49,0x46,0x46}) && header.length>=12 && header[8]==0x57 && header[9]==0x45 && header[10]==0x42 && header[11]==0x50;
             case "image/bmp" -> startsWith(header,new byte[]{0x42,0x4D});
             case "application/msword" -> startsWith(header,new byte[]{(byte)0xD0,(byte)0xCF,0x11,(byte)0xE0,(byte)0xA1,(byte)0xB1,0x1A,(byte)0xE1});
-            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> startsWith(header,new byte[]{0x50,0x4B,0x03,0x04});
+            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> isValidDocx(file);
             default -> false;
         };
     }
-
+    private boolean isValidDocx(MultipartFile file) throws IOException {
+        boolean contentTypes = false;
+        boolean document = false;
+        try (var in = new ZipInputStream(file.getInputStream())) {
+            ZipEntry entry;
+            while ((entry = in.getNextEntry()) != null) {
+                if (entry.isDirectory()) continue;
+                if (entry.getName().equals("[Content_Types].xml")) contentTypes = true;
+                if (entry.getName().equals("word/document.xml")) document = true;
+                if (contentTypes && document) return true;
+            }
+        }
+        return false;
+    }
     private boolean startsWith(byte[] value,byte[] prefix) {
         if(value.length<prefix.length) return false;
         for(int i=0;i<prefix.length;i++) if(value[i]!=prefix[i]) return false;
         return true;
     }
-
     private boolean extensionMatchesContentType(String ext,String type) {
         return switch(type) {
             case "application/pdf" -> ext.equals(".pdf");
@@ -69,21 +80,14 @@ public class DocumentStorageService {
             default -> false;
         };
     }
-
     private boolean isSafeImageType(String type) {
-        return type.equals("image/jpeg")
-                || type.equals("image/png")
-                || type.equals("image/gif")
-                || type.equals("image/webp")
-                || type.equals("image/bmp");
+        return type.equals("image/jpeg") || type.equals("image/png") || type.equals("image/gif") || type.equals("image/webp") || type.equals("image/bmp");
     }
-
     public void delete(String key) throws IOException {
         if(key==null||key.isBlank()) return;
         Path p=resolve(key);
         Files.deleteIfExists(p);
     }
-
     public Path resolve(String key){
         if(key==null||key.isBlank()) throw new IllegalArgumentException("Invalid storage path");
         Path p=root.resolve(key).normalize();
