@@ -38,7 +38,7 @@ class DocumentStorageServiceTest {
         var file=new MockMultipartFile("file","report.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",minimalDocx());
         var stored=service.store(UUID.randomUUID(),file); assertTrue(service.resolve(stored.storageKey()).toFile().isFile());
     }
-    @Test void rejectsZipThatIsNotAValidDocxPackage() {
+    @Test void rejectsZipThatIsNotAValidDocxPackage() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",zipBytes("payload.txt","not a docx"));
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
