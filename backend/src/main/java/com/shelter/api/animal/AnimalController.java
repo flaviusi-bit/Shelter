@@ -1,5 +1,7 @@
 package com.shelter.api.animal;
 
+import com.shelter.api.audit.AuditLogService;
+import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.springframework.http.HttpStatus;
@@ -13,15 +15,16 @@ import java.util.UUID;
 @RequestMapping("/api/animals")
 public class AnimalController {
     private final AnimalRepository repository;
-    public AnimalController(AnimalRepository repository){this.repository=repository;}
+    private final AuditLogService audit;
+    public AnimalController(AnimalRepository repository, AuditLogService audit){this.repository=repository;this.audit=audit;}
 
     @GetMapping public List<Animal> list(@RequestParam(required=false) String q){
         if(q==null||q.isBlank()) return repository.findAll(org.springframework.data.domain.Sort.by("name").ascending());
         return repository.findByNameContainingIgnoreCaseOrMicrochipNumberContainingIgnoreCaseOrAnimalCodeContainingIgnoreCaseOrderByNameAsc(q,q,q);
     }
     @GetMapping("/{id}") public Animal get(@PathVariable UUID id){ return repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); }
-    @PostMapping @ResponseStatus(HttpStatus.CREATED) public Animal create(@Valid @RequestBody AnimalRequest r){ Animal a=new Animal(); apply(a,r); return repository.save(a); }
-    @PutMapping("/{id}") public Animal update(@PathVariable UUID id,@Valid @RequestBody AnimalRequest r){ Animal a=repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); apply(a,r); return repository.save(a); }
+    @PostMapping @ResponseStatus(HttpStatus.CREATED) public Animal create(@Valid @RequestBody AnimalRequest r, Authentication auth){ Animal a=new Animal(); apply(a,r); var saved=repository.save(a); audit.record(auth.getName(),"CREATE_ANIMAL","ANIMAL",saved.getId(),saved.getName()); return saved; }
+    @PutMapping("/{id}") public Animal update(@PathVariable UUID id,@Valid @RequestBody AnimalRequest r, Authentication auth){ Animal a=repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); apply(a,r); var saved=repository.save(a); audit.record(auth.getName(),"UPDATE_ANIMAL","ANIMAL",saved.getId(),saved.getName()); return saved; }
     private void apply(Animal a,AnimalRequest r){
         a.setName(r.name()); a.setAnimalType(r.animalType()); a.setSex(r.sex()); a.setDateOfBirth(r.dateOfBirth());
         a.setWeightKg(r.weightKg()); a.setMicrochipNumber(r.microchipNumber()); a.setIntakeDate(r.intakeDate());
