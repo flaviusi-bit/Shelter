@@ -48,6 +48,7 @@ public class TaskController {
     @PostMapping("/{id}/complete")
     public Task complete(@PathVariable UUID id, Authentication auth){
         Task task=tasks.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Task not found"));
+        if (!"OPEN".equals(task.getStatus())) throw new IllegalStateException("Only open tasks can be completed");
         task.setStatus("COMPLETED");
         task.setCompletedAt(OffsetDateTime.now());
         task.setCompletedBy(auth.getName());
@@ -59,6 +60,7 @@ public class TaskController {
     @PostMapping("/{id}/skip")
     public Task skip(@PathVariable UUID id, Authentication auth){
         Task task=tasks.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Task not found"));
+        if (!"OPEN".equals(task.getStatus())) throw new IllegalStateException("Only open tasks can be skipped");
         task.setStatus("SKIPPED");
         task.setCompletedAt(OffsetDateTime.now());
         task.setCompletedBy(auth.getName());
