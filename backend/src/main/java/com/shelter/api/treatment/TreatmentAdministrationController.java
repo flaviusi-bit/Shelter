@@ -5,7 +5,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.*;\nimport org.springframework.beans.factory.annotation.Value;
+import java.time.*;
+import org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,7 +15,8 @@ import java.util.UUID;
 public class TreatmentAdministrationController {
     private final TreatmentAdministrationRepository administrations;
     private final TreatmentRepository treatments;
-    private final AnimalRepository animals;\n    private final ZoneId zone;
+    private final AnimalRepository animals;
+    private final ZoneId zone;
 
     public TreatmentAdministrationController(TreatmentAdministrationRepository administrations,TreatmentRepository treatments,AnimalRepository animals){
         this.administrations=administrations;this.treatments=treatments;this.animals=animals;
