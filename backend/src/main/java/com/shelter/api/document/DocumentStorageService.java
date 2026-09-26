@@ -27,6 +27,14 @@ public class DocumentStorageService {
         Files.createDirectories(target.getParent()); file.transferTo(target);
         return new StoredFile(key,original,type,file.getSize());
     }
-    private boolean isSafeImageType(String type){\n        return type.equals("image/jpeg")||type.equals("image/png")||type.equals("image/gif")||type.equals("image/webp")||type.equals("image/bmp");\n    }\n\n    public Path resolve(String key){Path p=root.resolve(key).normalize();if(!p.startsWith(root))throw new IllegalArgumentException("Invalid storage path");return p;}
+    private boolean isSafeImageType(String type) {
+        return type.equals("image/jpeg")
+                || type.equals("image/png")
+                || type.equals("image/gif")
+                || type.equals("image/webp")
+                || type.equals("image/bmp");
+    }
+
+    public Path resolve(String key){Path p=root.resolve(key).normalize();if(!p.startsWith(root))throw new IllegalArgumentException("Invalid storage path");return p;}
     public record StoredFile(String storageKey,String originalFileName,String contentType,long size){}
 }
