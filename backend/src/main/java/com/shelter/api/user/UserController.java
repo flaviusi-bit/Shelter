@@ -1,5 +1,7 @@
 package com.shelter.api.user;
 
+import com.shelter.api.audit.AuditLogService;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -15,10 +17,12 @@ public class UserController {
 
     private final AppUserRepository users;
     private final PasswordEncoder passwordEncoder;
+    private final AuditLogService audit;
 
-    public UserController(AppUserRepository users, PasswordEncoder passwordEncoder) {
+    public UserController(AppUserRepository users, PasswordEncoder passwordEncoder, AuditLogService audit) {
         this.users = users;
         this.passwordEncoder = passwordEncoder;
+        this.audit = audit;
     }
 
     @GetMapping
@@ -29,7 +33,7 @@ public class UserController {
     }
 
     @PostMapping
-    public UserView create(@RequestBody CreateUserRequest r) {
+    public UserView create(@RequestBody CreateUserRequest r, Authentication auth) {
         String username = r.username() == null ? "" : r.username().trim().toLowerCase(Locale.ROOT);
         String displayName = r.displayName() == null ? "" : r.displayName().trim();
         String password = r.password() == null ? "" : r.password();
@@ -58,6 +62,7 @@ public class UserController {
         u.setRole(role);
         u.setActive(true);
         u = users.save(u);
+        audit.record(auth.getName(), "CREATE_USER", "USER", u.getId(), "username=" + u.getUsername() + ", role=" + u.getRole());
         return new UserView(u.getId(), u.getUsername(), u.getDisplayName(), u.getRole(), u.isActive());
     }
 
