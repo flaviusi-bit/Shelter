@@ -94,6 +94,18 @@ class DocumentStorageServiceTest {
         assertThrows(IllegalArgumentException.class,()->service.resolve("../outside.txt"));
         assertThrows(IllegalArgumentException.class,()->service.resolve(""));
     }
+    @Test void rejectsNullAnimalId() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        var file=new MockMultipartFile("file","payload.txt","text/plain","hello".getBytes());
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(null,file));
+        assertEquals("Animal id is required",error.getMessage());
+    }
+    @Test void rejectsOverlongFilename() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        var file=new MockMultipartFile("file","a".repeat(256)+".txt","text/plain","hello".getBytes());
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("Filename is too long",error.getMessage());
+    }
     @Test void rejectsMissingContentType() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","payload.bin",null,new byte[]{1,2,3});
