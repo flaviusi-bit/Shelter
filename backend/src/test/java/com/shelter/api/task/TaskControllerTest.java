@@ -104,7 +104,7 @@ class TaskControllerTest {
 
     @Test
     void listRejectsInvalidStatus() {
-        assertThrows(IllegalArgumentException.class, () -> controller.list("DELETED"));
+        var ex = assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> controller.list("DELETED")); assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getStatusCode());
         verify(tasks, never()).findByStatusOrderByDueAtAsc(anyString());
     }
 
