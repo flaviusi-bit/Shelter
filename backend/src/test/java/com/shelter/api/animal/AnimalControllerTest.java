@@ -34,4 +34,21 @@ class AnimalControllerTest {
         verify(repository, never()).save(any(Animal.class));
         verifyNoInteractions(audit);
     }
+    @Test
+    void rejectsUnknownAnimalStatus() {
+        var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        var request = new AnimalController.AnimalRequest(
+            "Misha", "DOG", "FEMALE",
+            LocalDate.of(2020, 1, 1),
+            null, null,
+            LocalDate.of(2024, 1, 1),
+            null, null, "DELETED", null, null);
+
+        var violations = validator.validate(request);
+
+        assertEquals(1, violations.size());
+        assertEquals("must match \"ACTIVE|TREATMENT|HEALTHY|QUARANTINE|FOSTER|ADOPTED\"",
+            violations.iterator().next().getMessage());
+    }
+
 }
