@@ -75,7 +75,7 @@ public class DocumentStorageService {
         return contentTypes && document && !duplicateRequiredPart;
     }
     private String normalizeZipEntryName(String name) {
-        String normalized = name.replace('\\\\', '/');
+        String normalized = name.replace('\\', '/');
         while (normalized.startsWith("./")) normalized = normalized.substring(2);
         return normalized;
     }
