@@ -50,7 +50,8 @@ public class TreatmentAdministrationController {
     public List<TreatmentAdministration> generate(
             @PathVariable UUID animalId,
             @PathVariable UUID treatmentId,
-            @RequestParam(defaultValue = "14") int days) {
+            @RequestParam(defaultValue = "14") int days,
+            Authentication authentication) {
         Treatment treatment = ensureTreatment(animalId, treatmentId);
         if (days < 1 || days > 90) {
             throw new IllegalArgumentException("days must be between 1 and 90");
@@ -79,6 +80,9 @@ public class TreatmentAdministrationController {
             }
             cursor = cursor.plus(interval);
         }
+        if (!created.isEmpty()) {
+            auditLog.record(authentication.getName(), "GENERATE_TREATMENT_SCHEDULE", "TREATMENT", treatmentId, "created=" + created.size());
+        }
         return created;
     }
 
@@ -101,6 +105,9 @@ public class TreatmentAdministrationController {
                 created.add(administrations.save(a));
             }
             cursor = cursor.plus(interval);
+        }
+        if (!created.isEmpty()) {
+            auditLog.record("SYSTEM", "AUTO_GENERATE_TREATMENT_SCHEDULE", "TREATMENT", treatment.getId(), "created=" + created.size());
         }
         return created;
     }
