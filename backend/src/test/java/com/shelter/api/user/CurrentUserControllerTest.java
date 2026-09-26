@@ -16,7 +16,7 @@ class CurrentUserControllerTest {
     void returnsAuthenticatedUsernameAndRole() {
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("vet");
-        when(authentication.getAuthorities()).thenReturn(List.of(
+        when(authentication.getAuthorities()).thenReturn(List.<GrantedAuthority>of(
             new SimpleGrantedAuthority("ROLE_VETERINARIAN")
         ));
 
