@@ -1,14 +1,18 @@
 package com.shelter.api.dashboard;
 
 import com.shelter.api.task.Task;
-import com.shelter.api.task.TaskRepository;
 import com.shelter.api.task.TaskDue;
+import com.shelter.api.task.TaskRepository;
 import com.shelter.api.treatment.TreatmentAdministration;
 import com.shelter.api.treatment.TreatmentAdministrationRepository;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneId;\nimport org.springframework.beans.factory.annotation.Value;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -17,17 +21,23 @@ import java.util.UUID;
 @RequestMapping("/api/dashboard")
 public class DashboardController {
     private final TreatmentAdministrationRepository administrations;
-    private final TaskRepository tasks;\n    private final ZoneId zone;
+    private final TaskRepository tasks;
+    private final ZoneId zone;
 
-    public DashboardController(TreatmentAdministrationRepository administrations, TaskRepository tasks) {
+    public DashboardController(
+            TreatmentAdministrationRepository administrations,
+            TaskRepository tasks,
+            @Value("${shelter.timezone:Europe/Bucharest}") String timezone) {
         this.administrations = administrations;
         this.tasks = tasks;
+        this.zone = ZoneId.of(timezone);
     }
 
     @GetMapping("/today")
     public Dashboard today() {
-        OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
-        OffsetDateTime start = now.toLocalDate().atStartOfDay().atOffset(ZoneOffset.UTC);
+        ZonedDateTime zonedNow = ZonedDateTime.now(zone);
+        OffsetDateTime now = zonedNow.toOffsetDateTime();
+        OffsetDateTime start = zonedNow.toLocalDate().atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime end = start.plusDays(1);
 
         List<TreatmentAdministration> rows = administrations.findAll().stream()
@@ -51,8 +61,8 @@ public class DashboardController {
             .filter(t -> !t.getDueAt().isBefore(now) && t.getDueAt().isBefore(end)).count();
 
         var taskItems = openTasks.stream().limit(50).map(t -> new TaskDue(
-            t.getId(), t.getAnimal()==null?null:t.getAnimal().getId(),
-            t.getAnimal()==null?null:t.getAnimal().getName(), t.getTaskType(), t.getTitle(),
+            t.getId(), t.getAnimal() == null ? null : t.getAnimal().getId(),
+            t.getAnimal() == null ? null : t.getAnimal().getName(), t.getTaskType(), t.getTitle(),
             t.getDueAt(), t.getStatus(), t.getPriority(), t.getAssignedTo(), t.getNotes()
         )).toList();
 
@@ -61,6 +71,7 @@ public class DashboardController {
 
     public record Dashboard(List<DashboardItem> items, long overdue, long remaining, long administered,
                             long overdueTasks, long remainingTasks, List<TaskDue> taskItems) {}
+
     public record DashboardItem(UUID id, UUID animalId, String animalName, String medication, String dose,
                                 String route, OffsetDateTime scheduledAt, OffsetDateTime administeredAt,
                                 String administeredBy, String status) {}
