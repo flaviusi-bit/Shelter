@@ -17,7 +17,7 @@ class DocumentStorageServiceTest {
     @Test
     void storesAllowedImageType() throws Exception {
         DocumentStorageService service = new DocumentStorageService(tempDir.toString());
-        var file = new MockMultipartFile("file", "photo.png", "image/png", new byte[]{1, 2, 3});
+        var file = new MockMultipartFile("file", "photo.png", "image/png", new byte[]{(byte)0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A});
 
         var stored = service.store(UUID.randomUUID(), file);
 
@@ -27,6 +27,27 @@ class DocumentStorageServiceTest {
 
         service.delete(stored.storageKey());
         assertFalse(service.resolve(stored.storageKey()).toFile().exists());
+    }
+
+    @Test
+    void rejectsContentThatDoesNotMatchDeclaredPdfType() {
+        DocumentStorageService service = new DocumentStorageService(tempDir.toString());
+        var file = new MockMultipartFile("file", "payload.pdf", "application/pdf", "not a pdf".getBytes());
+
+        var error = assertThrows(IllegalArgumentException.class,
+            () -> service.store(UUID.randomUUID(), file));
+
+        assertEquals("File content does not match content type", error.getMessage());
+    }
+
+    @Test
+    void acceptsPdfWithMatchingSignature() throws Exception {
+        DocumentStorageService service = new DocumentStorageService(tempDir.toString());
+        var file = new MockMultipartFile("file", "report.pdf", "application/pdf", "%PDF-1.7".getBytes());
+
+        var stored = service.store(UUID.randomUUID(), file);
+
+        assertTrue(service.resolve(stored.storageKey()).toFile().isFile());
     }
 
     @Test

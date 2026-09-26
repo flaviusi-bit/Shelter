@@ -23,11 +23,38 @@ public class DocumentStorageService {
         if(!(type.equals("application/pdf")||isSafeImageType(type)||type.equals("text/plain")||type.equals("application/msword")||type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) throw new IllegalArgumentException("File type is not allowed");
         String ext=""; int dot=original.lastIndexOf('.'); if(dot>=0) ext=original.substring(dot).toLowerCase();
         if(!extensionMatchesContentType(ext,type)) throw new IllegalArgumentException("File extension does not match content type");
+        if(!contentMatchesType(file,type)) throw new IllegalArgumentException("File content does not match content type");
         String key=animalId+"/"+UUID.randomUUID()+ext;
         Path target=root.resolve(key).normalize(); if(!target.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
         Files.createDirectories(target.getParent()); file.transferTo(target);
         return new StoredFile(key,original,type,file.getSize());
     }
+    private boolean contentMatchesType(MultipartFile file,String type) throws IOException {
+        if(type.equals("text/plain")) return true;
+        byte[] header;
+        try(var in=file.getInputStream()){
+            header=in.readNBytes(12);
+        }
+        return switch(type) {
+            case "application/pdf" -> startsWith(header,new byte[]{0x25,0x50,0x44,0x46,0x2D});
+            case "image/jpeg" -> startsWith(header,new byte[]{(byte)0xFF,(byte)0xD8,(byte)0xFF});
+            case "image/png" -> startsWith(header,new byte[]{(byte)0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A});
+            case "image/gif" -> startsWith(header,new byte[]{0x47,0x49,0x46,0x38});
+            case "image/webp" -> startsWith(header,new byte[]{0x52,0x49,0x46,0x46}) && header.length>=12
+                    && header[8]==0x57 && header[9]==0x45 && header[10]==0x42 && header[11]==0x50;
+            case "image/bmp" -> startsWith(header,new byte[]{0x42,0x4D});
+            case "application/msword" -> startsWith(header,new byte[]{(byte)0xD0,(byte)0xCF,0x11,(byte)0xE0,(byte)0xA1,(byte)0xB1,0x1A,(byte)0xE1});
+            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> startsWith(header,new byte[]{0x50,0x4B,0x03,0x04});
+            default -> false;
+        };
+    }
+
+    private boolean startsWith(byte[] value,byte[] prefix) {
+        if(value.length<prefix.length) return false;
+        for(int i=0;i<prefix.length;i++) if(value[i]!=prefix[i]) return false;
+        return true;
+    }
+
     private boolean extensionMatchesContentType(String ext,String type) {
         return switch(type) {
             case "application/pdf" -> ext.equals(".pdf");
