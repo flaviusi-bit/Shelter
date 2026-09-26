@@ -65,10 +65,10 @@ public class DocumentStorageService {
                 String entryName = normalizeZipEntryName(entry.getName());
                 if (entryName.equals("[Content_Types].xml")) {
                     if (contentTypes) duplicateRequiredPart = true;
-                    contentTypes = isWellFormedXml(readEntry(in), "Types");
+                    contentTypes = isWellFormedXml(readEntry(in), "Types", "http://schemas.openxmlformats.org/package/2006/content-types");
                 } else if (entryName.equals("word/document.xml")) {
                     if (document) duplicateRequiredPart = true;
-                    document = isWellFormedXml(readEntry(in), "document");
+                    document = isWellFormedXml(readEntry(in), "document", "http://schemas.openxmlformats.org/wordprocessingml/2006/main", "http://purl.oclc.org/ooxml/wordprocessingml/main");
                 }
             }
         }
@@ -91,7 +91,7 @@ public class DocumentStorageService {
         }
         return output.toByteArray();
     }
-    private boolean isWellFormedXml(byte[] input, String expectedRoot) throws IOException {
+    private boolean isWellFormedXml(byte[] input, String expectedRoot, String... expectedNamespaces) throws IOException {
         if (input == null) return false;
         try {
             var factory = DocumentBuilderFactory.newInstance();
@@ -104,7 +104,9 @@ public class DocumentStorageService {
             factory.setXIncludeAware(false);
             factory.setExpandEntityReferences(false);
             var root = factory.newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
-            return expectedRoot.equals(root.getLocalName() != null ? root.getLocalName() : root.getNodeName());
+            String localName = root.getLocalName() != null ? root.getLocalName() : root.getNodeName();
+            String namespace = root.getNamespaceURI();
+            return expectedRoot.equals(localName) && java.util.Arrays.asList(expectedNamespaces).contains(namespace);
         } catch (Exception e) {
             return false;
         }
