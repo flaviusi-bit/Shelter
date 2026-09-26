@@ -3,7 +3,7 @@ import type {FormEvent,ReactNode} from 'react'
 import type {DashboardItem} from './dashboard'
 import {getDashboard} from './dashboard'
 import type {Animal,AnimalInput,Treatment,Administration,MedicalEvent,Vaccination,Deworming,MedicalDocument} from './api'
-import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask,getAuditLogs,getUsers,deactivateUser,reactivateUser,createUser,getCurrentUser} from './api'
+import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask,getAuditLogs,getUsers,deactivateUser,reactivateUser,createUser,getCurrentUser,changeMyPassword} from './api'
 
 const today=()=>new Date().toISOString().slice(0,10)
 const blankAnimal=():AnimalInput=>({name:'',animalType:'DOG',sex:'UNKNOWN',dateOfBirth:'',weightKg:undefined,microchipNumber:'',intakeDate:today(),rescueSource:'',location:'',status:'ACTIVE',notes:'',photoUrl:''})
@@ -46,10 +46,16 @@ function Backups({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
  <section className="panel"><p className="eyebrow">RESTORE</p><h2>Restore on a replacement computer</h2><p className="muted">Select and verify a backup before using the local restore procedure. Database restore remains a protected local operation and is not exposed as a browser button.</p></section>
  </main>
 }
+function ChangePasswordForm({onCancel,onChanged}:{onCancel:()=>void;onChanged:()=>void}){
+ const [currentPassword,setCurrentPassword]=useState(''),[newPassword,setNewPassword]=useState(''),[confirmPassword,setConfirmPassword]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('')
+ async function save(){if(newPassword.length<12){setError('New password must be at least 12 characters');return}if(newPassword!==confirmPassword){setError('New passwords do not match');return}setBusy(true);setError('');try{await changeMyPassword(currentPassword,newPassword);localStorage.removeItem('shelterAuth');onChanged()}catch(e){setError(e instanceof Error?e.message:'Could not change password')}finally{setBusy(false)}}
+ return <FormShell eyebrow="ACCOUNT SECURITY" title="Change password" onCancel={onCancel}><div className="form-grid"><label className="span-2">Current password *<input type="password" value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)} autoComplete="current-password"/></label><label>New password *<input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} autoComplete="new-password"/></label><label>Confirm new password *<input type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} autoComplete="new-password"/></label></div><p className="muted">Minimum 12 characters. After changing the password you will be signed out and must sign in again.</p>{error&&<div className="inline-error">{error}</div>}<button type="button" className="primary" disabled={busy} onClick={save}>{busy?'Changing…':'Change password'}</button></FormShell>
+}
 function Dashboard({isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenUsers,onLogout}:{isAdmin:boolean;onOpenAnimals:()=>void;onOpenBackups:()=>void;onOpenAudit:()=>void;onOpenUsers:()=>void;onLogout:()=>void}) {
  const [data,setData]=useState<{items:DashboardItem[];overdue:number;remaining:number;administered:number;overdueTasks:number;remainingTasks:number;taskItems:any[]}|null>(null)
  const [error,setError]=useState('')
  const [showTask,setShowTask]=useState(false)
+ const [showPassword,setShowPassword]=useState(false)
 
  async function load() {
   try { setData(await getDashboard()); setError('') }
@@ -63,7 +69,7 @@ function Dashboard({isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenUsers,
  return <main className="shell">
   <header className="topbar">
    <div><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Today</h1><p className="muted">Operational care dashboard</p></div>
-   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button>{isAdmin&&<><button className="secondary" onClick={onOpenBackups}>Backups</button><button className="secondary" onClick={onOpenAudit}>Audit log</button><button className="secondary" onClick={onOpenUsers}>Users</button></>}<button className="secondary" onClick={onLogout}>Sign out</button></div>
+   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button><button className="secondary" onClick={()=>setShowPassword(true)}>Change password</button>{isAdmin&&<><button className="secondary" onClick={onOpenBackups}>Backups</button><button className="secondary" onClick={onOpenAudit}>Audit log</button><button className="secondary" onClick={onOpenUsers}>Users</button></>}<button className="secondary" onClick={onLogout}>Sign out</button></div>
   </header>
   {error&&<div className="error">{error}</div>}
   <section className="dashboard-stats"><Stat label="Overdue" value={data?.overdue??'—'} danger/><Stat label="Remaining" value={data?.remaining??'—'}/><Stat label="Administered" value={data?.administered??'—'}/></section>
@@ -80,7 +86,7 @@ function Dashboard({isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenUsers,
    <div className="dashboard-list">{(data?.items||[]).slice(0,30).map(x=><div className="dashboard-item" key={x.id}><div><strong>{x.animalName}</strong><span>{x.medication} · {x.dose}</span></div><span className={'status status-'+x.status.toLowerCase()}>{x.status}</span></div>)}</div>
   </section>
   {showTask&&<TaskForm onCancel={()=>setShowTask(false)} onSaved={()=>{setShowTask(false);load()}}/>}
- </main>
+  {showPassword&&<ChangePasswordForm onCancel={()=>setShowPassword(false)} onChanged={onLogout}/>}\n </main>
 }
 function Users({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
  const [items,setItems]=useState<import('./api').ShelterUser[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(''),[showCreate,setShowCreate]=useState(false)
