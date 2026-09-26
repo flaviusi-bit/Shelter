@@ -27,11 +27,18 @@ public class TaskController {
     }
 
     @PostMapping
-    public Task create(@RequestBody Task input, Authentication auth){
-        if(input.getAnimal()!=null && input.getAnimal().getId()!=null){
-            input.setAnimal(animals.findById(input.getAnimal().getId())
+    public Task create(@jakarta.validation.Valid @RequestBody TaskRequest request, Authentication auth){
+        Task input=new Task();
+        if(request.animalId()!=null){
+            input.setAnimal(animals.findById(request.animalId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Animal not found")));
-        } else input.setAnimal(null);
+        }
+        input.setTaskType(request.taskType());
+        input.setTitle(request.title());
+        input.setDueAt(request.dueAt());
+        input.setPriority(request.priority()==null?"NORMAL":request.priority());
+        input.setAssignedTo(request.assignedTo());
+        input.setNotes(request.notes());
         input.setCreatedBy(auth.getName());
         input.setStatus("OPEN");
         input.setCompletedAt(null);
@@ -41,6 +48,16 @@ public class TaskController {
         audit.record(auth.getName(),"CREATE_TASK","TASK",saved.getId(),saved.getTitle());
         return saved;
     }
+
+    public record TaskRequest(
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=40) String taskType,
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=200) String title,
+        @jakarta.validation.constraints.NotNull java.time.OffsetDateTime dueAt,
+        @jakarta.validation.constraints.Pattern(regexp="LOW|NORMAL|HIGH|URGENT") String priority,
+        @jakarta.validation.constraints.Size(max=120) String assignedTo,
+        @jakarta.validation.constraints.Size(max=10000) String notes,
+        UUID animalId
+    ) {}
 
     @PostMapping("/sync-medical-reminders")
     public java.util.Map<String,Integer> syncMedicalReminders(Authentication auth){ int created=reminders.syncAll(); audit.record(auth.getName(),"SYNC_MEDICAL_REMINDERS","TASK",null,"created="+created); return java.util.Map.of("created", created); }
