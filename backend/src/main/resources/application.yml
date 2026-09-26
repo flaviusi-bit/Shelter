@@ -23,6 +23,7 @@ management:
         enabled: true
 
 shelter:
+  timezone: ${SHELTER_TIMEZONE:Europe/Bucharest}
   storage:
     documents-path: ${SHELTER_DOCUMENTS_PATH:./data/documents}
 
