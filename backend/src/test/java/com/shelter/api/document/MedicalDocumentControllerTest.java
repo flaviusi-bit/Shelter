@@ -189,7 +189,7 @@ class MedicalDocumentControllerTest {
 
         assertNotNull(result);
         assertEquals(animal, result.getAnimal());
-        assertEquals("LAB", result.getDocumentType());
+        assertEquals("LAB_RESULT", result.getDocumentType());
         assertEquals("Blood test", result.getTitle());
         assertEquals("2026-09-26", result.getDocumentDate().toString());
         assertEquals("routine", result.getNotes());
