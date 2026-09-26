@@ -64,12 +64,12 @@ public class MedicalDocumentController {
                 doc = documents.save(doc);
                 doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
                 doc = documents.save(doc);
-                audit.record(auth.getName(),"UPLOAD_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
-                return doc;
             }catch(RuntimeException e){
                 try{ storage.delete(stored.storageKey()); }catch(IOException cleanup){ e.addSuppressed(cleanup); }
                 throw e;
             }
+            audit.record(auth.getName(),"UPLOAD_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
+            return doc;
         }catch(IOException|IllegalArgumentException e){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,e.getMessage(),e);
         }
