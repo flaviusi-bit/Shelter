@@ -15,6 +15,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
+import org.mockito.ArgumentCaptor;
 import static org.mockito.Mockito.*;
 
 class MedicalDocumentControllerTest {
@@ -235,9 +236,11 @@ class MedicalDocumentControllerTest {
             () -> controller.upload(animalId, file, "LAB", "Blood test",
                 "2026-09-26", null, authentication));
 
-        var persisted = documents.save(any(MedicalDocument.class));
-        assertNotNull(persisted);
-        verify(documents, times(2)).save(any(MedicalDocument.class));
+        var captor = ArgumentCaptor.forClass(MedicalDocument.class);
+        verify(documents, times(2)).save(captor.capture());
+        var persisted = captor.getAllValues().get(1);
+        assertNotNull(persisted.getStorageKey());
+        assertEquals("/api/animals/" + animalId + "/documents/files/null", persisted.getFileUrl());
         verify(audit).record("vet", "UPLOAD_MEDICAL_DOCUMENT", "MEDICAL_DOCUMENT",
             null, "report.pdf");
         try (var paths = java.nio.file.Files.walk(tempDir)) {
