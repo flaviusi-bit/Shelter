@@ -95,6 +95,7 @@ public class DocumentStorageService {
         if (input == null) return false;
         try {
             var factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
