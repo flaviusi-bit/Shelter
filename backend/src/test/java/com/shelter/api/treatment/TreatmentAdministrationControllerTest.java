@@ -2,6 +2,7 @@ package com.shelter.api.treatment;
 
 import com.shelter.api.animal.Animal;
 import com.shelter.api.animal.AnimalRepository;
+import com.shelter.api.audit.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -20,6 +21,7 @@ class TreatmentAdministrationControllerTest {
     private TreatmentRepository treatments;
     private AnimalRepository animals;
     private TreatmentAdministrationController controller;
+    private AuditLogService auditLog;
     private UUID animalId;
     private UUID treatmentId;
     private UUID administrationId;
@@ -31,7 +33,8 @@ class TreatmentAdministrationControllerTest {
         administrations = mock(TreatmentAdministrationRepository.class);
         treatments = mock(TreatmentRepository.class);
         animals = mock(AnimalRepository.class);
-        controller = new TreatmentAdministrationController(administrations, treatments, animals, "Europe/Bucharest");
+        auditLog = mock(AuditLogService.class);
+        controller = new TreatmentAdministrationController(administrations, treatments, animals, auditLog, "Europe/Bucharest");
 
         animalId = UUID.randomUUID();
         treatmentId = UUID.randomUUID();

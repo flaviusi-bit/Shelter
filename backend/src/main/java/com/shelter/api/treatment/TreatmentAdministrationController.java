@@ -137,7 +137,8 @@ public class TreatmentAdministrationController {
             @PathVariable UUID animalId,
             @PathVariable UUID treatmentId,
             @PathVariable UUID administrationId,
-            @RequestBody ActionRequest request) {
+            @RequestBody ActionRequest request,
+            Authentication authentication) {
         ensureTreatment(animalId, treatmentId);
         TreatmentAdministration a = administrations.findById(administrationId)
                 .orElseThrow(() -> new IllegalArgumentException("Administration not found: " + administrationId));
@@ -153,7 +154,7 @@ public class TreatmentAdministrationController {
         a.setStatus(request.status());
         a.setNotes(request.notes());
         TreatmentAdministration saved = administrations.save(a);
-        auditLog.record("SYSTEM", "UPDATE_TREATMENT_ADMINISTRATION_STATUS", "TREATMENT_ADMINISTRATION", saved.getId(), "status=" + request.status());
+        auditLog.record(authentication.getName(), "UPDATE_TREATMENT_ADMINISTRATION_STATUS", "TREATMENT_ADMINISTRATION", saved.getId(), "status=" + request.status());
         return saved;
     }
 
