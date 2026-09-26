@@ -56,6 +56,21 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File content does not match content type",error.getMessage());
     }
+    @Test void rejectsDocxWithExcessiveTotalUncompressedSize() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        byte[] payload=new byte[9 * 1024 * 1024];
+        var output=new java.io.ByteArrayOutputStream();
+        try(var zip=new java.util.zip.ZipOutputStream(output)){
+            for(int i=0;i<4;i++){
+                zip.putNextEntry(new java.util.zip.ZipEntry("word/large"+i+".bin"));
+                zip.write(payload);
+                zip.closeEntry();
+            }
+        }
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",output.toByteArray());
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
     @Test void rejectsDocxWithOversizedUndeclaredZipEntry() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         byte[] oversized=new byte[10 * 1024 * 1024 + 1];

@@ -19,6 +19,7 @@ public class DocumentStorageService {
     private static final int MAX_DOCX_XML_ENTRY_SIZE = 1024 * 1024;
     private static final int MAX_DOCX_ENTRIES = 1000;
     private static final long MAX_DOCX_ENTRY_SIZE = 10L * 1024 * 1024;
+    private static final long MAX_DOCX_TOTAL_ENTRY_SIZE = 32L * 1024 * 1024;
     private final Path root;
     public DocumentStorageService(@Value("${shelter.storage.documents-path:./data/documents}") String path) {
         this.root=Paths.get(path).toAbsolutePath().normalize();
@@ -62,6 +63,7 @@ public class DocumentStorageService {
         boolean duplicateRequiredPart = false;
         boolean unsafeEntryPath = false;
         int entryCount = 0;
+        long[] totalEntrySize = {0};
         try (var in = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
@@ -75,11 +77,11 @@ public class DocumentStorageService {
                 }
                 if (entryName.equals("[Content_Types].xml")) {
                     if (contentTypes) duplicateRequiredPart = true;
-                    contentTypes = isWellFormedXml(readEntry(in), "Types", "http://schemas.openxmlformats.org/package/2006/content-types");
+                    contentTypes = isWellFormedXml(readEntry(in, totalEntrySize), "Types", "http://schemas.openxmlformats.org/package/2006/content-types");
                 } else if (entryName.equals("word/document.xml")) {
                     if (document) duplicateRequiredPart = true;
-                    document = isWellFormedXml(readEntry(in), "document", "http://schemas.openxmlformats.org/wordprocessingml/2006/main", "http://purl.oclc.org/ooxml/wordprocessingml/main");
-                } else if (!consumeEntryWithinLimit(in)) {
+                    document = isWellFormedXml(readEntry(in, totalEntrySize), "document", "http://schemas.openxmlformats.org/wordprocessingml/2006/main", "http://purl.oclc.org/ooxml/wordprocessingml/main");
+                } else if (!consumeEntryWithinLimit(in, totalEntrySize)) {
                     return false;
                 }
             }
@@ -100,24 +102,26 @@ public class DocumentStorageService {
         }
         return String.join("/", stack);
     }
-    private boolean consumeEntryWithinLimit(java.io.InputStream input) throws IOException {
+    private boolean consumeEntryWithinLimit(java.io.InputStream input, long[] totalEntrySize) throws IOException {
         byte[] buffer = new byte[8192];
         long total = 0;
         int read;
         while ((read = input.read(buffer)) != -1) {
             total += read;
-            if (total > MAX_DOCX_ENTRY_SIZE) return false;
+            totalEntrySize[0] += read;
+            if (total > MAX_DOCX_ENTRY_SIZE || totalEntrySize[0] > MAX_DOCX_TOTAL_ENTRY_SIZE) return false;
         }
         return true;
     }
-    private byte[] readEntry(java.io.InputStream input) throws IOException {
+    private byte[] readEntry(java.io.InputStream input, long[] totalEntrySize) throws IOException {
         var output = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192];
         int total = 0;
         int read;
         while ((read = input.read(buffer)) != -1) {
             total += read;
-            if (total > MAX_DOCX_XML_ENTRY_SIZE) return null;
+            totalEntrySize[0] += read;
+            if (total > MAX_DOCX_XML_ENTRY_SIZE || totalEntrySize[0] > MAX_DOCX_TOTAL_ENTRY_SIZE) return null;
             output.write(buffer, 0, read);
         }
         return output.toByteArray();
