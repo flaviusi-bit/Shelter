@@ -4,6 +4,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.zip.ZipEntry;
@@ -56,13 +58,18 @@ public class DocumentStorageService {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
                 if (entry.isDirectory()) continue;
-                if (entry.getName().equals("[Content_Types].xml")) contentTypes = isWellFormedXml(in, "Types");
-                else if (entry.getName().equals("word/document.xml")) document = isWellFormedXml(in, "document");
+                if (entry.getName().equals("[Content_Types].xml")) contentTypes = isWellFormedXml(readEntry(in), "Types");
+                else if (entry.getName().equals("word/document.xml")) document = isWellFormedXml(readEntry(in), "document");
             }
         }
         return contentTypes && document;
     }
-    private boolean isWellFormedXml(java.io.InputStream input, String expectedRoot) throws IOException {
+    private byte[] readEntry(java.io.InputStream input) throws IOException {
+        var output = new ByteArrayOutputStream();
+        input.transferTo(output);
+        return output.toByteArray();
+    }
+    private boolean isWellFormedXml(byte[] input, String expectedRoot) throws IOException {
         try {
             var factory = DocumentBuilderFactory.newInstance();
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
@@ -73,7 +80,7 @@ public class DocumentStorageService {
             factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
             factory.setXIncludeAware(false);
             factory.setExpandEntityReferences(false);
-            var root = factory.newDocumentBuilder().parse(input).getDocumentElement();
+            var root = factory.newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
             return expectedRoot.equals(root.getLocalName() != null ? root.getLocalName() : root.getNodeName());
         } catch (Exception e) {
             return false;
