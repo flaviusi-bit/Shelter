@@ -62,16 +62,22 @@ public class DocumentStorageService {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
                 if (entry.isDirectory()) continue;
-                if (entry.getName().equals("[Content_Types].xml")) {
+                String entryName = normalizeZipEntryName(entry.getName());
+                if (entryName.equals("[Content_Types].xml")) {
                     if (contentTypes) duplicateRequiredPart = true;
                     contentTypes = isWellFormedXml(readEntry(in), "Types");
-                } else if (entry.getName().equals("word/document.xml")) {
+                } else if (entryName.equals("word/document.xml")) {
                     if (document) duplicateRequiredPart = true;
                     document = isWellFormedXml(readEntry(in), "document");
                 }
             }
         }
         return contentTypes && document && !duplicateRequiredPart;
+    }
+    private String normalizeZipEntryName(String name) {
+        String normalized = name.replace('\\\\', '/');
+        while (normalized.startsWith("./")) normalized = normalized.substring(2);
+        return normalized;
     }
     private byte[] readEntry(java.io.InputStream input) throws IOException {
         var output = new ByteArrayOutputStream();
