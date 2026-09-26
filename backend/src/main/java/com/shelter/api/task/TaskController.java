@@ -43,7 +43,7 @@ public class TaskController {
     }
 
     @PostMapping("/sync-medical-reminders")
-    public java.util.Map<String,Integer> syncMedicalReminders(){ return java.util.Map.of("created", reminders.syncAll()); }
+    public java.util.Map<String,Integer> syncMedicalReminders(Authentication auth){ int created=reminders.syncAll(); audit.record(auth.getName(),"SYNC_MEDICAL_REMINDERS","TASK",null,"created="+created); return java.util.Map.of("created", created); }
 
     @PostMapping("/{id}/complete")
     public Task complete(@PathVariable UUID id, Authentication auth){
