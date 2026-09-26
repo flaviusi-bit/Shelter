@@ -116,5 +116,20 @@ class TreatmentAdministrationControllerTest {
         org.junit.jupiter.api.Assertions.assertEquals("SKIPPED", result.getStatus());
         verify(administrations).save(administration);
     }
-}
+    @Test
+    void actionRequestRejectsInvalidStatus() {
+        var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        var request = new TreatmentAdministrationController.ActionRequest("note", "COMPLETED");
+        var violations = validator.validate(request);
+        org.junit.jupiter.api.Assertions.assertEquals(1, violations.size());
+    }
 
+    @Test
+    void actionRequestRejectsOversizedNotes() {
+        var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        var request = new TreatmentAdministrationController.ActionRequest("x".repeat(10001), "SKIPPED");
+        var violations = validator.validate(request);
+        org.junit.jupiter.api.Assertions.assertEquals(1, violations.size());
+    }
+
+}

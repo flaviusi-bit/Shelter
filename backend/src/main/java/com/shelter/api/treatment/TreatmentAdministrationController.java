@@ -3,6 +3,9 @@ package com.shelter.api.treatment;
 import com.shelter.api.animal.AnimalRepository;
 import com.shelter.api.audit.AuditLogService;
 import org.springframework.beans.factory.annotation.Value;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -117,7 +120,7 @@ public class TreatmentAdministrationController {
             @PathVariable UUID animalId,
             @PathVariable UUID treatmentId,
             @PathVariable UUID administrationId,
-            @RequestBody(required = false) ActionRequest request,
+            @Valid @RequestBody(required = false) ActionRequest request,
             Authentication authentication) {
         ensureTreatment(animalId, treatmentId);
         TreatmentAdministration a = administrations.findById(administrationId)
@@ -144,7 +147,7 @@ public class TreatmentAdministrationController {
             @PathVariable UUID animalId,
             @PathVariable UUID treatmentId,
             @PathVariable UUID administrationId,
-            @RequestBody ActionRequest request,
+            @Valid @RequestBody ActionRequest request,
             Authentication authentication) {
         ensureTreatment(animalId, treatmentId);
         TreatmentAdministration a = administrations.findById(administrationId)
@@ -203,5 +206,5 @@ public class TreatmentAdministrationController {
         }
     }
 
-    public record ActionRequest(String notes, String status) {}
+    public record ActionRequest(@Size(max=10000) String notes, @Pattern(regexp="MISSED|SKIPPED") String status) {}
 }
