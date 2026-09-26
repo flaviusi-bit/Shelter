@@ -68,7 +68,11 @@ public class DocumentStorageService {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
                 if (++entryCount > MAX_DOCX_ENTRIES) return false;
-                if (entry.isDirectory()) continue;
+                if (entry.isDirectory()) {
+                    String directoryName = normalizeZipEntryName(entry.getName());
+                    if (directoryName == null) return false;
+                    continue;
+                }
                 if (entry.getSize() > MAX_DOCX_ENTRY_SIZE) return false;
                 String entryName = normalizeZipEntryName(entry.getName());
                 if (entryName == null) {
