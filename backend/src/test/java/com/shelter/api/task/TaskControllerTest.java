@@ -103,6 +103,18 @@ class TaskControllerTest {
     }
 
     @Test
+    void listRejectsInvalidStatus() {
+        assertThrows(IllegalArgumentException.class, () -> controller.list("DELETED"));
+        verify(tasks, never()).findByStatusOrderByDueAtAsc(anyString());
+    }
+
+    @Test
+    void listAcceptsKnownStatus() {
+        controller.list("COMPLETED");
+        verify(tasks).findByStatusOrderByDueAtAsc("COMPLETED");
+    }
+
+    @Test
     void openTaskCanBeCompleted() {
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("volunteer");

@@ -23,6 +23,9 @@ public class TaskController {
 
     @GetMapping
     public List<Task> list(@RequestParam(defaultValue="OPEN") String status){
+        if (!java.util.Set.of("OPEN", "COMPLETED", "SKIPPED").contains(status)) {
+            throw new IllegalArgumentException("Invalid task status");
+        }
         return tasks.findByStatusOrderByDueAtAsc(status);
     }
 
