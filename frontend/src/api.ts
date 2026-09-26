@@ -34,3 +34,8 @@ export async function getTasks(status='OPEN'):Promise<Task[]>{return json(await 
 export async function createTask(a:Omit<Task,'id'|'status'>):Promise<Task>{return json(await fetch('/api/tasks',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
 export async function completeTask(id:string):Promise<Task>{return json(await fetch('/api/tasks/'+id+'/complete',{method:'POST',headers:headers()}))}
 export async function skipTask(id:string):Promise<Task>{return json(await fetch('/api/tasks/'+id+'/skip',{method:'POST',headers:headers()}))}
+
+export type BackupInfo={name:string;createdAt:string;databaseBytes:number;documentsBytes:number;checksumAvailable:boolean}
+export type BackupVerification={valid:boolean;message:string}
+export async function getBackups():Promise<BackupInfo[]>{return json(await fetch('/api/admin/backups',{headers:headers()}))}
+export async function verifyBackup(name:string):Promise<BackupVerification>{return json(await fetch('/api/admin/backups/'+encodeURIComponent(name)+'/verify',{method:'POST',headers:headers()}))}

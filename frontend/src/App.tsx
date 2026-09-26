@@ -19,11 +19,26 @@ function Login({onLogin}:{onLogin:()=>void}){
  return <main className="login-shell"><form className="login-card" onSubmit={submit}><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Sign in</h1><p className="muted">Access the animal care system.</p><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username" autoComplete="username"/><input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" autoComplete="current-password"/>{error&&<div className="inline-error">{error}</div>}<button className="primary" type="submit">Sign in</button></form></main>
 }
 function ShelterApp({onLogout}:{onLogout:()=>void}){
- const [view,setView]=useState<'dashboard'|'animals'>('dashboard')
- if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onLogout={onLogout}/>
+ const [view,setView]=useState<'dashboard'|'animals'|'backups'>('dashboard')
+ if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onLogout={onLogout}/>
+ if(view==='backups')return <Backups onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  return <Animals onBack={()=>setView('dashboard')} onLogout={onLogout}/>
 }
-function Dashboard({onOpenAnimals,onLogout}:{onOpenAnimals:()=>void;onLogout:()=>void}) {
+function Backups({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
+ const [items,setItems]=useState<import('./api').BackupInfo[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(''),[message,setMessage]=useState('')
+ async function load(){try{setItems(await import('./api').then(x=>x.getBackups()));setError('')}catch(e){setError(e instanceof Error?e.message:'Could not load backups')}}
+ useEffect(()=>{load()},[])
+ async function verify(name:string){setBusy(name);setMessage('');try{const r=await import('./api').then(x=>x.verifyBackup(name));setMessage(r.message)}catch(e){setError(e instanceof Error?e.message:'Could not verify backup')}finally{setBusy('')}}
+ const size=(n:number)=>n<1024*1024?(n/1024).toFixed(1)+' KB':(n/1024/1024).toFixed(1)+' MB'
+ return <main className="shell"><header className="topbar"><div><p className="eyebrow">ADMINISTRATION</p><h1>Backups</h1><p className="muted">Local backup catalog and integrity verification</p></div><div className="top-actions"><button className="secondary" onClick={onBack}>Dashboard</button><button className="secondary" onClick={onLogout}>Sign out</button></div></header>
+ {error&&<div className="error">{error}</div>}{message&&<div className="success">{message}</div>}
+ <section className="panel"><div className="section-head"><div><p className="eyebrow">BACKUP CATALOG</p><h2>{items.length} backups</h2></div><button className="secondary" onClick={load}>Refresh</button></div>
+ {items.length===0?<p className="muted">No backups are available in the configured backup folder.</p>:<div className="backup-list">{items.map(x=><div className="backup-item" key={x.name}><div><strong>{x.name}</strong><span>{new Date(x.createdAt).toLocaleString()} · DB {size(x.databaseBytes)} · Documents {size(x.documentsBytes)}</span></div><div className="actions"><span className={x.checksumAvailable?'status status-administered':'status status-missed'}>{x.checksumAvailable?'CHECKSUM':'NO CHECKSUM'}</span><button className="secondary small" disabled={busy===x.name} onClick={()=>verify(x.name)}>{busy===x.name?'Verifying…':'Verify'}</button></div></div>)}</div>}
+ </section>
+ <section className="panel"><p className="eyebrow">RESTORE</p><h2>Restore on a replacement computer</h2><p className="muted">Select and verify a backup before using the local restore procedure. Database restore remains a protected local operation and is not exposed as a browser button.</p></section>
+ </main>
+}
+function Dashboard({onOpenAnimals,onOpenBackups,onLogout}:{onOpenAnimals:()=>void;onOpenBackups:()=>void;onLogout:()=>void}) {
  const [data,setData]=useState<{items:DashboardItem[];overdue:number;remaining:number;administered:number;overdueTasks:number;remainingTasks:number;taskItems:any[]}|null>(null)
  const [error,setError]=useState('')
  const [showTask,setShowTask]=useState(false)
@@ -40,7 +55,7 @@ function Dashboard({onOpenAnimals,onLogout}:{onOpenAnimals:()=>void;onLogout:()=
  return <main className="shell">
   <header className="topbar">
    <div><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Today</h1><p className="muted">Operational care dashboard</p></div>
-   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button><button className="secondary" onClick={onLogout}>Sign out</button></div>
+   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button><button className="secondary" onClick={onOpenBackups}>Backups</button><button className="secondary" onClick={onLogout}>Sign out</button></div>
   </header>
   {error&&<div className="error">{error}</div>}
   <section className="dashboard-stats"><Stat label="Overdue" value={data?.overdue??'—'} danger/><Stat label="Remaining" value={data?.remaining??'—'}/><Stat label="Administered" value={data?.administered??'—'}/></section>
