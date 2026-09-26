@@ -17,6 +17,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 @Service
 public class DocumentStorageService {
     private static final int MAX_DOCX_XML_ENTRY_SIZE = 1024 * 1024;
+    private static final int MAX_DOCX_ENTRIES = 1000;
     private final Path root;
     public DocumentStorageService(@Value("${shelter.storage.documents-path:./data/documents}") String path) {
         this.root=Paths.get(path).toAbsolutePath().normalize();
@@ -59,9 +60,11 @@ public class DocumentStorageService {
         boolean document = false;
         boolean duplicateRequiredPart = false;
         boolean unsafeEntryPath = false;
+        int entryCount = 0;
         try (var in = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
+                if (++entryCount > MAX_DOCX_ENTRIES) return false;
                 if (entry.isDirectory()) continue;
                 String entryName = normalizeZipEntryName(entry.getName());
                 if (entryName == null) {

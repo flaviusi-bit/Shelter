@@ -56,6 +56,14 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File content does not match content type",error.getMessage());
     }
+    @Test void rejectsDocxWithTooManyZipEntries() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String[] entries=new String[1002 * 2];
+        for(int i=0;i<1002;i++){ entries[i*2]="part"+i+".xml"; entries[i*2+1]="x"; }
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",zipBytes(entries));
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
     @Test void rejectsDocxWithUnsafeZipEntryPath() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",zipBytes("[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>","../word/document.xml","<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>"));
