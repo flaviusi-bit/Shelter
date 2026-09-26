@@ -21,5 +21,5 @@ public class TreatmentController {
   var animal=ensureAnimal(animalId); var t=new Treatment(); t.setAnimal(animal); t.setMedication(r.medication()); t.setDose(r.dose()); t.setRoute(r.route()); t.setFrequency(r.frequency()); t.setStartDate(r.startDate()); t.setEndDate(r.endDate()); t.setStatus(r.status()==null?"ACTIVE":r.status()); t.setInstructions(r.instructions()); t.setPrescribedBy(r.prescribedBy()); var saved=treatments.save(t); audit.record(auth.getName(),"CREATE_TREATMENT","TREATMENT",saved.getId(),saved.getMedication()); return saved;
  }
  private com.shelter.api.animal.Animal ensureAnimal(UUID id){return animals.findById(id).orElseThrow(()->new IllegalArgumentException("Animal not found: "+id));}
- public record Request(@NotBlank @Size(max=160) String medication,@NotBlank @Size(max=80) String dose,@NotBlank @Size(max=40) String route,@NotBlank @Size(max=80) String frequency,@NotNull LocalDate startDate,LocalDate endDate,@Size(max=30) String status,String instructions,@Size(max=120) String prescribedBy){}
+ public record Request(@NotBlank @Size(max=160) String medication,@NotBlank @Size(max=80) String dose,@NotBlank @Size(max=40) String route,@NotBlank @Size(max=80) String frequency,@NotNull LocalDate startDate,LocalDate endDate,@Size(max=30) String status,@Size(max=10000) String instructions,@Size(max=120) String prescribedBy){}
 }

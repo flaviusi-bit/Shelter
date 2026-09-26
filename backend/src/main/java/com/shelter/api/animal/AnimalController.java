@@ -35,7 +35,7 @@ public class AnimalController {
         @NotBlank @Size(max=120) String name,@NotBlank @Size(max=30) String animalType,@NotBlank @Size(max=20) String sex,
         LocalDate dateOfBirth,@DecimalMin("0.001") BigDecimal weightKg,@Size(max=80) String microchipNumber,
         @NotNull LocalDate intakeDate,@Size(max=255) String rescueSource,@Size(max=120) String location,
-        @Size(max=30) String status,String notes,@Size(max=1000) String photoUrl){}
+        @Size(max=30) String status,@Size(max=10000) String notes,@Size(max=1000) String photoUrl){}
     @ResponseStatus(HttpStatus.NOT_FOUND)
     static class AnimalNotFoundException extends RuntimeException{AnimalNotFoundException(UUID id){super("Animal not found: "+id);}}
 }
