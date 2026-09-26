@@ -31,6 +31,7 @@ services:
       SHELTER_ADMIN_PASSWORD: ${SHELTER_ADMIN_PASSWORD:-change-me-now}
       SHELTER_DOCUMENTS_PATH: /app/data/documents
       SHELTER_TIMEZONE: ${SHELTER_TIMEZONE:-Europe/Bucharest}
+      SHELTER_BACKUP_PATH: /app/data/backups
     ports:
       - "${BACKEND_PORT:-8080}:8080"
     healthcheck:
@@ -41,6 +42,7 @@ services:
       start_period: 30s
     volumes:
       - shelter-documents-data:/app/data/documents
+      - ${SHELTER_BACKUP_PATH:-./backups}:/app/data/backups
     depends_on:
       postgres:
         condition: service_healthy
@@ -48,5 +50,3 @@ services:
 volumes:
   shelter-postgres-data:
   shelter-documents-data:
-
-# The backend image is built from backend/Dockerfile, including Maven compilation.

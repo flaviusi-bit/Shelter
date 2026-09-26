@@ -26,6 +26,8 @@ shelter:
   timezone: ${SHELTER_TIMEZONE:Europe/Bucharest}
   storage:
     documents-path: ${SHELTER_DOCUMENTS_PATH:./data/documents}
+  backup:
+    directory: ${SHELTER_BACKUP_PATH:./data/backups}
 
 server:
   port: 8080
