@@ -2,7 +2,10 @@ package com.shelter.api.config;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +16,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(controllers = SecurityConfigTest.ProbeController.class)
+@WebMvcTest
+@ContextConfiguration(classes = SecurityConfigTest.TestConfig.class)
 @Import(SecurityConfig.class)
 class SecurityConfigTest {
 
@@ -60,27 +64,26 @@ class SecurityConfigTest {
         mvc.perform(request(HttpMethod.DELETE, "/api/future-resource/1")).andExpect(status().isForbidden());
     }
 
+    @Configuration
+    static class TestConfig {
+        @Bean ProbeController probeController() { return new ProbeController(); }
+    }
+
     @RestController
     @RequestMapping("/api")
     static class ProbeController {
         @RequestMapping(value = "/animals", method = RequestMethod.GET)
         String animalsRead() { return "ok"; }
-
         @RequestMapping(value = "/animals", method = RequestMethod.POST)
         String animalsCreate() { return "ok"; }
-
         @RequestMapping(value = "/animals/{id}", method = RequestMethod.PUT)
         String animalsUpdate() { return "ok"; }
-
         @RequestMapping(value = "/animals/{id}/vaccinations", method = RequestMethod.POST)
         String vaccinationCreate() { return "ok"; }
-
         @RequestMapping(value = "/users", method = RequestMethod.GET)
         String usersRead() { return "ok"; }
-
         @RequestMapping(value = "/tasks", method = RequestMethod.POST)
         String taskCreate() { return "ok"; }
-
         @RequestMapping(value = "/future-resource/{id}", method = RequestMethod.DELETE)
         String futureDelete() { return "ok"; }
     }
