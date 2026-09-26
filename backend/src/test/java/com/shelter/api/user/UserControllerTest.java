@@ -28,6 +28,104 @@ class UserControllerTest {
         controller = new UserController(users, passwordEncoder, audit);
     }
 
+
+
+    @Test
+    void createUserSuccessfullyNormalizesUsernameAndRole() {
+        when(users.findByUsername("new.user")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("secure-password-123")).thenReturn("encoded");
+        AppUser saved = user("new.user", "COORDINATOR", true);
+        saved.setDisplayName("New User");
+        when(users.save(any(AppUser.class))).thenReturn(saved);
+
+        UserController.UserView result = controller.create(
+            new UserController.CreateUserRequest(" New.User ", " New User ", "secure-password-123", " coordinator "),
+            auth);
+
+        assertEquals("new.user", result.username());
+        assertEquals("New User", result.displayName());
+        assertEquals("COORDINATOR", result.role());
+        verify(passwordEncoder).encode("secure-password-123");
+        verify(audit).record("admin", "CREATE_USER", "USER", saved.getId(),
+            "username=new.user, role=COORDINATOR");
+    }
+
+    @Test
+    void createUserRejectsInvalidUsername() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> controller.create(
+                new UserController.CreateUserRequest("bad name", "User", "secure-password-123", "VIEWER"), auth));
+        assertEquals("Username must be 3-80 characters and contain only letters, numbers, dot, underscore or hyphen", ex.getMessage());
+        verifyNoInteractions(users, passwordEncoder, audit);
+    }
+
+    @Test
+    void createUserRejectsBlankDisplayName() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> controller.create(
+                new UserController.CreateUserRequest("viewer1", "   ", "secure-password-123", "VIEWER"), auth));
+        assertEquals("Display name is required and must be at most 120 characters", ex.getMessage());
+        verifyNoInteractions(users, passwordEncoder, audit);
+    }
+
+    @Test
+    void createUserRejectsShortPassword() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> controller.create(
+                new UserController.CreateUserRequest("viewer1", "Viewer", "short", "VIEWER"), auth));
+        assertEquals("Password must be at least 12 characters", ex.getMessage());
+        verifyNoInteractions(users, passwordEncoder, audit);
+    }
+
+    @Test
+    void createUserRejectsInvalidRole() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> controller.create(
+                new UserController.CreateUserRequest("viewer1", "Viewer", "secure-password-123", "OWNER"), auth));
+        assertEquals("Invalid role", ex.getMessage());
+        verifyNoInteractions(users, passwordEncoder, audit);
+    }
+
+    @Test
+    void createUserRejectsDuplicateUsername() {
+        when(users.findByUsername("viewer1")).thenReturn(Optional.of(user("viewer1", "VIEWER", true)));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> controller.create(
+                new UserController.CreateUserRequest("viewer1", "Viewer", "secure-password-123", "VIEWER"), auth));
+        assertEquals("Username already exists", ex.getMessage());
+        verify(users, never()).save(any());
+        verifyNoInteractions(passwordEncoder, audit);
+    }
+
+    @Test
+    void updateUserRejectsInvalidRole() {
+        AppUser user = user("volunteer", "VOLUNTEER", true);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> controller.update(user.getId(),
+                new UserController.UpdateUserRequest("Volunteer", "OWNER"), auth));
+
+        assertEquals("Invalid role", ex.getMessage());
+        verify(users, never()).save(any());
+        verifyNoInteractions(audit);
+    }
+
+    @Test
+    void updateUserRejectsBlankDisplayName() {
+        AppUser user = user("volunteer", "VOLUNTEER", true);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> controller.update(user.getId(),
+                new UserController.UpdateUserRequest("   ", "VOLUNTEER"), auth));
+
+        assertEquals("Display name is required and must be at most 120 characters", ex.getMessage());
+        verify(users, never()).save(any());
+        verifyNoInteractions(audit);
+    }
+
     @Test
     void updateUserDisplayNameAndRole() {
         AppUser user = user("volunteer", "VOLUNTEER", true);
