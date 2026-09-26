@@ -1,6 +1,7 @@
 package com.shelter.api.task;
 
 import com.shelter.api.animal.AnimalRepository;
+import com.shelter.api.audit.AuditLogService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -16,8 +17,9 @@ public class TaskController {
     private final TaskRepository tasks;
     private final AnimalRepository animals;
     private final TaskReminderService reminders;
+    private final AuditLogService audit;
 
-    public TaskController(TaskRepository tasks, AnimalRepository animals, TaskReminderService reminders){this.tasks=tasks;this.animals=animals;this.reminders=reminders;}
+    public TaskController(TaskRepository tasks, AnimalRepository animals, TaskReminderService reminders, AuditLogService audit){this.tasks=tasks;this.animals=animals;this.reminders=reminders;this.audit=audit;}
 
     @GetMapping
     public List<Task> list(@RequestParam(defaultValue="OPEN") String status){
@@ -35,7 +37,9 @@ public class TaskController {
         input.setCompletedAt(null);
         input.setCompletedBy(null);
         input.setSourceKey(null);
-        return tasks.save(input);
+        var saved=tasks.save(input);
+        audit.record(auth.getName(),"CREATE_TASK","TASK",saved.getId(),saved.getTitle());
+        return saved;
     }
 
     @PostMapping("/sync-medical-reminders")
@@ -47,7 +51,9 @@ public class TaskController {
         task.setStatus("COMPLETED");
         task.setCompletedAt(OffsetDateTime.now());
         task.setCompletedBy(auth.getName());
-        return tasks.save(task);
+        var saved=tasks.save(task);
+        audit.record(auth.getName(),"COMPLETE_TASK","TASK",saved.getId(),saved.getTitle());
+        return saved;
     }
 
     @PostMapping("/{id}/skip")
@@ -56,6 +62,8 @@ public class TaskController {
         task.setStatus("SKIPPED");
         task.setCompletedAt(OffsetDateTime.now());
         task.setCompletedBy(auth.getName());
-        return tasks.save(task);
+        var saved=tasks.save(task);
+        audit.record(auth.getName(),"SKIP_TASK","TASK",saved.getId(),saved.getTitle());
+        return saved;
     }
 }
