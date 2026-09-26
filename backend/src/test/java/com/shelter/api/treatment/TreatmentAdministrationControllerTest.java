@@ -79,13 +79,15 @@ class TreatmentAdministrationControllerTest {
 
         assertThrows(IllegalStateException.class, () ->
             controller.setStatus(animalId, treatmentId, administrationId,
-                new TreatmentAdministrationController.ActionRequest("late", "SKIPPED")));
+                new TreatmentAdministrationController.ActionRequest("late", "SKIPPED"), authentication));
     }
 
     @Test
     void scheduledAdministrationCanBeMarkedSkipped() {
+        Authentication authentication = Mockito.mock(Authentication.class);
+        when(authentication.getName()).thenReturn("vet");
         var result = controller.setStatus(animalId, treatmentId, administrationId,
-            new TreatmentAdministrationController.ActionRequest("not given", "SKIPPED"));
+            new TreatmentAdministrationController.ActionRequest("not given", "SKIPPED"), authentication);
 
         org.junit.jupiter.api.Assertions.assertEquals("SKIPPED", result.getStatus());
         verify(administrations).save(administration);
