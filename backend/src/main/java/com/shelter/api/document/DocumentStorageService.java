@@ -73,6 +73,7 @@ public class DocumentStorageService {
                 String entryName = normalizeZipEntryName(entry.getName());
                 if (entryName == null) {
                     unsafeEntryPath = true;
+                    if (!consumeEntryWithinLimit(in, totalEntrySize)) return false;
                     continue;
                 }
                 if (entryName.equals("[Content_Types].xml")) {
