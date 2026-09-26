@@ -40,6 +40,68 @@ class TaskControllerTest {
         when(tasks.save(any(Task.class))).thenAnswer(i -> i.getArgument(0));
     }
 
+
+
+    @Test
+    void createTaskSetsServerControlledFieldsAndAudits() {
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("coordinator");
+
+        TaskController.TaskRequest request = new TaskController.TaskRequest(
+            "FOLLOW_UP", "Call adopter", java.time.OffsetDateTime.parse("2026-09-27T10:00:00Z"),
+            null, "volunteer", "Call tomorrow", null);
+
+        Task result = controller.create(request, authentication);
+
+        assertEquals("FOLLOW_UP", result.getTaskType());
+        assertEquals("Call adopter", result.getTitle());
+        assertEquals("2026-09-27T10:00Z", result.getDueAt().toString());
+        assertEquals("NORMAL", result.getPriority());
+        assertEquals("volunteer", result.getAssignedTo());
+        assertEquals("Call tomorrow", result.getNotes());
+        assertEquals("coordinator", result.getCreatedBy());
+        assertEquals("OPEN", result.getStatus());
+        assertEquals(null, result.getCompletedAt());
+        assertEquals(null, result.getCompletedBy());
+        assertEquals(null, result.getSourceKey());
+        verify(tasks).save(result);
+        verify(audit).record("coordinator", "CREATE_TASK", "TASK", null, "Call adopter");
+    }
+
+    @Test
+    void createTaskResolvesAnimalAndRejectsUnknownAnimal() {
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("veterinarian");
+
+        UUID animalId = UUID.randomUUID();
+        com.shelter.api.animal.Animal animal = new com.shelter.api.animal.Animal();
+        animal.setName("Misha");
+        when(animals.findById(animalId)).thenReturn(Optional.of(animal));
+
+        TaskController.TaskRequest request = new TaskController.TaskRequest(
+            "CHECKUP", "Medical check", java.time.OffsetDateTime.parse("2026-09-28T12:00:00Z"),
+            "HIGH", null, null, animalId);
+
+        Task result = controller.create(request, authentication);
+
+        assertEquals(animal, result.getAnimal());
+        assertEquals("HIGH", result.getPriority());
+        verify(tasks).save(result);
+
+        UUID missingAnimalId = UUID.randomUUID();
+        when(animals.findById(missingAnimalId)).thenReturn(Optional.empty());
+        TaskController.TaskRequest missingAnimalRequest = new TaskController.TaskRequest(
+            "CHECKUP", "Missing animal", java.time.OffsetDateTime.parse("2026-09-28T12:00:00Z"),
+            "HIGH", null, null, missingAnimalId);
+
+        org.springframework.web.server.ResponseStatusException ex =
+            assertThrows(org.springframework.web.server.ResponseStatusException.class,
+                () -> controller.create(missingAnimalRequest, authentication));
+
+        assertEquals(org.springframework.http.HttpStatus.NOT_FOUND, ex.getStatusCode());
+        verify(tasks, times(1)).save(any(Task.class));
+    }
+
     @Test
     void openTaskCanBeCompleted() {
         Authentication authentication = mock(Authentication.class);
