@@ -222,6 +222,30 @@ class MedicalDocumentControllerTest {
     }
 
     @Test
+    void uploadDoesNotDeletePersistedFileWhenAuditFails() throws Exception {
+        var file = new org.springframework.mock.web.MockMultipartFile(
+            "file", "report.pdf", "application/pdf", "medical report".getBytes());
+
+        when(documents.save(any(MedicalDocument.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+        doThrow(new RuntimeException("audit unavailable"))
+            .when(audit).record(any(), eq("UPLOAD_MEDICAL_DOCUMENT"), eq("MEDICAL_DOCUMENT"), any(), any());
+
+        assertThrows(RuntimeException.class,
+            () -> controller.upload(animalId, file, "LAB", "Blood test",
+                "2026-09-26", null, authentication));
+
+        var persisted = documents.save(any(MedicalDocument.class));
+        assertNotNull(persisted);
+        verify(documents, times(2)).save(any(MedicalDocument.class));
+        verify(audit).record("vet", "UPLOAD_MEDICAL_DOCUMENT", "MEDICAL_DOCUMENT",
+            null, "report.pdf");
+        try (var paths = java.nio.file.Files.walk(tempDir)) {
+            assertEquals(1, paths.filter(java.nio.file.Files::isRegularFile).count());
+        }
+    }
+
+    @Test
     void createRejectsOversizedNotesBeforeSaving() {
         MedicalDocument input = new MedicalDocument();
         input.setDocumentType("LAB");
