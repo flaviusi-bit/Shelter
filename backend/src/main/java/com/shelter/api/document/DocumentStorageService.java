@@ -125,7 +125,7 @@ public class DocumentStorageService {
     private byte[] readEntry(java.io.InputStream input, long[] totalEntrySize) throws IOException {
         var output = new ByteArrayOutputStream();
         byte[] buffer = new byte[8192];
-        int total = 0;
+        long total = 0;
         int read;
         while ((read = input.read(buffer)) != -1) {
             total += read;

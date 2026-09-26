@@ -151,6 +151,23 @@ class DocumentStorageServiceTest {
         assertEquals("File content does not match content type",error.getMessage());
     }
 
+    @Test void rejectsDocxWithUndeclaredOversizedRequiredXmlEntry() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        byte[] oversized=new byte[1024 * 1024 + 1];
+        var output=new ByteArrayOutputStream();
+        try(var zip=new ZipOutputStream(output)){
+            zip.putNextEntry(new ZipEntry("[Content_Types].xml"));
+            zip.write(oversized);
+            zip.closeEntry();
+            zip.putNextEntry(new ZipEntry("word/document.xml"));
+            zip.write("<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>".getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+        }
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",output.toByteArray());
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
+
     @Test void rejectsDocxWithOversizedRequiredXmlEntry() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var oversized="<document>"+"x".repeat(1024*1024)+"</document>";
