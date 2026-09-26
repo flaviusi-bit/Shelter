@@ -3,7 +3,7 @@ import type {FormEvent,ReactNode} from 'react'
 import type {DashboardItem} from './dashboard'
 import {getDashboard} from './dashboard'
 import type {Animal,AnimalInput,Treatment,Administration,MedicalEvent,Vaccination,Deworming,MedicalDocument} from './api'
-import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask,getAuditLogs,getUsers,deactivateUser,reactivateUser,createUser,getCurrentUser,changeMyPassword} from './api'
+import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask,getAuditLogs,getUsers,deactivateUser,reactivateUser,createUser,getCurrentUser,changeMyPassword,resetUserPassword} from './api'
 
 const today=()=>new Date().toISOString().slice(0,10)
 const blankAnimal=():AnimalInput=>({name:'',animalType:'DOG',sex:'UNKNOWN',dateOfBirth:'',weightKg:undefined,microchipNumber:'',intakeDate:today(),rescueSource:'',location:'',status:'ACTIVE',notes:'',photoUrl:''})
@@ -89,17 +89,22 @@ function Dashboard({isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenUsers,
   {showPassword&&<ChangePasswordForm onCancel={()=>setShowPassword(false)} onChanged={onLogout}/>}\n </main>
 }
 function Users({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
- const [items,setItems]=useState<import('./api').ShelterUser[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(''),[showCreate,setShowCreate]=useState(false)
+ const [items,setItems]=useState<import('./api').ShelterUser[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(''),[showCreate,setShowCreate]=useState(false),[resetUser,setResetUser]=useState<import('./api').ShelterUser|null>(null)
  async function load(){try{setItems(await getUsers());setError('')}catch(e){setError(e instanceof Error?e.message:'Could not load users')}}
  useEffect(()=>{load()},[])
  async function toggle(u:import('./api').ShelterUser){setBusy(u.id);setError('');try{const updated=u.active?await deactivateUser(u.id):await reactivateUser(u.id);setItems(xs=>xs.map(x=>x.id===updated.id?updated:x))}catch(e){setError(e instanceof Error?e.message:'Could not update user')}finally{setBusy('')}}
  return <main className="shell"><header className="topbar"><div><p className="eyebrow">ADMINISTRATION</p><h1>Users</h1><p className="muted">Manage shelter system accounts and access status</p></div><div className="top-actions"><button className="secondary" onClick={onBack}>Dashboard</button><button className="secondary" onClick={onLogout}>Sign out</button></div></header>
  {error&&<div className="error">{error}</div>}
  <section className="panel"><div className="section-head"><div><p className="eyebrow">USER ACCOUNTS</p><h2>{items.length} users</h2></div><div className="section-head-actions"><button className="secondary" onClick={load}>Refresh</button><button className="primary" onClick={()=>setShowCreate(true)}>+ New user</button></div></div>
- {items.length===0?<p className="muted">No users available.</p>:<div className="record-list">{items.map(u=><div className="record" key={u.id}><div><strong>{u.displayName}</strong><span>@{u.username} · {u.role}</span><small className={u.active?'':'muted'}>{u.active?'Active':'Inactive'}</small></div><button className={u.active?'secondary small':'primary small'} disabled={busy===u.id} onClick={()=>toggle(u)}>{busy===u.id?'Saving…':u.active?'Deactivate':'Reactivate'}</button></div>)}</div>}
+ {items.length===0?<p className="muted">No users available.</p>:<div className="record-list">{items.map(u=><div className="record" key={u.id}><div><strong>{u.displayName}</strong><span>@{u.username} · {u.role}</span><small className={u.active?'':'muted'}>{u.active?'Active':'Inactive'}</small></div><div className="actions"><button className={u.active?'secondary small':'primary small'} disabled={busy===u.id} onClick={()=>toggle(u)}>{busy===u.id?'Saving…':u.active?'Deactivate':'Reactivate'}</button>{u.active&&<button className="secondary small" disabled={busy===u.id} onClick={()=>setResetUser(u)}>Reset password</button>}</div></div>)}</div>}
  </section>
- {showCreate&&<UserForm onCancel={()=>setShowCreate(false)} onSaved={u=>{setItems(xs=>[...xs,u].sort((x,y)=>x.username.localeCompare(y.username)));setShowCreate(false)}}/>}
+ {showCreate&&<UserForm onCancel={()=>setShowCreate(false)} onSaved={u=>{setItems(xs=>[...xs,u].sort((x,y)=>x.username.localeCompare(y.username)));setShowCreate(false)}}/>}{resetUser&&<ResetUserPasswordForm user={resetUser} onCancel={()=>setResetUser(null)} onSaved={()=>setResetUser(null)}/>}
  </main>
+}
+function ResetUserPasswordForm({user,onCancel,onSaved}:{user:import('./api').ShelterUser;onCancel:()=>void;onSaved:()=>void}){
+ const [password,setPassword]=useState(''),[confirm,setConfirm]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState('')
+ async function save(){if(password.length<12){setError('Password must be at least 12 characters');return}if(password!==confirm){setError('Passwords do not match');return}setBusy(true);setError('');try{await resetUserPassword(user.id,password);onSaved()}catch(e){setError(e instanceof Error?e.message:'Could not reset password')}finally{setBusy(false)}}
+ return <FormShell eyebrow="USER MANAGEMENT" title={'Reset password · '+user.displayName} onCancel={onCancel}><div className="form-grid"><label>New password *<input type="password" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="new-password"/></label><label>Confirm password *<input type="password" value={confirm} onChange={e=>setConfirm(e.target.value)} autoComplete="new-password"/></label></div><p className="muted">This immediately replaces the user's password. The new password is not displayed or stored in the interface.</p>{error&&<div className="inline-error">{error}</div>}<button type="button" className="primary" disabled={busy} onClick={save}>{busy?'Resetting…':'Reset password'}</button></FormShell>
 }
 function UserForm({onCancel,onSaved}:{onCancel:()=>void;onSaved:(u:import('./api').ShelterUser)=>void}){
  const [f,setF]=useState({username:'',displayName:'',password:'',role:'VOLUNTEER'}),[busy,setBusy]=useState(false),[error,setError]=useState('')
