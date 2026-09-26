@@ -165,7 +165,7 @@ class MedicalDocumentControllerTest {
             "file", "report.pdf", "application/pdf", "medical report".getBytes());
 
         var error = assertThrows(ResponseStatusException.class,
-            () -> controller.upload(animalId, file, "LAB", "Blood test",
+            () -> controller.upload(animalId, file, "LAB_RESULT", "Blood test",
                 "2026-99-99", null, authentication));
 
         assertEquals(400, error.getStatusCode().value());
@@ -184,7 +184,7 @@ class MedicalDocumentControllerTest {
         when(documents.save(any(MedicalDocument.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
 
-        var result = controller.upload(animalId, file, "LAB", "Blood test",
+        var result = controller.upload(animalId, file, "LAB_RESULT", "Blood test",
             "2026-09-26", "routine", authentication);
 
         assertNotNull(result);
@@ -213,7 +213,7 @@ class MedicalDocumentControllerTest {
             .thenThrow(new RuntimeException("database unavailable"));
 
         assertThrows(RuntimeException.class,
-            () -> controller.upload(animalId, file, "LAB", "Blood test",
+            () -> controller.upload(animalId, file, "LAB_RESULT", "Blood test",
                 "2026-09-26", null, authentication));
 
         try (var paths = java.nio.file.Files.walk(tempDir)) {
@@ -233,7 +233,7 @@ class MedicalDocumentControllerTest {
             .when(audit).record(any(), eq("UPLOAD_MEDICAL_DOCUMENT"), eq("MEDICAL_DOCUMENT"), any(), any());
 
         assertThrows(RuntimeException.class,
-            () -> controller.upload(animalId, file, "LAB", "Blood test",
+            () -> controller.upload(animalId, file, "LAB_RESULT", "Blood test",
                 "2026-09-26", null, authentication));
 
         var captor = ArgumentCaptor.forClass(MedicalDocument.class);
@@ -267,7 +267,7 @@ class MedicalDocumentControllerTest {
         validate.setAccessible(true);
         var ex = assertThrows(java.lang.reflect.InvocationTargetException.class,
             () -> validate.invoke(controller, "UNKNOWN", "Report", null));
-        assertEquals("Invalid document type", ex.getCause().getMessage());
+        assertEquals("400 BAD_REQUEST \"Invalid document type\"", ex.getCause().getMessage());
     }
 
 }
