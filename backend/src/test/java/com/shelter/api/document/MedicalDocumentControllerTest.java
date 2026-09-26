@@ -54,7 +54,7 @@ class MedicalDocumentControllerTest {
         MedicalDocument document = document("report.pdf", "application/pdf", animalId);
         var stored = storage.store(animalId,
             new org.springframework.mock.web.MockMultipartFile(
-                "file", "report.pdf", "application/pdf", "medical report".getBytes()));
+                "file", "report.pdf", "application/pdf", "%PDF-1.7\nmedical report".getBytes()));
         document.setStorageKey(stored.storageKey());
         document.setOriginalFileName(stored.originalFileName());
         document.setContentType(stored.contentType());
@@ -106,7 +106,7 @@ class MedicalDocumentControllerTest {
         MedicalDocument document = document(dangerousName, "application/pdf", animalId);
         var stored = storage.store(animalId,
             new org.springframework.mock.web.MockMultipartFile(
-                "file", "safe.pdf", "application/pdf", "data".getBytes()));
+                "file", "safe.pdf", "application/pdf", "%PDF-1.7\ndata".getBytes()));
         document.setStorageKey(stored.storageKey());
         document.setContentType("application/pdf");
         when(documents.findById(documentId)).thenReturn(Optional.of(document));
@@ -128,7 +128,7 @@ class MedicalDocumentControllerTest {
         MedicalDocument document = document(dangerousName, "application/pdf", animalId);
         var stored = storage.store(animalId,
             new org.springframework.mock.web.MockMultipartFile(
-                "file", "safe.pdf", "application/pdf", "data".getBytes()));
+                "file", "safe.pdf", "application/pdf", "%PDF-1.7\ndata".getBytes()));
         document.setStorageKey(stored.storageKey());
         document.setContentType("application/pdf");
         when(documents.findById(documentId)).thenReturn(Optional.of(document));
@@ -147,7 +147,7 @@ class MedicalDocumentControllerTest {
         MedicalDocument document = document("report.pdf", "not-a-valid-media-type", animalId);
         var stored = storage.store(animalId,
             new org.springframework.mock.web.MockMultipartFile(
-                "file", "report.pdf", "application/pdf", "medical report".getBytes()));
+                "file", "report.pdf", "application/pdf", "%PDF-1.7\nmedical report".getBytes()));
         document.setStorageKey(stored.storageKey());
         when(documents.findById(documentId)).thenReturn(Optional.of(document));
 
@@ -162,7 +162,7 @@ class MedicalDocumentControllerTest {
     @Test
     void uploadRejectsInvalidDocumentDateBeforeWritingFile() {
         var file = new org.springframework.mock.web.MockMultipartFile(
-            "file", "report.pdf", "application/pdf", "medical report".getBytes());
+            "file", "report.pdf", "application/pdf", "%PDF-1.7\nmedical report".getBytes());
 
         var error = assertThrows(ResponseStatusException.class,
             () -> controller.upload(animalId, file, "LAB_RESULT", "Blood test",
@@ -179,7 +179,7 @@ class MedicalDocumentControllerTest {
     @Test
     void uploadStoresFileAndPersistsMetadata() throws Exception {
         var file = new org.springframework.mock.web.MockMultipartFile(
-            "file", "report.pdf", "application/pdf", "medical report".getBytes());
+            "file", "report.pdf", "application/pdf", "%PDF-1.7\nmedical report".getBytes());
 
         when(documents.save(any(MedicalDocument.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
@@ -195,7 +195,7 @@ class MedicalDocumentControllerTest {
         assertEquals("routine", result.getNotes());
         assertEquals("vet", result.getUploadedBy());
         assertEquals("application/pdf", result.getContentType());
-        assertEquals(Long.valueOf("medical report".getBytes().length), result.getFileSize());
+        assertEquals(Long.valueOf("%PDF-1.7\nmedical report".getBytes().length), result.getFileSize());
         assertTrue(result.getStorageKey().startsWith(animalId + "/"));
         assertTrue(storage.resolve(result.getStorageKey()).toFile().isFile());
         assertEquals("/api/animals/" + animalId + "/documents/files/null", result.getFileUrl());
@@ -207,7 +207,7 @@ class MedicalDocumentControllerTest {
     @Test
     void uploadDeletesStoredFileWhenPersistenceFails() throws Exception {
         var file = new org.springframework.mock.web.MockMultipartFile(
-            "file", "report.pdf", "application/pdf", "medical report".getBytes());
+            "file", "report.pdf", "application/pdf", "%PDF-1.7\nmedical report".getBytes());
 
         when(documents.save(any(MedicalDocument.class)))
             .thenThrow(new RuntimeException("database unavailable"));
@@ -225,7 +225,7 @@ class MedicalDocumentControllerTest {
     @Test
     void uploadDoesNotDeletePersistedFileWhenAuditFails() throws Exception {
         var file = new org.springframework.mock.web.MockMultipartFile(
-            "file", "report.pdf", "application/pdf", "medical report".getBytes());
+            "file", "report.pdf", "application/pdf", "%PDF-1.7\nmedical report".getBytes());
 
         when(documents.save(any(MedicalDocument.class)))
             .thenAnswer(invocation -> invocation.getArgument(0));
