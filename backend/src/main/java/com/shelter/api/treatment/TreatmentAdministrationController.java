@@ -114,6 +114,9 @@ public class TreatmentAdministrationController {
         if (!a.getTreatment().getId().equals(treatmentId)) {
             throw new IllegalArgumentException("Administration does not belong to treatment");
         }
+        if (!"SCHEDULED".equals(a.getStatus())) {
+            throw new IllegalStateException("Only scheduled administrations can be administered");
+        }
         a.setStatus("ADMINISTERED");
         a.setAdministeredAt(OffsetDateTime.now());
         a.setAdministeredBy(authentication.getName());
@@ -134,6 +137,9 @@ public class TreatmentAdministrationController {
                 .orElseThrow(() -> new IllegalArgumentException("Administration not found: " + administrationId));
         if (!a.getTreatment().getId().equals(treatmentId)) {
             throw new IllegalArgumentException("Administration does not belong to treatment");
+        }
+        if (!"SCHEDULED".equals(a.getStatus())) {
+            throw new IllegalStateException("Only scheduled administrations can be marked missed or skipped");
         }
         if (!List.of("MISSED", "SKIPPED").contains(request.status())) {
             throw new IllegalArgumentException("Invalid status");
