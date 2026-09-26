@@ -117,6 +117,6 @@ public class MedicalDocumentController {
 
     private String safeDownloadFileName(String name){
         if(name==null||name.isBlank()) return "document";
-        return name.replaceAll("[\\r\\n\"]","_");
+        return name.replace("\\","_").replaceAll("[\\r\\n\"]","_");
     }
 }
