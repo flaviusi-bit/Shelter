@@ -1,5 +1,7 @@
 package com.shelter.api.backup;
 
+import com.shelter.api.audit.AuditLogService;
+import org.springframework.security.core.Authentication;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -17,9 +19,11 @@ import java.util.stream.Stream;
 @RequestMapping("/api/admin/backups")
 public class BackupController {
     private final Path root;
+    private final AuditLogService audit;
 
-    public BackupController(@Value("${shelter.backup.directory:./backups}") String directory) {
+    public BackupController(@Value("${shelter.backup.directory:./backups}") String directory, AuditLogService audit) {
         this.root = Paths.get(directory).toAbsolutePath().normalize();
+        this.audit = audit;
     }
 
     @GetMapping
@@ -35,11 +39,14 @@ public class BackupController {
     }
 
     @PostMapping("/{name}/verify")
-    public BackupVerification verify(@PathVariable String name) throws IOException {
+    public BackupVerification verify(@PathVariable String name, Authentication auth) throws IOException {
         Path dir = safeDirectory(name);
         if (!Files.isDirectory(dir)) throw new IllegalArgumentException("Backup not found");
         Path sums = dir.resolve("SHA256SUMS");
-        if (!Files.isRegularFile(sums)) return new BackupVerification(false, "SHA256SUMS is missing");
+        if (!Files.isRegularFile(sums)) {
+            audit.record(auth.getName(), "VERIFY_BACKUP", "BACKUP", null, "name=" + name + ", valid=false, reason=SHA256SUMS missing");
+            return new BackupVerification(false, "SHA256SUMS is missing");
+        }
         List<String> failures = new ArrayList<>();
         for (String line : Files.readAllLines(sums, StandardCharsets.UTF_8)) {
             String[] parts = line.trim().split("\\s+", 2);
@@ -52,7 +59,9 @@ public class BackupController {
             String actual = sha256(file);
             if (!actual.equalsIgnoreCase(parts[0])) failures.add(parts[1] + ": checksum mismatch");
         }
-        return failures.isEmpty()
+        boolean valid = failures.isEmpty();
+        audit.record(auth.getName(), "VERIFY_BACKUP", "BACKUP", null, "name=" + name + ", valid=" + valid);
+        return valid
             ? new BackupVerification(true, "Backup integrity verified")
             : new BackupVerification(false, String.join("; ", failures));
     }
