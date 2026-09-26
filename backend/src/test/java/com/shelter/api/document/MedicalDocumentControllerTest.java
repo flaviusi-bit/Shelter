@@ -121,6 +121,23 @@ class MedicalDocumentControllerTest {
     }
 
     @Test
+    void uploadRejectsInvalidDocumentDateBeforeWritingFile() {
+        var file = new org.springframework.mock.web.MockMultipartFile(
+            "file", "report.pdf", "application/pdf", "medical report".getBytes());
+
+        var error = assertThrows(ResponseStatusException.class,
+            () -> controller.upload(animalId, file, "LAB", "Blood test",
+                "2026-99-99", null, authentication));
+
+        assertEquals(400, error.getStatusCode().value());
+        assertEquals("Document date must be a valid ISO date (YYYY-MM-DD)",
+            error.getReason());
+        verify(documents, never()).save(any(MedicalDocument.class));
+        verify(audit, never()).record(any(), any(), any(), any(), any());
+        assertEquals(0, tempDir.toFile().list().length);
+    }
+
+    @Test
     void createRejectsOversizedNotesBeforeSaving() {
         MedicalDocument input = new MedicalDocument();
         input.setDocumentType("LAB");
