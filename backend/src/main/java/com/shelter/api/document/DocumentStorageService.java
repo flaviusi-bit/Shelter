@@ -58,11 +58,16 @@ public class DocumentStorageService {
         boolean contentTypes = false;
         boolean document = false;
         boolean duplicateRequiredPart = false;
+        boolean unsafeEntryPath = false;
         try (var in = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
                 if (entry.isDirectory()) continue;
                 String entryName = normalizeZipEntryName(entry.getName());
+                if (entryName == null) {
+                    unsafeEntryPath = true;
+                    continue;
+                }
                 if (entryName.equals("[Content_Types].xml")) {
                     if (contentTypes) duplicateRequiredPart = true;
                     contentTypes = isWellFormedXml(readEntry(in), "Types", "http://schemas.openxmlformats.org/package/2006/content-types");
@@ -72,12 +77,21 @@ public class DocumentStorageService {
                 }
             }
         }
-        return contentTypes && document && !duplicateRequiredPart;
+        return contentTypes && document && !duplicateRequiredPart && !unsafeEntryPath;
     }
     private String normalizeZipEntryName(String name) {
+        if (name == null || name.isBlank()) return null;
         String normalized = name.replace('\\', '/');
-        while (normalized.startsWith("./")) normalized = normalized.substring(2);
-        return normalized;
+        if (normalized.startsWith("/")) return null;
+        var stack = new java.util.ArrayDeque<String>();
+        for (String part : normalized.split("/")) {
+            if (part.isEmpty() || part.equals(".")) continue;
+            if (part.equals("..")) {
+                if (stack.isEmpty()) return null;
+                stack.removeLast();
+            } else stack.addLast(part);
+        }
+        return String.join("/", stack);
     }
     private byte[] readEntry(java.io.InputStream input) throws IOException {
         var output = new ByteArrayOutputStream();
