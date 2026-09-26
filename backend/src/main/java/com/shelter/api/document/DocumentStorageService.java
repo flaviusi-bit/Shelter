@@ -16,6 +16,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 
 @Service
 public class DocumentStorageService {
+    private static final int MAX_DOCX_XML_ENTRY_SIZE = 1024 * 1024;
     private final Path root;
     public DocumentStorageService(@Value("${shelter.storage.documents-path:./data/documents}") String path) {
         this.root=Paths.get(path).toAbsolutePath().normalize();
@@ -66,10 +67,18 @@ public class DocumentStorageService {
     }
     private byte[] readEntry(java.io.InputStream input) throws IOException {
         var output = new ByteArrayOutputStream();
-        input.transferTo(output);
+        byte[] buffer = new byte[8192];
+        int total = 0;
+        int read;
+        while ((read = input.read(buffer)) != -1) {
+            total += read;
+            if (total > MAX_DOCX_XML_ENTRY_SIZE) return null;
+            output.write(buffer, 0, read);
+        }
         return output.toByteArray();
     }
     private boolean isWellFormedXml(byte[] input, String expectedRoot) throws IOException {
+        if (input == null) return false;
         try {
             var factory = DocumentBuilderFactory.newInstance();
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
