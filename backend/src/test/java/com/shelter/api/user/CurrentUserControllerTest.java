@@ -16,9 +16,7 @@ class CurrentUserControllerTest {
     void returnsAuthenticatedUsernameAndRole() {
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("vet");
-        when(authentication.getAuthorities()).thenReturn(List.<GrantedAuthority>of(
-            new SimpleGrantedAuthority("ROLE_VETERINARIAN")
-        ));
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_VETERINARIAN"))).when(authentication).getAuthorities();
 
         CurrentUserController.CurrentUserView result =
             new CurrentUserController().current(authentication);
@@ -32,7 +30,7 @@ class CurrentUserControllerTest {
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("viewer");
         GrantedAuthority authority = new SimpleGrantedAuthority("SOME_AUTHORITY");
-        when(authentication.getAuthorities()).thenReturn(List.of(authority));
+        doReturn(List.of(authority)).when(authentication).getAuthorities();
 
         CurrentUserController.CurrentUserView result =
             new CurrentUserController().current(authentication);
