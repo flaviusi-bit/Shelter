@@ -39,3 +39,6 @@ export type BackupInfo={name:string;createdAt:string;databaseBytes:number;docume
 export type BackupVerification={valid:boolean;message:string}
 export async function getBackups():Promise<BackupInfo[]>{return json(await fetch('/api/admin/backups',{headers:headers()}))}
 export async function verifyBackup(name:string):Promise<BackupVerification>{return json(await fetch('/api/admin/backups/'+encodeURIComponent(name)+'/verify',{method:'POST',headers:headers()}))}
+
+export type AuditLog={id:string;actor:string;action:string;entityType:string;entityId?:string;occurredAt:string;details?:string}
+export async function getAuditLogs(limit=200):Promise<AuditLog[]>{return json(await fetch('/api/admin/audit?limit='+limit,{headers:headers()}))}

@@ -3,7 +3,7 @@ import type {FormEvent,ReactNode} from 'react'
 import type {DashboardItem} from './dashboard'
 import {getDashboard} from './dashboard'
 import type {Animal,AnimalInput,Treatment,Administration,MedicalEvent,Vaccination,Deworming,MedicalDocument} from './api'
-import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask} from './api'
+import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask,getAuditLogs} from './api'
 
 const today=()=>new Date().toISOString().slice(0,10)
 const blankAnimal=():AnimalInput=>({name:'',animalType:'DOG',sex:'UNKNOWN',dateOfBirth:'',weightKg:undefined,microchipNumber:'',intakeDate:today(),rescueSource:'',location:'',status:'ACTIVE',notes:'',photoUrl:''})
@@ -19,9 +19,10 @@ function Login({onLogin}:{onLogin:()=>void}){
  return <main className="login-shell"><form className="login-card" onSubmit={submit}><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Sign in</h1><p className="muted">Access the animal care system.</p><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username" autoComplete="username"/><input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" autoComplete="current-password"/>{error&&<div className="inline-error">{error}</div>}<button className="primary" type="submit">Sign in</button></form></main>
 }
 function ShelterApp({onLogout}:{onLogout:()=>void}){
- const [view,setView]=useState<'dashboard'|'animals'|'backups'>('dashboard')
+ const [view,setView]=useState<'dashboard'|'animals'|'backups'|'audit'>('dashboard')
  if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onLogout={onLogout}/>
  if(view==='backups')return <Backups onBack={()=>setView('dashboard')} onLogout={onLogout}/>
+ if(view==='audit')return <Audit onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  return <Animals onBack={()=>setView('dashboard')} onLogout={onLogout}/>
 }
 function Backups({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
@@ -38,7 +39,7 @@ function Backups({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
  <section className="panel"><p className="eyebrow">RESTORE</p><h2>Restore on a replacement computer</h2><p className="muted">Select and verify a backup before using the local restore procedure. Database restore remains a protected local operation and is not exposed as a browser button.</p></section>
  </main>
 }
-function Dashboard({onOpenAnimals,onOpenBackups,onLogout}:{onOpenAnimals:()=>void;onOpenBackups:()=>void;onLogout:()=>void}) {
+function Dashboard({onOpenAnimals,onOpenBackups,onOpenAudit,onLogout}:{onOpenAnimals:()=>void;onOpenBackups:()=>void;onOpenAudit:()=>void;onLogout:()=>void}) {
  const [data,setData]=useState<{items:DashboardItem[];overdue:number;remaining:number;administered:number;overdueTasks:number;remainingTasks:number;taskItems:any[]}|null>(null)
  const [error,setError]=useState('')
  const [showTask,setShowTask]=useState(false)
@@ -55,7 +56,7 @@ function Dashboard({onOpenAnimals,onOpenBackups,onLogout}:{onOpenAnimals:()=>voi
  return <main className="shell">
   <header className="topbar">
    <div><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Today</h1><p className="muted">Operational care dashboard</p></div>
-   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button><button className="secondary" onClick={onOpenBackups}>Backups</button><button className="secondary" onClick={onLogout}>Sign out</button></div>
+   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button><button className="secondary" onClick={onOpenBackups}>Backups</button><button className="secondary" onClick={onOpenAudit}>Audit log</button><button className="secondary" onClick={onLogout}>Sign out</button></div>
   </header>
   {error&&<div className="error">{error}</div>}
   <section className="dashboard-stats"><Stat label="Overdue" value={data?.overdue??'—'} danger/><Stat label="Remaining" value={data?.remaining??'—'}/><Stat label="Administered" value={data?.administered??'—'}/></section>
@@ -74,6 +75,13 @@ function Dashboard({onOpenAnimals,onOpenBackups,onLogout}:{onOpenAnimals:()=>voi
   {showTask&&<TaskForm onCancel={()=>setShowTask(false)} onSaved={()=>{setShowTask(false);load()}}/>}
  </main>
 }
+function Audit({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
+ const [items,setItems]=useState<import('./api').AuditLog[]>([]),[error,setError]=useState('');
+ async function load(){try{setItems(await getAuditLogs());setError('')}catch(e){setError(e instanceof Error?e.message:'Could not load audit log')}}
+ useEffect(()=>{load()},[])
+ return <main className="shell"><header className="topbar"><div><p className="eyebrow">ADMINISTRATION</p><h1>Audit log</h1><p className="muted">Recent recorded actions in the shelter system</p></div><div className="top-actions"><button className="secondary" onClick={onBack}>Dashboard</button><button className="secondary" onClick={onLogout}>Sign out</button></div></header>{error&&<div className="error">{error}</div>}<section className="panel"><div className="section-head"><div><p className="eyebrow">ACTIVITY</p><h2>{items.length} entries</h2></div><button className="secondary" onClick={load}>Refresh</button></div>{items.length===0?<p className="muted">No audit entries recorded.</p>:<div className="record-list">{items.map(x=><div className="record" key={x.id}><strong>{x.action}</strong><span>{new Date(x.occurredAt).toLocaleString()} · {x.actor} · {x.entityType}{x.entityId?' · '+x.entityId:''}</span>{x.details&&<small>{x.details}</small>}</div>)}</div>}</section></main>
+}
+
 function TaskForm({onCancel,onSaved}:{onCancel:()=>void;onSaved:()=>void}){const [f,setF]=useState<any>({taskType:'GENERAL',title:'',dueAt:'',priority:'NORMAL',assignedTo:'',notes:''}),[busy,setBusy]=useState(false),[error,setError]=useState('');const set=(k:string,v:string)=>setF((x:any)=>({...x,[k]:v}));async function save(){if(!f.title||!f.dueAt){setError('Title and due date are required');return}setBusy(true);try{await createTask({taskType:f.taskType,title:f.title,dueAt:new Date(f.dueAt).toISOString(),priority:f.priority,assignedTo:f.assignedTo||undefined,notes:f.notes||undefined});onSaved()}catch(e){setError(e instanceof Error?e.message:'Could not create task')}finally{setBusy(false)}}return <FormShell title="New task / reminder" onCancel={onCancel}><div className="form-grid"><label>Type<select value={f.taskType} onChange={e=>set('taskType',e.target.value)}><option value="GENERAL">General</option><option value="VACCINATION_DUE">Vaccination due</option><option value="DEWORMING_DUE">Deworming due</option><option value="VET_VISIT">Vet visit</option><option value="TREATMENT">Treatment</option></select></label><label>Priority<select value={f.priority} onChange={e=>set('priority',e.target.value)}><option value="LOW">Low</option><option value="NORMAL">Normal</option><option value="HIGH">High</option><option value="URGENT">Urgent</option></select></label><label className="span-2">Title *<input value={f.title} onChange={e=>set('title',e.target.value)} placeholder="e.g. Book follow-up blood test"/></label><label>Due date & time *<input type="datetime-local" value={f.dueAt} onChange={e=>set('dueAt',e.target.value)}/></label><label>Assigned to<input value={f.assignedTo} onChange={e=>set('assignedTo',e.target.value)} placeholder="Username (optional)"/></label><label className="span-2">Notes<textarea rows={3} value={f.notes} onChange={e=>set('notes',e.target.value)}/></label></div>{error&&<div className="inline-error">{error}</div>}<button type="button" className="primary" disabled={busy} onClick={save}>{busy?'Saving…':'Create task'}</button></FormShell>}
 
 function Stat({label,value,danger=false}:{label:string;value:string|number;danger?:boolean}){return <article className={'stat '+(danger?'stat-danger':'')}><span>{label}</span><strong>{value}</strong></article>}
