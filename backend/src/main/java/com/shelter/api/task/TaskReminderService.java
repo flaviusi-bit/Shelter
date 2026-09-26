@@ -1,6 +1,7 @@
 package com.shelter.api.task;
 
 import com.shelter.api.animal.Animal;
+import com.shelter.api.audit.AuditLogService;
 import com.shelter.api.medical.Deworming;
 import com.shelter.api.medical.DewormingRepository;
 import com.shelter.api.medical.Vaccination;
@@ -18,21 +19,25 @@ public class TaskReminderService {
     private final VaccinationRepository vaccinations;
     private final DewormingRepository dewormings;
     private final ZoneId zone;
+    private final AuditLogService audit;
 
     public TaskReminderService(
             TaskRepository tasks,
             VaccinationRepository vaccinations,
             DewormingRepository dewormings,
-            @Value("${shelter.timezone:Europe/Bucharest}") String timezone) {
+            @Value("${shelter.timezone:Europe/Bucharest}") String timezone,
+            AuditLogService audit) {
         this.tasks = tasks;
         this.vaccinations = vaccinations;
         this.dewormings = dewormings;
         this.zone = ZoneId.of(timezone);
+        this.audit = audit;
     }
 
     @Scheduled(fixedDelayString = "${shelter.medical-reminder-sync-ms:3600000}")
     public void scheduledSync() {
-        syncAll();
+        int created = syncAll();
+        if (created > 0) audit.record("SYSTEM", "AUTO_SYNC_MEDICAL_REMINDERS", "TASK", null, "created=" + created);
     }
 
     public int syncAll() {
