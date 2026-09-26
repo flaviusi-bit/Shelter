@@ -3,7 +3,7 @@ import type {FormEvent,ReactNode} from 'react'
 import type {DashboardItem} from './dashboard'
 import {getDashboard} from './dashboard'
 import type {Animal,AnimalInput,Treatment,Administration,MedicalEvent,Vaccination,Deworming,MedicalDocument} from './api'
-import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask,getAuditLogs,getUsers,deactivateUser,reactivateUser,createUser} from './api'
+import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask,getAuditLogs,getUsers,deactivateUser,reactivateUser,createUser,getCurrentUser} from './api'
 
 const today=()=>new Date().toISOString().slice(0,10)
 const blankAnimal=():AnimalInput=>({name:'',animalType:'DOG',sex:'UNKNOWN',dateOfBirth:'',weightKg:undefined,microchipNumber:'',intakeDate:today(),rescueSource:'',location:'',status:'ACTIVE',notes:'',photoUrl:''})
@@ -19,10 +19,16 @@ function Login({onLogin}:{onLogin:()=>void}){
  return <main className="login-shell"><form className="login-card" onSubmit={submit}><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Sign in</h1><p className="muted">Access the animal care system.</p><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username" autoComplete="username"/><input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" autoComplete="current-password"/>{error&&<div className="inline-error">{error}</div>}<button className="primary" type="submit">Sign in</button></form></main>
 }
 function ShelterApp({onLogout}:{onLogout:()=>void}){
+ const [role,setRole]=useState('VIEWER')
+ useEffect(()=>{getCurrentUser().then(u=>setRole(u.role)).catch(()=>setRole('VIEWER'))},[])
+ const isAdmin=role==='ADMIN'
  const [view,setView]=useState<'dashboard'|'animals'|'backups'|'audit'|'users'>('dashboard')
- if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
+ if(view==='dashboard')return <Dashboard isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
+ if(view==='backups'&&!isAdmin)return <Dashboard isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
  if(view==='backups')return <Backups onBack={()=>setView('dashboard')} onLogout={onLogout}/>
+ if(view==='users'&&!isAdmin)return <Dashboard isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
  if(view==='users')return <Users onBack={()=>setView('dashboard')} onLogout={onLogout}/>
+ if(view==='audit'&&!isAdmin)return <Dashboard isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
  if(view==='audit')return <Audit onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  return <Animals onBack={()=>setView('dashboard')} onLogout={onLogout}/>
 }
@@ -40,7 +46,7 @@ function Backups({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
  <section className="panel"><p className="eyebrow">RESTORE</p><h2>Restore on a replacement computer</h2><p className="muted">Select and verify a backup before using the local restore procedure. Database restore remains a protected local operation and is not exposed as a browser button.</p></section>
  </main>
 }
-function Dashboard({onOpenAnimals,onOpenBackups,onOpenAudit,onOpenUsers,onLogout}:{onOpenAnimals:()=>void;onOpenBackups:()=>void;onOpenAudit:()=>void;onOpenUsers:()=>void;onLogout:()=>void}) {
+function Dashboard({isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenUsers,onLogout}:{isAdmin:boolean;onOpenAnimals:()=>void;onOpenBackups:()=>void;onOpenAudit:()=>void;onOpenUsers:()=>void;onLogout:()=>void}) {
  const [data,setData]=useState<{items:DashboardItem[];overdue:number;remaining:number;administered:number;overdueTasks:number;remainingTasks:number;taskItems:any[]}|null>(null)
  const [error,setError]=useState('')
  const [showTask,setShowTask]=useState(false)
@@ -57,7 +63,7 @@ function Dashboard({onOpenAnimals,onOpenBackups,onOpenAudit,onOpenUsers,onLogout
  return <main className="shell">
   <header className="topbar">
    <div><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Today</h1><p className="muted">Operational care dashboard</p></div>
-   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button><button className="secondary" onClick={onOpenBackups}>Backups</button><button className="secondary" onClick={onOpenAudit}>Audit log</button><button className="secondary" onClick={onOpenUsers}>Users</button><button className="secondary" onClick={onLogout}>Sign out</button></div>
+   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button>{isAdmin&&<><button className="secondary" onClick={onOpenBackups}>Backups</button><button className="secondary" onClick={onOpenAudit}>Audit log</button><button className="secondary" onClick={onOpenUsers}>Users</button></>}<button className="secondary" onClick={onLogout}>Sign out</button></div>
   </header>
   {error&&<div className="error">{error}</div>}
   <section className="dashboard-stats"><Stat label="Overdue" value={data?.overdue??'—'} danger/><Stat label="Remaining" value={data?.remaining??'—'}/><Stat label="Administered" value={data?.administered??'—'}/></section>
