@@ -147,7 +147,7 @@ class SecurityConfigTest {
         String userResetPassword() { return "ok"; }
         @RequestMapping(value = "/users/me/password", method = RequestMethod.POST)
         String userOwnPassword() { return "ok"; }
-        @RequestMapping(value = "/admin/backups/{name}/verify", method = RequestMethod.POST)
+        @RequestMapping(value = "/admin/backups", method = RequestMethod.GET)
         String backupList() { return "ok"; }
         @RequestMapping(value = "/admin/backups/{name}/verify", method = RequestMethod.POST)
         String backupVerify() { return "ok"; }
