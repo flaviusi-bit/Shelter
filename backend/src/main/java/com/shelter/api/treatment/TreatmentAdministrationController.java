@@ -180,11 +180,27 @@ public class TreatmentAdministrationController {
         if (f.matches("twice daily|two times daily|q12h|every 12 hours?")) return Duration.ofHours(12);
         if (f.matches("three times daily|q8h|every 8 hours?")) return Duration.ofHours(8);
         if (f.matches("four times daily|q6h|every 6 hours?")) return Duration.ofHours(6);
-        var m = java.util.regex.Pattern.compile("every\\s+(\\d+)\\s+hours?").matcher(f);
-        if (m.matches()) return Duration.ofHours(Long.parseLong(m.group(1)));
-        var d = java.util.regex.Pattern.compile("every\\s+(\\d+)\\s+days?").matcher(f);
-        if (d.matches()) return Duration.ofDays(Long.parseLong(d.group(1)));
+        var m = java.util.regex.Pattern.compile("every\\s+([1-9]\\d*)\\s+hours?").matcher(f);
+        if (m.matches()) {
+            long hours = parsePositiveInterval(m.group(1), "hours");
+            if (hours > 24L * 365L) throw new IllegalArgumentException("Frequency interval is too large");
+            return Duration.ofHours(hours);
+        }
+        var d = java.util.regex.Pattern.compile("every\\s+([1-9]\\d*)\\s+days?").matcher(f);
+        if (d.matches()) {
+            long days = parsePositiveInterval(d.group(1), "days");
+            if (days > 365L) throw new IllegalArgumentException("Frequency interval is too large");
+            return Duration.ofDays(days);
+        }
         throw new IllegalArgumentException("Unsupported frequency for automatic scheduling. Use daily, twice daily, q12h, q8h, q6h, or 'every N hours/days'.");
+    }
+
+    private long parsePositiveInterval(String value, String unit) {
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Invalid " + unit + " interval");
+        }
     }
 
     public record ActionRequest(String notes, String status) {}

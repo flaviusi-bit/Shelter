@@ -57,6 +57,30 @@ class TreatmentAdministrationControllerTest {
     }
 
     @Test
+    void rejectsZeroFrequencyInterval() {
+        when(treatment.getFrequency()).thenReturn("every 0 hours");
+        when(treatment.getStartDate()).thenReturn(java.time.LocalDate.now());
+        assertThrows(IllegalArgumentException.class, () ->
+            controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class)));
+    }
+
+    @Test
+    void rejectsNegativeFrequencyInterval() {
+        when(treatment.getFrequency()).thenReturn("every -1 hours");
+        when(treatment.getStartDate()).thenReturn(java.time.LocalDate.now());
+        assertThrows(IllegalArgumentException.class, () ->
+            controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class)));
+    }
+
+    @Test
+    void rejectsExcessivelyLargeFrequencyInterval() {
+        when(treatment.getFrequency()).thenReturn("every 366 days");
+        when(treatment.getStartDate()).thenReturn(java.time.LocalDate.now());
+        assertThrows(IllegalArgumentException.class, () ->
+            controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class)));
+    }
+
+    @Test
     void cannotAdministerAlreadyFinalizedAdministration() {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getName()).thenReturn("vet");
