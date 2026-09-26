@@ -118,6 +118,7 @@ public class UserController {
         if (next.length() < 12) throw new IllegalArgumentException("Password must be at least 12 characters");
         AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
         if (!u.isActive()) throw new IllegalStateException("Cannot reset password for an inactive user");
+        if (u.getUsername().equalsIgnoreCase(auth.getName())) throw new IllegalStateException("Use change password for your own account");
         u.setPasswordHash(passwordEncoder.encode(next));
         users.save(u);
         audit.record(auth.getName(), "RESET_PASSWORD", "USER", u.getId(), "username=" + u.getUsername());
