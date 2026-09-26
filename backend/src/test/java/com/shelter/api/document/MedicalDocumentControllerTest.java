@@ -121,6 +121,26 @@ class MedicalDocumentControllerTest {
     }
 
     @Test
+    void downloadSanitizesBackslashInHeaderFilename() throws Exception {
+        UUID documentId = UUID.randomUUID();
+        String dangerousName = "report\\\".concat("\\server\\share\\report.pdf");
+        MedicalDocument document = document(dangerousName, "application/pdf", animalId);
+        var stored = storage.store(animalId,
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", "safe.pdf", "application/pdf", "data".getBytes()));
+        document.setStorageKey(stored.storageKey());
+        document.setContentType("application/pdf");
+        when(documents.findById(documentId)).thenReturn(Optional.of(document));
+
+        var response = controller.download(animalId, documentId, authentication);
+
+        String header = response.getHeaders().getFirst("Content-Disposition");
+        assertNotNull(header);
+        assertFalse(header.contains("\\\\"));
+        assertEquals("inline; filename=\"report__server_share_report.pdf\"", header);
+    }
+
+    @Test
     void uploadRejectsInvalidDocumentDateBeforeWritingFile() {
         var file = new org.springframework.mock.web.MockMultipartFile(
             "file", "report.pdf", "application/pdf", "medical report".getBytes());
