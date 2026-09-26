@@ -141,6 +141,24 @@ class MedicalDocumentControllerTest {
     }
 
     @Test
+    void downloadRejectsInvalidStoredContentTypeWithoutAuditingAccess() throws Exception {
+        UUID documentId = UUID.randomUUID();
+        MedicalDocument document = document("report.pdf", "not-a-valid-media-type", animalId);
+        var stored = storage.store(animalId,
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", "report.pdf", "application/pdf", "medical report".getBytes()));
+        document.setStorageKey(stored.storageKey());
+        when(documents.findById(documentId)).thenReturn(Optional.of(document));
+
+        var error = assertThrows(ResponseStatusException.class,
+            () -> controller.download(animalId, documentId, authentication));
+
+        assertEquals(404, error.getStatusCode().value());
+        assertEquals("File unavailable", error.getReason());
+        verify(audit, never()).record(any(), any(), any(), any(), any());
+    }
+
+    @Test
     void uploadRejectsInvalidDocumentDateBeforeWritingFile() {
         var file = new org.springframework.mock.web.MockMultipartFile(
             "file", "report.pdf", "application/pdf", "medical report".getBytes());
