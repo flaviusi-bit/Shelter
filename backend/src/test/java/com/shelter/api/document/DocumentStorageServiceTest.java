@@ -51,6 +51,28 @@ class DocumentStorageServiceTest {
         assertEquals("File type is not allowed", error.getMessage());
     }
     @Test
+    void rejectsMismatchedExtensionAndContentType() {
+        DocumentStorageService service = new DocumentStorageService(tempDir.toString());
+        var file = new MockMultipartFile("file", "payload.exe", "application/pdf", new byte[]{1, 2, 3});
+
+        var error = assertThrows(IllegalArgumentException.class,
+            () -> service.store(UUID.randomUUID(), file));
+
+        assertEquals("File extension does not match content type", error.getMessage());
+    }
+
+    @Test
+    void rejectsAllowedContentTypeWithoutRequiredExtension() {
+        DocumentStorageService service = new DocumentStorageService(tempDir.toString());
+        var file = new MockMultipartFile("file", "payload", "text/plain", new byte[]{1, 2, 3});
+
+        var error = assertThrows(IllegalArgumentException.class,
+            () -> service.store(UUID.randomUUID(), file));
+
+        assertEquals("File extension does not match content type", error.getMessage());
+    }
+
+    @Test
     void rejectsPathTraversalKey() {
         DocumentStorageService service = new DocumentStorageService(tempDir.toString());
 

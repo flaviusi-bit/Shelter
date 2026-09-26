@@ -22,11 +22,27 @@ public class DocumentStorageService {
         String type=file.getContentType()==null?"application/octet-stream":file.getContentType();
         if(!(type.equals("application/pdf")||isSafeImageType(type)||type.equals("text/plain")||type.equals("application/msword")||type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) throw new IllegalArgumentException("File type is not allowed");
         String ext=""; int dot=original.lastIndexOf('.'); if(dot>=0) ext=original.substring(dot).toLowerCase();
+        if(!extensionMatchesContentType(ext,type)) throw new IllegalArgumentException("File extension does not match content type");
         String key=animalId+"/"+UUID.randomUUID()+ext;
         Path target=root.resolve(key).normalize(); if(!target.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
         Files.createDirectories(target.getParent()); file.transferTo(target);
         return new StoredFile(key,original,type,file.getSize());
     }
+    private boolean extensionMatchesContentType(String ext,String type) {
+        return switch(type) {
+            case "application/pdf" -> ext.equals(".pdf");
+            case "image/jpeg" -> ext.equals(".jpg")||ext.equals(".jpeg");
+            case "image/png" -> ext.equals(".png");
+            case "image/gif" -> ext.equals(".gif");
+            case "image/webp" -> ext.equals(".webp");
+            case "image/bmp" -> ext.equals(".bmp");
+            case "text/plain" -> ext.equals(".txt");
+            case "application/msword" -> ext.equals(".doc");
+            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> ext.equals(".docx");
+            default -> false;
+        };
+    }
+
     private boolean isSafeImageType(String type) {
         return type.equals("image/jpeg")
                 || type.equals("image/png")
