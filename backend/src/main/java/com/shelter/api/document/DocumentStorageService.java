@@ -20,13 +20,13 @@ public class DocumentStorageService {
         String original=StringUtils.cleanPath(file.getOriginalFilename()==null?"document":file.getOriginalFilename());
         if(original.contains("..")) throw new IllegalArgumentException("Invalid filename");
         String type=file.getContentType()==null?"application/octet-stream":file.getContentType();
-        if(!(type.equals("application/pdf")||type.startsWith("image/")||type.equals("text/plain")||type.equals("application/msword")||type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) throw new IllegalArgumentException("File type is not allowed");
+        if(!(type.equals("application/pdf")||isSafeImageType(type)||type.equals("text/plain")||type.equals("application/msword")||type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) throw new IllegalArgumentException("File type is not allowed");
         String ext=""; int dot=original.lastIndexOf('.'); if(dot>=0) ext=original.substring(dot).toLowerCase();
         String key=animalId+"/"+UUID.randomUUID()+ext;
         Path target=root.resolve(key).normalize(); if(!target.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
         Files.createDirectories(target.getParent()); file.transferTo(target);
         return new StoredFile(key,original,type,file.getSize());
     }
-    public Path resolve(String key){Path p=root.resolve(key).normalize();if(!p.startsWith(root))throw new IllegalArgumentException("Invalid storage path");return p;}
+    private boolean isSafeImageType(String type){\n        return type.equals("image/jpeg")||type.equals("image/png")||type.equals("image/gif")||type.equals("image/webp")||type.equals("image/bmp");\n    }\n\n    public Path resolve(String key){Path p=root.resolve(key).normalize();if(!p.startsWith(root))throw new IllegalArgumentException("Invalid storage path");return p;}
     public record StoredFile(String storageKey,String originalFileName,String contentType,long size){}
 }
