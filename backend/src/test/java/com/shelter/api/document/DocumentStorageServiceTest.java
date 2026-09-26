@@ -52,7 +52,7 @@ class DocumentStorageServiceTest {
     }
     @Test void rejectsDocxWithDuplicateRequiredPart() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
-        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",zipBytes("[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>","./[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>","word/document.xml","<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>"));
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",zipBytes("[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>","./[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>","word/document.xml","<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>"));
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File content does not match content type",error.getMessage());
     }
@@ -63,7 +63,7 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File content does not match content type",error.getMessage());
     }
-    private byte[] minimalDocx() throws Exception { return zipBytes("[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>","word/document.xml","<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>"); }
+    private byte[] minimalDocx() throws Exception { return zipBytes("[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>","word/document.xml","<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>"); }
     private byte[] zipBytes(String... entries) throws Exception {
         var output=new ByteArrayOutputStream();
         try(var zip=new ZipOutputStream(output)){
