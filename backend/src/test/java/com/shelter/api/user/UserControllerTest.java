@@ -149,6 +149,45 @@ class UserControllerTest {
         verifyNoInteractions(audit);
     }
 
+    @Test
+    void resetPasswordSuccessfully() {
+        AppUser user = user("volunteer", "VOLUNTEER", true);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+        when(passwordEncoder.encode("temporary-password-123")).thenReturn("reset-hash");
+
+        controller.resetPassword(user.getId(), new UserController.ResetPasswordRequest("temporary-password-123"), auth);
+
+        assertEquals("reset-hash", user.getPasswordHash());
+        verify(users).save(user);
+        verify(audit).record("admin", "RESET_PASSWORD", "USER", user.getId(), "username=volunteer");
+    }
+
+    @Test
+    void resetPasswordRejectsShortPassword() {
+        AppUser user = user("volunteer", "VOLUNTEER", true);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> controller.resetPassword(user.getId(), new UserController.ResetPasswordRequest("short"), auth));
+
+        assertEquals("Password must be at least 12 characters", ex.getMessage());
+        verify(users, never()).save(any());
+        verifyNoInteractions(audit);
+    }
+
+    @Test
+    void resetPasswordRejectsInactiveUser() {
+        AppUser user = user("volunteer", "VOLUNTEER", false);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> controller.resetPassword(user.getId(), new UserController.ResetPasswordRequest("temporary-password-123"), auth));
+
+        assertEquals("Cannot reset password for an inactive user", ex.getMessage());
+        verify(users, never()).save(any());
+        verifyNoInteractions(audit);
+    }
+
     private static AppUser user(String username, String role, boolean active) {
         AppUser user = new AppUser();
         user.setUsername(username);
