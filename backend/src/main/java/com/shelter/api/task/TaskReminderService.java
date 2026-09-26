@@ -5,7 +5,7 @@ import com.shelter.api.medical.Deworming;
 import com.shelter.api.medical.DewormingRepository;
 import com.shelter.api.medical.Vaccination;
 import com.shelter.api.medical.VaccinationRepository;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Service;\nimport org.springframework.beans.factory.annotation.Value;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -17,11 +17,11 @@ public class TaskReminderService {
     private final DewormingRepository dewormings;
     private final ZoneId zone;
 
-    public TaskReminderService(TaskRepository tasks, VaccinationRepository vaccinations, DewormingRepository dewormings) {
+    public TaskReminderService(TaskRepository tasks, VaccinationRepository vaccinations, DewormingRepository dewormings, @Value("${shelter.timezone:Europe/Bucharest}") String timezone) {
         this.tasks = tasks;
         this.vaccinations = vaccinations;
         this.dewormings = dewormings;
-        this.zone = ZoneId.of(System.getenv().getOrDefault("SHELTER_TIMEZONE", "Europe/Bucharest"));
+        this.zone = ZoneId.of(timezone);
     }
 
     public int syncAll() {
