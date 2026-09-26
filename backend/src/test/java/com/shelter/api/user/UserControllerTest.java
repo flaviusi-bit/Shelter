@@ -55,6 +55,19 @@ class UserControllerTest {
     }
 
     @Test
+    void cannotDeactivateOwnAccount() {
+        AppUser user = user("admin", "ADMIN", true);
+        when(users.findById(user.getId())).thenReturn(Optional.of(user));
+
+        IllegalStateException ex = assertThrows(IllegalStateException.class,
+            () -> controller.deactivate(user.getId(), auth));
+
+        assertEquals("You cannot deactivate your own account", ex.getMessage());
+        verify(users, never()).save(any());
+        verifyNoInteractions(audit);
+    }
+
+    @Test
     void cannotDeactivateLastActiveAdministrator() {
         AppUser user = user("admin2", "ADMIN", true);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
