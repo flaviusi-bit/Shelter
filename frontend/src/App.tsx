@@ -3,7 +3,7 @@ import type {FormEvent,ReactNode} from 'react'
 import type {DashboardItem} from './dashboard'
 import {getDashboard} from './dashboard'
 import type {Animal,AnimalInput,Treatment,Administration,MedicalEvent,Vaccination,Deworming,MedicalDocument} from './api'
-import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask,getAuditLogs} from './api'
+import {getAnimals,getTreatments,getAdministrations,generateAdministrations,administer,setAdministrationStatus,createAnimal,updateAnimal,getMedicalEvents,createMedicalEvent,getVaccinations,createVaccination,getDewormings,createDeworming,getDocuments,createDocument,uploadDocument,createTask,completeTask,skipTask,getAuditLogs,getUsers,deactivateUser,reactivateUser,createUser} from './api'
 
 const today=()=>new Date().toISOString().slice(0,10)
 const blankAnimal=():AnimalInput=>({name:'',animalType:'DOG',sex:'UNKNOWN',dateOfBirth:'',weightKg:undefined,microchipNumber:'',intakeDate:today(),rescueSource:'',location:'',status:'ACTIVE',notes:'',photoUrl:''})
