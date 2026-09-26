@@ -64,13 +64,14 @@ public class MedicalDocumentController {
     }
 
     @GetMapping("/files/{documentId}")
-    public ResponseEntity<PathResource> download(@PathVariable UUID animalId,@PathVariable UUID documentId){
+    public ResponseEntity<PathResource> download(@PathVariable UUID animalId,@PathVariable UUID documentId, Authentication auth){
         var doc=documents.findById(documentId)
             .filter(d -> d.getAnimal().getId().equals(animalId))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Document not found"));
         try{
             PathResource resource=new PathResource(storage.resolve(doc.getStorageKey()));
             if(!resource.exists()||!resource.isReadable()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File not found");
+            audit.record(auth.getName(),"ACCESS_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
             MediaType type=MediaType.parseMediaType(doc.getContentType()==null?"application/octet-stream":doc.getContentType());
             return ResponseEntity.ok().contentType(type)
                 .header(HttpHeaders.CONTENT_DISPOSITION,"inline; filename=\"" + doc.getOriginalFileName() + "\"")
