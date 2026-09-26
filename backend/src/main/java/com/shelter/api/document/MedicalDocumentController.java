@@ -85,11 +85,12 @@ public class MedicalDocumentController {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File not found");
             PathResource resource=new PathResource(storage.resolve(doc.getStorageKey()));
             if(!resource.exists()||!resource.isReadable()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File not found");
-            audit.record(auth.getName(),"ACCESS_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
             MediaType type=MediaType.parseMediaType(doc.getContentType()==null?"application/octet-stream":doc.getContentType());
-            return ResponseEntity.ok().contentType(type)
+            ResponseEntity<PathResource> response = ResponseEntity.ok().contentType(type)
                 .header(HttpHeaders.CONTENT_DISPOSITION,"inline; filename=\"" + safeDownloadFileName(doc.getOriginalFileName()) + "\"")
                 .body(resource);
+            audit.record(auth.getName(),"ACCESS_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
+            return response;
         }catch(InvalidMediaTypeException e){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable",e);
         }catch(IllegalArgumentException e){
