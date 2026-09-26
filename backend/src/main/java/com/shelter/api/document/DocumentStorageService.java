@@ -9,6 +9,8 @@ import java.nio.file.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.UUID;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 @Service
 public class DocumentStorageService {
@@ -54,12 +56,28 @@ public class DocumentStorageService {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
                 if (entry.isDirectory()) continue;
-                if (entry.getName().equals("[Content_Types].xml")) contentTypes = true;
-                if (entry.getName().equals("word/document.xml")) document = true;
-                if (contentTypes && document) return true;
+                if (entry.getName().equals("[Content_Types].xml")) contentTypes = isWellFormedXml(in, "Types");
+                else if (entry.getName().equals("word/document.xml")) document = isWellFormedXml(in, "document");
             }
         }
-        return false;
+        return contentTypes && document;
+    }
+    private boolean isWellFormedXml(java.io.InputStream input, String expectedRoot) throws IOException {
+        try {
+            var factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
+            var root = factory.newDocumentBuilder().parse(input).getDocumentElement();
+            return expectedRoot.equals(root.getLocalName() != null ? root.getLocalName() : root.getNodeName());
+        } catch (Exception e) {
+            return false;
+        }
     }
     private boolean startsWith(byte[] value,byte[] prefix) {
         if(value.length<prefix.length) return false;
