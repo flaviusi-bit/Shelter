@@ -5,7 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.*;
+import java.time.*;\nimport org.springframework.beans.factory.annotation.Value;
 import java.util.List;
 import java.util.UUID;
 
@@ -14,7 +14,7 @@ import java.util.UUID;
 public class TreatmentAdministrationController {
     private final TreatmentAdministrationRepository administrations;
     private final TreatmentRepository treatments;
-    private final AnimalRepository animals;
+    private final AnimalRepository animals;\n    private final ZoneId zone;
 
     public TreatmentAdministrationController(TreatmentAdministrationRepository administrations,TreatmentRepository treatments,AnimalRepository animals){
         this.administrations=administrations;this.treatments=treatments;this.animals=animals;
@@ -32,7 +32,7 @@ public class TreatmentAdministrationController {
         if(days<1||days>90)throw new IllegalArgumentException("days must be between 1 and 90");
         Duration interval=parseFrequency(treatment.getFrequency());
         LocalDate end=treatment.getEndDate()!=null?treatment.getEndDate():treatment.getStartDate().plusDays(days-1);
-        OffsetDateTime cursor=treatment.getStartDate().atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+        OffsetDateTime cursor=treatment.getStartDate().atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime limit=end.plusDays(1).atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
         var existing=administrations.findByTreatmentIdOrderByScheduledAtAsc(treatmentId);
         var existingTimes=existing.stream().map(TreatmentAdministration::getScheduledAt).collect(java.util.stream.Collectors.toSet());
