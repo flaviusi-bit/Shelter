@@ -145,4 +145,14 @@ class TaskControllerTest {
         verify(tasks, never()).save(any(Task.class));
         verify(audit, never()).record(any(), any(), any(), any(), any());
     }
+    @Test
+    void rejectsUnknownTaskType() {
+        var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        var request = new TaskController.TaskRequest(
+            "UNKNOWN_TASK", "Test", java.time.OffsetDateTime.now(),
+            "NORMAL", null, null, null);
+        var violations = validator.validate(request);
+        org.junit.jupiter.api.Assertions.assertEquals(1, violations.size());
+    }
+
 }

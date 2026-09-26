@@ -53,7 +53,7 @@ public class TaskController {
     }
 
     public record TaskRequest(
-        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=40) String taskType,
+        @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Pattern(regexp="GENERAL|VACCINATION_DUE|DEWORMING_DUE|VET_VISIT|TREATMENT") String taskType,
         @jakarta.validation.constraints.NotBlank @jakarta.validation.constraints.Size(max=200) String title,
         @jakarta.validation.constraints.NotNull java.time.OffsetDateTime dueAt,
         @jakarta.validation.constraints.Pattern(regexp="LOW|NORMAL|HIGH|URGENT") String priority,
