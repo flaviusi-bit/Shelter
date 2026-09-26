@@ -58,4 +58,24 @@ class TreatmentControllerTest {
         assertEquals("ACTIVE", result.getStatus());
         verify(treatments).save(any(Treatment.class));
     }
+    @Test
+    void rejectsUnsupportedFrequency() {
+        var request = new TreatmentController.Request(
+            "Amoxicillin", "10 mg", "ORAL", "every week",
+            LocalDate.of(2026, 9, 20), null, "ACTIVE", null, "vet");
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () ->
+            controller.create(animalId, request, mock(Authentication.class)));
+        verify(treatments, never()).save(any());
+    }
+
+    @Test
+    void rejectsExcessiveFrequencyInterval() {
+        var request = new TreatmentController.Request(
+            "Amoxicillin", "10 mg", "ORAL", "every 366 days",
+            LocalDate.of(2026, 9, 20), null, "ACTIVE", null, "vet");
+        assertThrows(org.springframework.web.server.ResponseStatusException.class, () ->
+            controller.create(animalId, request, mock(Authentication.class)));
+        verify(treatments, never()).save(any());
+    }
+
 }
