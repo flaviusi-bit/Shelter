@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.UUID;
 
@@ -49,6 +51,7 @@ public class MedicalDocumentController {
                                   @RequestParam(required=false) String notes,Authentication auth){
         var animal=animals.findById(animalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Animal not found"));
         validateMetadata(documentType,title,notes);
+        LocalDate parsedDocumentDate = parseDocumentDate(documentDate);
         try{
             var stored=storage.store(animalId,file);
             try{
@@ -56,7 +59,7 @@ public class MedicalDocumentController {
                 doc.setAnimal(animal);doc.setDocumentType(documentType);doc.setTitle(title);
                 doc.setStorageKey(stored.storageKey());doc.setOriginalFileName(stored.originalFileName());
                 doc.setContentType(stored.contentType());doc.setFileSize(stored.size());
-                if(documentDate!=null&&!documentDate.isBlank()) doc.setDocumentDate(java.time.LocalDate.parse(documentDate));
+                doc.setDocumentDate(parsedDocumentDate);
                 doc.setNotes(notes);doc.setUploadedBy(auth.getName());
                 doc = documents.save(doc);
                 doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
@@ -101,6 +104,15 @@ public class MedicalDocumentController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Title is required and must be at most 200 characters");
         if(notes!=null&&notes.length()>10000)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Notes must be at most 10000 characters");
+    }
+
+    private LocalDate parseDocumentDate(String value){
+        if(value==null||value.isBlank()) return null;
+        try{
+            return LocalDate.parse(value);
+        }catch(DateTimeParseException e){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Document date must be a valid ISO date (YYYY-MM-DD)",e);
+        }
     }
 
     private String safeDownloadFileName(String name){
