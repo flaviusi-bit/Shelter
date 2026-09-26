@@ -66,6 +66,19 @@ public class UserController {
         return new UserView(u.getId(), u.getUsername(), u.getDisplayName(), u.getRole(), u.isActive());
     }
 
+    @PostMapping("/{id}/deactivate")
+    public UserView deactivate(@PathVariable java.util.UUID id, Authentication auth) {
+        AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
+        if (!u.isActive()) throw new IllegalStateException("User is already inactive");
+        if ("ADMIN".equals(u.getRole()) && users.countByRoleAndActiveTrue("ADMIN") <= 1) {
+            throw new IllegalStateException("Cannot deactivate the last active administrator");
+        }
+        u.setActive(false);
+        u = users.save(u);
+        audit.record(auth.getName(), "DEACTIVATE_USER", "USER", u.getId(), "username=" + u.getUsername() + ", role=" + u.getRole());
+        return new UserView(u.getId(), u.getUsername(), u.getDisplayName(), u.getRole(), u.isActive());
+    }
+
     public record CreateUserRequest(String username, String displayName, String password, String role) {}
     public record UserView(java.util.UUID id, String username, String displayName, String role, boolean active) {}
 }
