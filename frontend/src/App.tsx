@@ -19,10 +19,10 @@ function Login({onLogin}:{onLogin:()=>void}){
  return <main className="login-shell"><form className="login-card" onSubmit={submit}><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Sign in</h1><p className="muted">Access the animal care system.</p><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username" autoComplete="username"/><input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" autoComplete="current-password"/>{error&&<div className="inline-error">{error}</div>}<button className="primary" type="submit">Sign in</button></form></main>
 }
 function ShelterApp({onLogout}:{onLogout:()=>void}){
- const [view,setView]=useState<'dashboard'|'animals'|'backups'|'audit'>('dashboard')
- if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onLogout={onLogout}/>
+ const [view,setView]=useState<'dashboard'|'animals'|'backups'|'audit'|'users'>('dashboard')
+ if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
  if(view==='backups')return <Backups onBack={()=>setView('dashboard')} onLogout={onLogout}/>
- if(view==='audit')return <Audit onBack={()=>setView('dashboard')} onLogout={onLogout}/>
+ if(view==='users')return <Users onBack={()=>setView('dashboard')} onLogout={onLogout}/>\n if(view==='audit')return <Audit onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  return <Animals onBack={()=>setView('dashboard')} onLogout={onLogout}/>
 }
 function Backups({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
@@ -39,7 +39,7 @@ function Backups({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
  <section className="panel"><p className="eyebrow">RESTORE</p><h2>Restore on a replacement computer</h2><p className="muted">Select and verify a backup before using the local restore procedure. Database restore remains a protected local operation and is not exposed as a browser button.</p></section>
  </main>
 }
-function Dashboard({onOpenAnimals,onOpenBackups,onOpenAudit,onLogout}:{onOpenAnimals:()=>void;onOpenBackups:()=>void;onOpenAudit:()=>void;onLogout:()=>void}) {
+function Dashboard({onOpenAnimals,onOpenBackups,onOpenAudit,onOpenUsers,onLogout}:{onOpenAnimals:()=>void;onOpenBackups:()=>void;onOpenAudit:()=>void;onOpenUsers:()=>void;onLogout:()=>void}) {
  const [data,setData]=useState<{items:DashboardItem[];overdue:number;remaining:number;administered:number;overdueTasks:number;remainingTasks:number;taskItems:any[]}|null>(null)
  const [error,setError]=useState('')
  const [showTask,setShowTask]=useState(false)
@@ -56,7 +56,7 @@ function Dashboard({onOpenAnimals,onOpenBackups,onOpenAudit,onLogout}:{onOpenAni
  return <main className="shell">
   <header className="topbar">
    <div><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Today</h1><p className="muted">Operational care dashboard</p></div>
-   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button><button className="secondary" onClick={onOpenBackups}>Backups</button><button className="secondary" onClick={onOpenAudit}>Audit log</button><button className="secondary" onClick={onLogout}>Sign out</button></div>
+   <div className="top-actions"><button className="secondary" onClick={onOpenAnimals}>Animals</button><button className="secondary" onClick={onOpenBackups}>Backups</button><button className="secondary" onClick={onOpenAudit}>Audit log</button><button className="secondary" onClick={onOpenUsers}>Users</button><button className="secondary" onClick={onLogout}>Sign out</button></div>
   </header>
   {error&&<div className="error">{error}</div>}
   <section className="dashboard-stats"><Stat label="Overdue" value={data?.overdue??'—'} danger/><Stat label="Remaining" value={data?.remaining??'—'}/><Stat label="Administered" value={data?.administered??'—'}/></section>
@@ -75,7 +75,26 @@ function Dashboard({onOpenAnimals,onOpenBackups,onOpenAudit,onLogout}:{onOpenAni
   {showTask&&<TaskForm onCancel={()=>setShowTask(false)} onSaved={()=>{setShowTask(false);load()}}/>}
  </main>
 }
-function Audit({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
+function Users({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
+ const [items,setItems]=useState<import('./api').ShelterUser[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(''),[showCreate,setShowCreate]=useState(false)
+ async function load(){try{setItems(await getUsers());setError('')}catch(e){setError(e instanceof Error?e.message:'Could not load users')}}
+ useEffect(()=>{load()},[])
+ async function toggle(u:import('./api').ShelterUser){setBusy(u.id);setError('');try{const updated=u.active?await deactivateUser(u.id):await reactivateUser(u.id);setItems(xs=>xs.map(x=>x.id===updated.id?updated:x))}catch(e){setError(e instanceof Error?e.message:'Could not update user')}finally{setBusy('')}}
+ return <main className="shell"><header className="topbar"><div><p className="eyebrow">ADMINISTRATION</p><h1>Users</h1><p className="muted">Manage shelter system accounts and access status</p></div><div className="top-actions"><button className="secondary" onClick={onBack}>Dashboard</button><button className="secondary" onClick={onLogout}>Sign out</button></div></header>
+ {error&&<div className="error">{error}</div>}
+ <section className="panel"><div className="section-head"><div><p className="eyebrow">USER ACCOUNTS</p><h2>{items.length} users</h2></div><div className="section-head-actions"><button className="secondary" onClick={load}>Refresh</button><button className="primary" onClick={()=>setShowCreate(true)}>+ New user</button></div></div>
+ {items.length===0?<p className="muted">No users available.</p>:<div className="record-list">{items.map(u=><div className="record" key={u.id}><div><strong>{u.displayName}</strong><span>@{u.username} · {u.role}</span><small className={u.active?'':'muted'}>{u.active?'Active':'Inactive'}</small></div><button className={u.active?'secondary small':'primary small'} disabled={busy===u.id} onClick={()=>toggle(u)}>{busy===u.id?'Saving…':u.active?'Deactivate':'Reactivate'}</button></div>)}</div>}
+ </section>
+ {showCreate&&<UserForm onCancel={()=>setShowCreate(false)} onSaved={u=>{setItems(xs=>[...xs,u].sort((x,y)=>x.username.localeCompare(y.username)));setShowCreate(false)}}/>}
+ </main>
+}
+function UserForm({onCancel,onSaved}:{onCancel:()=>void;onSaved:(u:import('./api').ShelterUser)=>void}){
+ const [f,setF]=useState({username:'',displayName:'',password:'',role:'VOLUNTEER'}),[busy,setBusy]=useState(false),[error,setError]=useState('')
+ const set=(k:keyof typeof f,v:string)=>setF(x=>({...x,[k]:v}))
+ async function save(){if(!f.username||!f.displayName||f.password.length<12){setError('Username, display name and a password of at least 12 characters are required');return}setBusy(true);setError('');try{onSaved(await createUser(f))}catch(e){setError(e instanceof Error?e.message:'Could not create user')}finally{setBusy(false)}}
+ return <FormShell title="Create user" onCancel={onCancel}><div className="form-grid"><label>Username *<input value={f.username} onChange={e=>set('username',e.target.value)} autoComplete="off"/></label><label>Display name *<input value={f.displayName} onChange={e=>set('displayName',e.target.value)}/></label><label>Role<select value={f.role} onChange={e=>set('role',e.target.value)}><option>ADMIN</option><option>VETERINARIAN</option><option>COORDINATOR</option><option>VOLUNTEER</option><option>VIEWER</option></select></label><label>Password *<input type="password" value={f.password} onChange={e=>set('password',e.target.value)} autoComplete="new-password"/></label></div>{error&&<div className="inline-error">{error}</div>}<button type="button" className="primary" disabled={busy} onClick={save}>{busy?'Creating…':'Create user'}</button></FormShell>
+}
+\nfunction Audit({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
  const [items,setItems]=useState<import('./api').AuditLog[]>([]),[error,setError]=useState('');
  async function load(){try{setItems(await getAuditLogs());setError('')}catch(e){setError(e instanceof Error?e.message:'Could not load audit log')}}
  useEffect(()=>{load()},[])
