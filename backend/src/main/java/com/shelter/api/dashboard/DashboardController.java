@@ -8,7 +8,7 @@ import com.shelter.api.treatment.TreatmentAdministrationRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.ZoneId;\nimport org.springframework.beans.factory.annotation.Value;
 import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
@@ -17,7 +17,7 @@ import java.util.UUID;
 @RequestMapping("/api/dashboard")
 public class DashboardController {
     private final TreatmentAdministrationRepository administrations;
-    private final TaskRepository tasks;
+    private final TaskRepository tasks;\n    private final ZoneId zone;
 
     public DashboardController(TreatmentAdministrationRepository administrations, TaskRepository tasks) {
         this.administrations = administrations;
