@@ -45,6 +45,7 @@ public class MedicalDocumentController {
                                   @RequestParam(required=false) String documentDate,
                                   @RequestParam(required=false) String notes,Authentication auth){
         var animal=animals.findById(animalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Animal not found"));
+        validateMetadata(documentType,title,notes);
         try{
             var stored=storage.store(animalId,file);
             try{
@@ -86,6 +87,15 @@ public class MedicalDocumentController {
         }catch(InvalidMediaTypeException e){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable",e);
         }
+    }
+
+    private void validateMetadata(String documentType,String title,String notes){
+        if(documentType==null||documentType.isBlank()||documentType.length()>50)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Document type is required and must be at most 50 characters");
+        if(title==null||title.isBlank()||title.length()>200)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Title is required and must be at most 200 characters");
+        if(notes!=null&&notes.length()>10000)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Notes must be at most 10000 characters");
     }
 
     private String safeDownloadFileName(String name){
