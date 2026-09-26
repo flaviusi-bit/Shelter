@@ -82,9 +82,11 @@ public class DocumentStorageService {
                     continue;
                 }
                 if (entryName.equals("[Content_Types].xml")) {
+                    if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     if (contentTypes) duplicateRequiredPart = true;
                     contentTypes = isWellFormedXml(readEntry(in, totalEntrySize), "Types", "http://schemas.openxmlformats.org/package/2006/content-types");
                 } else if (entryName.equals("word/document.xml")) {
+                    if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     if (document) duplicateRequiredPart = true;
                     document = isWellFormedXml(readEntry(in, totalEntrySize), "document", "http://schemas.openxmlformats.org/wordprocessingml/2006/main", "http://purl.oclc.org/ooxml/wordprocessingml/main");
                 } else if (!consumeEntryWithinLimit(in, totalEntrySize)) {
