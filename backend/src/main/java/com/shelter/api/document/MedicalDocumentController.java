@@ -86,6 +86,8 @@ public class MedicalDocumentController {
                 .body(resource);
         }catch(InvalidMediaTypeException e){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable",e);
+        }catch(IllegalArgumentException e){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable",e);
         }
     }
 
