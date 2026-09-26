@@ -6,6 +6,7 @@ import com.shelter.api.medical.DewormingRepository;
 import com.shelter.api.medical.Vaccination;
 import com.shelter.api.medical.VaccinationRepository;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,6 +28,11 @@ public class TaskReminderService {
         this.vaccinations = vaccinations;
         this.dewormings = dewormings;
         this.zone = ZoneId.of(timezone);
+    }
+
+    @Scheduled(fixedDelayString = "${shelter.medical-reminder-sync-ms:3600000}")
+    public void scheduledSync() {
+        syncAll();
     }
 
     public int syncAll() {
