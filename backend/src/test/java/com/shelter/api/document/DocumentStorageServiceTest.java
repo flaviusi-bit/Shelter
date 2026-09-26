@@ -24,6 +24,9 @@ class DocumentStorageServiceTest {
         assertEquals("photo.png", stored.originalFileName());
         assertEquals("image/png", stored.contentType());
         assertTrue(service.resolve(stored.storageKey()).toFile().isFile());
+
+        service.delete(stored.storageKey());
+        assertFalse(service.resolve(stored.storageKey()).toFile().exists());
     }
 
     @Test
