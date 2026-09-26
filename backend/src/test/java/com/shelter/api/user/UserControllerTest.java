@@ -56,14 +56,14 @@ class UserControllerTest {
 
     @Test
     void cannotRemoveLastActiveAdministrator() {
-        AppUser user = user("admin", "ADMIN", true);
+        AppUser user = user("admin2", "ADMIN", true);
         when(users.findById(user.getId())).thenReturn(Optional.of(user));
         when(users.countByRoleAndActiveTrue("ADMIN")).thenReturn(1L);
 
         IllegalStateException ex = assertThrows(IllegalStateException.class,
-            () -> controller.update(user.getId(), new UserController.UpdateUserRequest("Admin", "VIEWER"), auth));
+            () -> controller.update(user.getId(), new UserController.UpdateUserRequest("Admin 2", "VIEWER"), auth));
 
-        assertEquals("You cannot change your own role", ex.getMessage());
+        assertEquals("Cannot remove the last active administrator", ex.getMessage());
         verify(users, never()).save(any());
         verifyNoInteractions(audit);
     }
