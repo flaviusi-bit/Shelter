@@ -35,6 +35,17 @@ public class DocumentStorageService {
                 || type.equals("image/bmp");
     }
 
-    public Path resolve(String key){Path p=root.resolve(key).normalize();if(!p.startsWith(root))throw new IllegalArgumentException("Invalid storage path");return p;}
+    public void delete(String key) throws IOException {
+        if(key==null||key.isBlank()) return;
+        Path p=resolve(key);
+        Files.deleteIfExists(p);
+    }
+
+    public Path resolve(String key){
+        if(key==null||key.isBlank()) throw new IllegalArgumentException("Invalid storage path");
+        Path p=root.resolve(key).normalize();
+        if(!p.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
+        return p;
+    }
     public record StoredFile(String storageKey,String originalFileName,String contentType,long size){}
 }
