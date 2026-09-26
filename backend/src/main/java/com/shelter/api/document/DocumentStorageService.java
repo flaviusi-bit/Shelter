@@ -79,6 +79,8 @@ public class DocumentStorageService {
                 } else if (entryName.equals("word/document.xml")) {
                     if (document) duplicateRequiredPart = true;
                     document = isWellFormedXml(readEntry(in), "document", "http://schemas.openxmlformats.org/wordprocessingml/2006/main", "http://purl.oclc.org/ooxml/wordprocessingml/main");
+                } else if (!consumeEntryWithinLimit(in)) {
+                    return false;
                 }
             }
         }
@@ -97,6 +99,16 @@ public class DocumentStorageService {
             } else stack.addLast(part);
         }
         return String.join("/", stack);
+    }
+    private boolean consumeEntryWithinLimit(java.io.InputStream input) throws IOException {
+        byte[] buffer = new byte[8192];
+        long total = 0;
+        int read;
+        while ((read = input.read(buffer)) != -1) {
+            total += read;
+            if (total > MAX_DOCX_ENTRY_SIZE) return false;
+        }
+        return true;
     }
     private byte[] readEntry(java.io.InputStream input) throws IOException {
         var output = new ByteArrayOutputStream();
