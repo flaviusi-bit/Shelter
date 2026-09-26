@@ -127,6 +127,8 @@ class SecurityConfigTest {
         String administrationGenerate() { return "ok"; }
         @RequestMapping(value = "/animals/{id}/treatments/{treatmentId}/administrations/{administrationId}/administer", method = RequestMethod.POST)
         String administrationAdminister() { return "ok"; }
+        @RequestMapping(value = "/animals/{id}/treatments/{treatmentId}/administrations/{administrationId}/status", method = RequestMethod.POST)
+        String administrationStatus() { return "ok"; }
         @RequestMapping(value = "/animals/{id}/documents", method = RequestMethod.POST)
         String documentCreate() { return "ok"; }
         @RequestMapping(value = "/animals/{id}/documents/upload", method = RequestMethod.POST)
@@ -146,7 +148,11 @@ class SecurityConfigTest {
         @RequestMapping(value = "/users/me/password", method = RequestMethod.POST)
         String userOwnPassword() { return "ok"; }
         @RequestMapping(value = "/admin/backups/{name}/verify", method = RequestMethod.POST)
+        String backupList() { return "ok"; }
+        @RequestMapping(value = "/admin/backups/{name}/verify", method = RequestMethod.POST)
         String backupVerify() { return "ok"; }
+        @RequestMapping(value = "/admin/audit", method = RequestMethod.GET)
+        String auditList() { return "ok"; }
         @RequestMapping(value = "/tasks", method = RequestMethod.POST)
         String taskCreate() { return "ok"; }
         @RequestMapping(value = "/tasks/sync-medical-reminders", method = RequestMethod.POST)
