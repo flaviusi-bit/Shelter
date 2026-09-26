@@ -70,6 +70,7 @@ public class UserController {
     public UserView deactivate(@PathVariable java.util.UUID id, Authentication auth) {
         AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
         if (!u.isActive()) throw new IllegalStateException("User is already inactive");
+        if (u.getUsername().equalsIgnoreCase(auth.getName())) throw new IllegalStateException("You cannot deactivate your own account");
         if ("ADMIN".equals(u.getRole()) && users.countByRoleAndActiveTrue("ADMIN") <= 1) {
             throw new IllegalStateException("Cannot deactivate the last active administrator");
         }
