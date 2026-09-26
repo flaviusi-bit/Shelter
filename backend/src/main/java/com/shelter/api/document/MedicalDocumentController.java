@@ -54,8 +54,9 @@ public class MedicalDocumentController {
         LocalDate parsedDocumentDate = parseDocumentDate(documentDate);
         try{
             var stored=storage.store(animalId,file);
+            MedicalDocument doc;
             try{
-                var doc=new MedicalDocument();
+                doc=new MedicalDocument();
                 doc.setAnimal(animal);doc.setDocumentType(documentType);doc.setTitle(title);
                 doc.setStorageKey(stored.storageKey());doc.setOriginalFileName(stored.originalFileName());
                 doc.setContentType(stored.contentType());doc.setFileSize(stored.size());
