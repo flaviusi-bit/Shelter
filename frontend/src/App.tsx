@@ -20,7 +20,7 @@ function Login({onLogin}:{onLogin:()=>void}){
 }
 function ShelterApp({onLogout}:{onLogout:()=>void}){
  const [view,setView]=useState<'dashboard'|'animals'|'backups'|'audit'>('dashboard')
- if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onLogout={onLogout}/>
+ if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onLogout={onLogout}/>
  if(view==='backups')return <Backups onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  if(view==='audit')return <Audit onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  return <Animals onBack={()=>setView('dashboard')} onLogout={onLogout}/>
