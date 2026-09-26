@@ -64,7 +64,7 @@ class MedicalDocumentControllerTest {
 
         assertEquals("application/pdf", response.getHeaders().getContentType().toString());
         assertTrue(response.getBody().exists());
-        assertEquals("inline; filename=\\\"report.pdf\\\"",
+        assertEquals("inline; filename=\"report.pdf\"",
             response.getHeaders().getFirst("Content-Disposition"));
         verify(audit).record("vet", "ACCESS_MEDICAL_DOCUMENT", "MEDICAL_DOCUMENT",
             null, "report.pdf");
@@ -117,7 +117,7 @@ class MedicalDocumentControllerTest {
         assertFalse(header.contains("\\r"));
         assertFalse(header.contains("\\n"));
         assertFalse(header.contains("\\\""));
-        assertEquals("inline; filename=\\\"report__X-Injected: true_.pdf\\\"", header);
+        assertEquals("inline; filename=\"report__X-Injected: true_.pdf\"", header);
     }
 
     @Test
