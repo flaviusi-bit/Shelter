@@ -56,6 +56,19 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File content does not match content type",error.getMessage());
     }
+    @Test void rejectsExcessiveTotalUncompressedSizeFromDirectories() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        var output=new java.io.ByteArrayOutputStream();
+        try(var zip=new java.util.zip.ZipOutputStream(output)){
+            for(int i=0;i<4;i++){
+                zip.putNextEntry(new java.util.zip.ZipEntry("dir"+i+"/"));
+                zip.closeEntry();
+            }
+        }
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",output.toByteArray());
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
     @Test void rejectsUnsafeDirectoryEntry() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var output=new java.io.ByteArrayOutputStream();
