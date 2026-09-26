@@ -22,7 +22,8 @@ function ShelterApp({onLogout}:{onLogout:()=>void}){
  const [view,setView]=useState<'dashboard'|'animals'|'backups'|'audit'|'users'>('dashboard')
  if(view==='dashboard')return <Dashboard onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
  if(view==='backups')return <Backups onBack={()=>setView('dashboard')} onLogout={onLogout}/>
- if(view==='users')return <Users onBack={()=>setView('dashboard')} onLogout={onLogout}/>\n if(view==='audit')return <Audit onBack={()=>setView('dashboard')} onLogout={onLogout}/>
+ if(view==='users')return <Users onBack={()=>setView('dashboard')} onLogout={onLogout}/>
+ if(view==='audit')return <Audit onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  return <Animals onBack={()=>setView('dashboard')} onLogout={onLogout}/>
 }
 function Backups({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
@@ -94,7 +95,8 @@ function UserForm({onCancel,onSaved}:{onCancel:()=>void;onSaved:(u:import('./api
  async function save(){if(!f.username||!f.displayName||f.password.length<12){setError('Username, display name and a password of at least 12 characters are required');return}setBusy(true);setError('');try{onSaved(await createUser(f))}catch(e){setError(e instanceof Error?e.message:'Could not create user')}finally{setBusy(false)}}
  return <FormShell title="Create user" onCancel={onCancel}><div className="form-grid"><label>Username *<input value={f.username} onChange={e=>set('username',e.target.value)} autoComplete="off"/></label><label>Display name *<input value={f.displayName} onChange={e=>set('displayName',e.target.value)}/></label><label>Role<select value={f.role} onChange={e=>set('role',e.target.value)}><option>ADMIN</option><option>VETERINARIAN</option><option>COORDINATOR</option><option>VOLUNTEER</option><option>VIEWER</option></select></label><label>Password *<input type="password" value={f.password} onChange={e=>set('password',e.target.value)} autoComplete="new-password"/></label></div>{error&&<div className="inline-error">{error}</div>}<button type="button" className="primary" disabled={busy} onClick={save}>{busy?'Creating…':'Create user'}</button></FormShell>
 }
-\nfunction Audit({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
+
+function Audit({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
  const [items,setItems]=useState<import('./api').AuditLog[]>([]),[error,setError]=useState('');
  async function load(){try{setItems(await getAuditLogs());setError('')}catch(e){setError(e instanceof Error?e.message:'Could not load audit log')}}
  useEffect(()=>{load()},[])
