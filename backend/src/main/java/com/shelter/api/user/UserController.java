@@ -89,6 +89,30 @@ public class UserController {
         return new UserView(u.getId(), u.getUsername(), u.getDisplayName(), u.getRole(), u.isActive());
     }
 
+    @PostMapping("/me/password")
+    public void changeMyPassword(@RequestBody ChangePasswordRequest r, Authentication auth) {
+        String current = r.currentPassword() == null ? "" : r.currentPassword();
+        String next = r.newPassword() == null ? "" : r.newPassword();
+        if (next.length() < 12) throw new IllegalArgumentException("Password must be at least 12 characters");
+
+        AppUser u = users.findByUsername(auth.getName())
+            .filter(AppUser::isActive)
+            .orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
+
+        if (!passwordEncoder.matches(current, u.getPasswordHash())) {
+            throw new IllegalArgumentException("Current password is incorrect");
+        }
+        if (passwordEncoder.matches(next, u.getPasswordHash())) {
+            throw new IllegalArgumentException("New password must be different from the current password");
+        }
+
+        u.setPasswordHash(passwordEncoder.encode(next));
+        users.save(u);
+        audit.record(auth.getName(), "CHANGE_PASSWORD", "USER", u.getId(), "username=" + u.getUsername());
+    }
+
+    public record ChangePasswordRequest(String currentPassword, String newPassword) {}
+
     public record CreateUserRequest(String username, String displayName, String password, String role) {}
     public record UserView(java.util.UUID id, String username, String displayName, String role, boolean active) {}
 }
