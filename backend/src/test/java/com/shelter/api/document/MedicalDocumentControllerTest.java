@@ -1,0 +1,149 @@
+package com.shelter.api.document;
+
+import com.shelter.api.animal.Animal;
+import com.shelter.api.animal.AnimalRepository;
+import com.shelter.api.audit.AuditLogService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.core.io.PathResource;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Optional;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+class MedicalDocumentControllerTest {
+    @TempDir
+    Path tempDir;
+
+    private MedicalDocumentRepository documents;
+    private AnimalRepository animals;
+    private AuditLogService audit;
+    private DocumentStorageService storage;
+    private MedicalDocumentController controller;
+    private Authentication authentication;
+    private UUID animalId;
+    private Animal animal;
+
+    @BeforeEach
+    void setUp() {
+        documents = mock(MedicalDocumentRepository.class);
+        animals = mock(AnimalRepository.class);
+        audit = mock(AuditLogService.class);
+        storage = new DocumentStorageService(tempDir.toString());
+        controller = new MedicalDocumentController(documents, animals, storage, audit);
+
+        animalId = UUID.randomUUID();
+        animal = new Animal();
+        animal.setId(animalId);
+        when(animals.findById(animalId)).thenReturn(Optional.of(animal));
+
+        authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn("vet");
+    }
+
+    @Test
+    void downloadReturnsStoredFileForOwningAnimal() throws Exception {
+        UUID documentId = UUID.randomUUID();
+        MedicalDocument document = document("report.pdf", "application/pdf", animalId);
+        var stored = storage.store(animalId,
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", "report.pdf", "application/pdf", "medical report".getBytes()));
+        document.setStorageKey(stored.storageKey());
+        document.setOriginalFileName(stored.originalFileName());
+        document.setContentType(stored.contentType());
+
+        when(documents.findById(documentId)).thenReturn(Optional.of(document));
+
+        var response = controller.download(animalId, documentId, authentication);
+
+        assertEquals("application/pdf", response.getHeaders().getContentType().toString());
+        assertTrue(response.getBody().exists());
+        assertEquals("inline; filename="report.pdf"",
+            response.getHeaders().getFirst("Content-Disposition"));
+        verify(audit).record("vet", "ACCESS_MEDICAL_DOCUMENT", "MEDICAL_DOCUMENT",
+            null, "report.pdf");
+    }
+
+    @Test
+    void downloadRejectsDocumentBelongingToAnotherAnimal() {
+        UUID documentId = UUID.randomUUID();
+        UUID otherAnimalId = UUID.randomUUID();
+        MedicalDocument document = document("private.pdf", "application/pdf", otherAnimalId);
+        when(documents.findById(documentId)).thenReturn(Optional.of(document));
+
+        var error = assertThrows(ResponseStatusException.class,
+            () -> controller.download(animalId, documentId, authentication));
+
+        assertEquals(404, error.getStatusCode().value());
+        verify(audit, never()).record(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void downloadRejectsMissingStoredFile() {
+        UUID documentId = UUID.randomUUID();
+        MedicalDocument document = document("missing.pdf", "application/pdf", animalId);
+        document.setStorageKey("missing/" + UUID.randomUUID() + ".pdf");
+        when(documents.findById(documentId)).thenReturn(Optional.of(document));
+
+        var error = assertThrows(ResponseStatusException.class,
+            () -> controller.download(animalId, documentId, authentication));
+
+        assertEquals(404, error.getStatusCode().value());
+        verify(audit, never()).record(any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void downloadSanitizesHeaderFilename() throws Exception {
+        UUID documentId = UUID.randomUUID();
+        String dangerousName = "report\r\nX-Injected: true\".pdf";
+        MedicalDocument document = document(dangerousName, "application/pdf", animalId);
+        var stored = storage.store(animalId,
+            new org.springframework.mock.web.MockMultipartFile(
+                "file", "safe.pdf", "application/pdf", "data".getBytes()));
+        document.setStorageKey(stored.storageKey());
+        document.setContentType("application/pdf");
+        when(documents.findById(documentId)).thenReturn(Optional.of(document));
+
+        var response = controller.download(animalId, documentId, authentication);
+
+        String header = response.getHeaders().getFirst("Content-Disposition");
+        assertNotNull(header);
+        assertFalse(header.contains("\r"));
+        assertFalse(header.contains("\n"));
+        assertFalse(header.contains("\""));
+        assertEquals("inline; filename="report__X-Injected: true_.pdf"", header);
+    }
+
+    @Test
+    void createRejectsOversizedNotesBeforeSaving() {
+        MedicalDocument input = new MedicalDocument();
+        input.setDocumentType("LAB");
+        input.setTitle("Blood test");
+        input.setNotes("x".repeat(10001));
+        input.setFileUrl("/files/report.pdf");
+
+        assertThrows(ResponseStatusException.class,
+            () -> controller.create(animalId, input, authentication));
+
+        verify(documents, never()).save(any(MedicalDocument.class));
+        verify(audit, never()).record(any(), any(), any(), any(), any());
+    }
+
+    private MedicalDocument document(String name, String contentType, UUID ownerId) {
+        Animal owner = new Animal();
+        owner.setId(ownerId);
+        MedicalDocument document = new MedicalDocument();
+        document.setAnimal(owner);
+        document.setOriginalFileName(name);
+        document.setContentType(contentType);
+        return document;
+    }
+}
