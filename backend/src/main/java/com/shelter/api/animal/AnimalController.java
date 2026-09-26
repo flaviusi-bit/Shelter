@@ -23,8 +23,9 @@ public class AnimalController {
         return repository.findByNameContainingIgnoreCaseOrMicrochipNumberContainingIgnoreCaseOrAnimalCodeContainingIgnoreCaseOrderByNameAsc(q,q,q);
     }
     @GetMapping("/{id}") public Animal get(@PathVariable UUID id){ return repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); }
-    @PostMapping @ResponseStatus(HttpStatus.CREATED) public Animal create(@Valid @RequestBody AnimalRequest r, Authentication auth){ Animal a=new Animal(); apply(a,r); var saved=repository.save(a); audit.record(auth.getName(),"CREATE_ANIMAL","ANIMAL",saved.getId(),saved.getName()); return saved; }
-    @PutMapping("/{id}") public Animal update(@PathVariable UUID id,@Valid @RequestBody AnimalRequest r, Authentication auth){ Animal a=repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); apply(a,r); var saved=repository.save(a); audit.record(auth.getName(),"UPDATE_ANIMAL","ANIMAL",saved.getId(),saved.getName()); return saved; }
+    @PostMapping @ResponseStatus(HttpStatus.CREATED) public Animal create(@Valid @RequestBody AnimalRequest r, Authentication auth){ validateDates(r); Animal a=new Animal(); apply(a,r); var saved=repository.save(a); audit.record(auth.getName(),"CREATE_ANIMAL","ANIMAL",saved.getId(),saved.getName()); return saved; }
+    @PutMapping("/{id}") public Animal update(@PathVariable UUID id,@Valid @RequestBody AnimalRequest r, Authentication auth){ validateDates(r); Animal a=repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); apply(a,r); var saved=repository.save(a); audit.record(auth.getName(),"UPDATE_ANIMAL","ANIMAL",saved.getId(),saved.getName()); return saved; }
+    private void validateDates(AnimalRequest r){ if(r.dateOfBirth()!=null && r.dateOfBirth().isAfter(r.intakeDate())) throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST,"Date of birth cannot be after intake date"); }
     private void apply(Animal a,AnimalRequest r){
         a.setName(r.name()); a.setAnimalType(r.animalType()); a.setSex(r.sex()); a.setDateOfBirth(r.dateOfBirth());
         a.setWeightKg(r.weightKg()); a.setMicrochipNumber(r.microchipNumber()); a.setIntakeDate(r.intakeDate());
