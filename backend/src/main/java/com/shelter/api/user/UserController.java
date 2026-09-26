@@ -66,26 +66,6 @@ public class UserController {
         return new UserView(u.getId(), u.getUsername(), u.getDisplayName(), u.getRole(), u.isActive());
     }
 
-    @PutMapping("/{id}")
-    public UserView update(@PathVariable java.util.UUID id, @RequestBody UpdateUserRequest r, Authentication auth) {
-        AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
-        String displayName = r.displayName() == null ? "" : r.displayName().trim();
-        String role = r.role() == null ? "" : r.role().trim().toUpperCase(Locale.ROOT);
-        if (displayName.isBlank() || displayName.length() > 120) throw new IllegalArgumentException("Display name is required and must be at most 120 characters");
-        if (!ALLOWED_ROLES.contains(role)) throw new IllegalArgumentException("Invalid role");
-        if (u.getUsername().equalsIgnoreCase(auth.getName()) && !u.getRole().equals(role)) {
-            throw new IllegalStateException("You cannot change your own role");
-        }
-        if (u.isActive() && "ADMIN".equals(u.getRole()) && !"ADMIN".equals(role) && users.countByRoleAndActiveTrue("ADMIN") <= 1) {
-            throw new IllegalStateException("Cannot remove the last active administrator");
-        }
-        u.setDisplayName(displayName);
-        u.setRole(role);
-        u = users.save(u);
-        audit.record(auth.getName(), "UPDATE_USER", "USER", u.getId(), "username=" + u.getUsername() + ", role=" + u.getRole());
-        return new UserView(u.getId(), u.getUsername(), u.getDisplayName(), u.getRole(), u.isActive());
-    }
-
     @PostMapping("/{id}/deactivate")
     public UserView deactivate(@PathVariable java.util.UUID id, Authentication auth) {
         AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
@@ -144,7 +124,7 @@ public class UserController {
         audit.record(auth.getName(), "RESET_PASSWORD", "USER", u.getId(), "username=" + u.getUsername());
     }
 
-    public record UpdateUserRequest(String displayName, String role) {}\n\n    public record ResetPasswordRequest(String newPassword) {}
+    public record ResetPasswordRequest(String newPassword) {}
 
     public record ChangePasswordRequest(String currentPassword, String newPassword) {}
 
