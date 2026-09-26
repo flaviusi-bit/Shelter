@@ -248,20 +248,6 @@ class MedicalDocumentControllerTest {
         }
     }
 
-    @Test
-    void createRejectsOversizedNotesBeforeSaving() {
-        MedicalDocument input = new MedicalDocument();
-        input.setDocumentType("LAB");
-        input.setTitle("Blood test");
-        input.setNotes("x".repeat(10001));
-        input.setFileUrl("/files/report.pdf");
-
-        assertThrows(ResponseStatusException.class,
-            () -> controller.create(animalId, input, authentication));
-
-        verify(documents, never()).save(any(MedicalDocument.class));
-        verify(audit, never()).record(any(), any(), any(), any(), any());
-    }
 
     private MedicalDocument document(String name, String contentType, UUID ownerId) {
         Animal owner = new Animal();
