@@ -6,11 +6,9 @@ import com.shelter.api.audit.AuditLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.springframework.core.io.PathResource;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.UUID;
@@ -66,7 +64,7 @@ class MedicalDocumentControllerTest {
 
         assertEquals("application/pdf", response.getHeaders().getContentType().toString());
         assertTrue(response.getBody().exists());
-        assertEquals("inline; filename="report.pdf"",
+        assertEquals("inline; filename=\\\"report.pdf\\\"",
             response.getHeaders().getFirst("Content-Disposition"));
         verify(audit).record("vet", "ACCESS_MEDICAL_DOCUMENT", "MEDICAL_DOCUMENT",
             null, "report.pdf");
@@ -116,10 +114,10 @@ class MedicalDocumentControllerTest {
 
         String header = response.getHeaders().getFirst("Content-Disposition");
         assertNotNull(header);
-        assertFalse(header.contains("\r"));
-        assertFalse(header.contains("\n"));
-        assertFalse(header.contains("\""));
-        assertEquals("inline; filename="report__X-Injected: true_.pdf"", header);
+        assertFalse(header.contains("\\r"));
+        assertFalse(header.contains("\\n"));
+        assertFalse(header.contains("\\\""));
+        assertEquals("inline; filename=\\\"report__X-Injected: true_.pdf\\\"", header);
     }
 
     @Test
