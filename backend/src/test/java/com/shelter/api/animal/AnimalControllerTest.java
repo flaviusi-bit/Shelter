@@ -25,7 +25,7 @@ class AnimalControllerTest {
             LocalDate.now().plusDays(1),
             null, null,
             LocalDate.now(),
-            null, null, null, null, null, null);
+            null, null, null, null, null);
 
         var ex = assertThrows(ResponseStatusException.class,
             () -> controller.create(request, authentication));
