@@ -40,6 +40,7 @@ class SecurityConfigTest {
         mvc.perform(request(HttpMethod.POST, "/api/tasks/1/complete")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/tasks/sync-medical-reminders")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/animals/1/vaccinations")).andExpect(status().isForbidden());
+        mvc.perform(request(HttpMethod.POST, "/api/animals/1/treatments/1/administrations/1/status")).andExpect(status().isForbidden());
         mvc.perform(request(HttpMethod.POST, "/api/animals/1/treatments")).andExpect(status().isForbidden());
     }
 
@@ -52,9 +53,12 @@ class SecurityConfigTest {
         mvc.perform(request(HttpMethod.POST, "/api/animals/1/treatments")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/animals/1/treatments/1/administrations/generate")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/animals/1/treatments/1/administrations/1/administer")).andExpect(status().isOk());
+        mvc.perform(request(HttpMethod.POST, "/api/animals/1/treatments/1/administrations/1/status")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/animals/1/documents")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/animals/1/documents/upload")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.GET, "/api/users")).andExpect(status().isForbidden());
+        mvc.perform(request(HttpMethod.GET, "/api/admin/audit")).andExpect(status().isForbidden());
+        mvc.perform(request(HttpMethod.GET, "/api/admin/backups")).andExpect(status().isForbidden());
         mvc.perform(request(HttpMethod.POST, "/api/users")).andExpect(status().isForbidden());
     }
 
@@ -64,6 +68,7 @@ class SecurityConfigTest {
         mvc.perform(request(HttpMethod.POST, "/api/tasks")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/tasks/1/complete")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/tasks/1/skip")).andExpect(status().isOk());
+        mvc.perform(request(HttpMethod.POST, "/api/animals/1/treatments/1/administrations/1/status")).andExpect(status().isForbidden());
         mvc.perform(request(HttpMethod.POST, "/api/animals")).andExpect(status().isForbidden());
         mvc.perform(request(HttpMethod.POST, "/api/animals/1/vaccinations")).andExpect(status().isForbidden());
     }
@@ -77,7 +82,9 @@ class SecurityConfigTest {
         mvc.perform(request(HttpMethod.POST, "/api/users/1/deactivate")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/users/1/reactivate")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/users/1/password")).andExpect(status().isOk());
+        mvc.perform(request(HttpMethod.GET, "/api/admin/backups")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/admin/backups/backup-1/verify")).andExpect(status().isOk());
+        mvc.perform(request(HttpMethod.GET, "/api/admin/audit")).andExpect(status().isOk());
         mvc.perform(request(HttpMethod.POST, "/api/animals/1/vaccinations")).andExpect(status().isOk());
     }
 
