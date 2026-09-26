@@ -47,17 +47,22 @@ public class MedicalDocumentController {
         var animal=animals.findById(animalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Animal not found"));
         try{
             var stored=storage.store(animalId,file);
-            var doc=new MedicalDocument();
-            doc.setAnimal(animal);doc.setDocumentType(documentType);doc.setTitle(title);
-            doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
-            doc.setStorageKey(stored.storageKey());doc.setOriginalFileName(stored.originalFileName());
-            doc.setContentType(stored.contentType());doc.setFileSize(stored.size());
-            if(documentDate!=null&&!documentDate.isBlank()) doc.setDocumentDate(java.time.LocalDate.parse(documentDate));
-            doc.setNotes(notes);doc.setUploadedBy(auth.getName());
-            doc = documents.save(doc);
-            audit.record(auth.getName(),"UPLOAD_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
-            doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
-            return documents.save(doc);
+            try{
+                var doc=new MedicalDocument();
+                doc.setAnimal(animal);doc.setDocumentType(documentType);doc.setTitle(title);
+                doc.setStorageKey(stored.storageKey());doc.setOriginalFileName(stored.originalFileName());
+                doc.setContentType(stored.contentType());doc.setFileSize(stored.size());
+                if(documentDate!=null&&!documentDate.isBlank()) doc.setDocumentDate(java.time.LocalDate.parse(documentDate));
+                doc.setNotes(notes);doc.setUploadedBy(auth.getName());
+                doc = documents.save(doc);
+                doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
+                doc = documents.save(doc);
+                audit.record(auth.getName(),"UPLOAD_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
+                return doc;
+            }catch(RuntimeException e){
+                try{ storage.delete(stored.storageKey()); }catch(IOException cleanup){ e.addSuppressed(cleanup); }
+                throw e;
+            }
         }catch(IOException|IllegalArgumentException e){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,e.getMessage(),e);
         }
@@ -69,15 +74,22 @@ public class MedicalDocumentController {
             .filter(d -> d.getAnimal().getId().equals(animalId))
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Document not found"));
         try{
+            if(doc.getStorageKey()==null||doc.getStorageKey().isBlank())
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File not found");
             PathResource resource=new PathResource(storage.resolve(doc.getStorageKey()));
             if(!resource.exists()||!resource.isReadable()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File not found");
             audit.record(auth.getName(),"ACCESS_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
             MediaType type=MediaType.parseMediaType(doc.getContentType()==null?"application/octet-stream":doc.getContentType());
             return ResponseEntity.ok().contentType(type)
-                .header(HttpHeaders.CONTENT_DISPOSITION,"inline; filename=\"" + doc.getOriginalFileName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION,"inline; filename=\"" + safeDownloadFileName(doc.getOriginalFileName()) + "\"")
                 .body(resource);
         }catch(InvalidMediaTypeException e){
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable",e);
         }
+    }
+
+    private String safeDownloadFileName(String name){
+        if(name==null||name.isBlank()) return "document";
+        return name.replaceAll("[\\r\\n\"]","_");
     }
 }
