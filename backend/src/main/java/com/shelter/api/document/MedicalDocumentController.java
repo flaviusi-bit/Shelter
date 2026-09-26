@@ -1,6 +1,7 @@
 package com.shelter.api.document;
 
 import com.shelter.api.animal.AnimalRepository;
+import com.shelter.api.audit.AuditLogService;
 import org.springframework.core.io.PathResource;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
@@ -17,9 +18,10 @@ public class MedicalDocumentController {
     private final MedicalDocumentRepository documents;
     private final AnimalRepository animals;
     private final DocumentStorageService storage;
+    private final AuditLogService audit;
 
-    public MedicalDocumentController(MedicalDocumentRepository documents,AnimalRepository animals,DocumentStorageService storage){
-        this.documents=documents;this.animals=animals;this.storage=storage;
+    public MedicalDocumentController(MedicalDocumentRepository documents,AnimalRepository animals,DocumentStorageService storage,AuditLogService audit){
+        this.documents=documents;this.animals=animals;this.storage=storage;this.audit=audit;
     }
 
     @GetMapping
@@ -32,7 +34,9 @@ public class MedicalDocumentController {
     public MedicalDocument create(@PathVariable UUID animalId,@RequestBody MedicalDocument input,Authentication auth){
         var animal=animals.findById(animalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Animal not found"));
         input.setAnimal(animal); input.setUploadedBy(auth.getName());
-        return documents.save(input);
+        var saved=documents.save(input);
+        audit.record(auth.getName(),"CREATE_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",saved.getId(),saved.getTitle());
+        return saved;
     }
 
     @PostMapping(value="/upload",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -51,6 +55,7 @@ public class MedicalDocumentController {
             if(documentDate!=null&&!documentDate.isBlank()) doc.setDocumentDate(java.time.LocalDate.parse(documentDate));
             doc.setNotes(notes);doc.setUploadedBy(auth.getName());
             doc = documents.save(doc);
+            audit.record(auth.getName(),"UPLOAD_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
             doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
             return documents.save(doc);
         }catch(IOException|IllegalArgumentException e){
