@@ -123,7 +123,7 @@ class MedicalDocumentControllerTest {
     @Test
     void downloadSanitizesBackslashInHeaderFilename() throws Exception {
         UUID documentId = UUID.randomUUID();
-        String dangerousName = "report\\\".concat("\\server\\share\\report.pdf");
+        String dangerousName = "report\\\\server\\share\\report.pdf";
         MedicalDocument document = document(dangerousName, "application/pdf", animalId);
         var stored = storage.store(animalId,
             new org.springframework.mock.web.MockMultipartFile(
