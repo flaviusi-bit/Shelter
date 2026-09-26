@@ -102,7 +102,7 @@ function Users({currentUsername,onBack,onLogout}:{currentUsername:string;onBack:
  </main>
 }
 function EditUserForm({user,currentUsername,onCancel,onSaved}:{user:import('./api').ShelterUser;currentUsername:string;onCancel:()=>void;onSaved:(u:import('./api').ShelterUser)=>void}){
- const currentUsername=localStorage.getItem('shelterUsername')||'';
+
  const [f,setF]=useState({displayName:user.displayName,role:user.role}),[busy,setBusy]=useState(false),[error,setError]=useState('');
  async function save(){if(!f.displayName.trim()){setError('Display name is required');return}setBusy(true);setError('');try{onSaved(await updateUser(user.id,{displayName:f.displayName,role:f.role}))}catch(e){setError(e instanceof Error?e.message:'Could not update user')}finally{setBusy(false)}}
  return <FormShell eyebrow="USER MANAGEMENT" title={'Edit user · '+user.username} onCancel={onCancel}><div className="form-grid"><label>Display name *<input value={f.displayName} onChange={e=>setF(x=>({...x,displayName:e.target.value}))}/></label><label>Role<select value={f.role} disabled={user.username.toLowerCase()===currentUsername.toLowerCase()} onChange={e=>setF(x=>({...x,role:e.target.value}))}><option>ADMIN</option><option>VETERINARIAN</option><option>COORDINATOR</option><option>VOLUNTEER</option><option>VIEWER</option></select>{user.username.toLowerCase()===currentUsername.toLowerCase()&&<small className="muted">Your own role cannot be changed here.</small>}</label></div>{error&&<div className="inline-error">{error}</div>}<button type="button" className="primary" disabled={busy} onClick={save}>{busy?'Saving…':'Save changes'}</button></FormShell>
