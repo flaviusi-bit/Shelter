@@ -158,6 +158,52 @@ class MedicalDocumentControllerTest {
     }
 
     @Test
+    void uploadStoresFileAndPersistsMetadata() throws Exception {
+        var file = new org.springframework.mock.web.MockMultipartFile(
+            "file", "report.pdf", "application/pdf", "medical report".getBytes());
+
+        when(documents.save(any(MedicalDocument.class)))
+            .thenAnswer(invocation -> invocation.getArgument(0));
+
+        var result = controller.upload(animalId, file, "LAB", "Blood test",
+            "2026-09-26", "routine", authentication);
+
+        assertNotNull(result);
+        assertEquals(animal, result.getAnimal());
+        assertEquals("LAB", result.getDocumentType());
+        assertEquals("Blood test", result.getTitle());
+        assertEquals("2026-09-26", result.getDocumentDate().toString());
+        assertEquals("routine", result.getNotes());
+        assertEquals("vet", result.getUploadedBy());
+        assertEquals("application/pdf", result.getContentType());
+        assertEquals(Long.valueOf("medical report".getBytes().length), result.getFileSize());
+        assertTrue(result.getStorageKey().startsWith(animalId + "/"));
+        assertTrue(storage.resolve(result.getStorageKey()).toFile().isFile());
+        assertEquals("/api/animals/" + animalId + "/documents/files/null", result.getFileUrl());
+        verify(documents, times(2)).save(result);
+        verify(audit).record("vet", "UPLOAD_MEDICAL_DOCUMENT", "MEDICAL_DOCUMENT",
+            null, "report.pdf");
+    }
+
+    @Test
+    void uploadDeletesStoredFileWhenPersistenceFails() throws Exception {
+        var file = new org.springframework.mock.web.MockMultipartFile(
+            "file", "report.pdf", "application/pdf", "medical report".getBytes());
+
+        when(documents.save(any(MedicalDocument.class)))
+            .thenThrow(new RuntimeException("database unavailable"));
+
+        assertThrows(RuntimeException.class,
+            () -> controller.upload(animalId, file, "LAB", "Blood test",
+                "2026-09-26", null, authentication));
+
+        try (var paths = java.nio.file.Files.walk(tempDir)) {
+            assertEquals(0, paths.filter(java.nio.file.Files::isRegularFile).count());
+        }
+        verify(audit, never()).record(any(), any(), any(), any(), any());
+    }
+
+    @Test
     void createRejectsOversizedNotesBeforeSaving() {
         MedicalDocument input = new MedicalDocument();
         input.setDocumentType("LAB");
