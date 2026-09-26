@@ -33,7 +33,7 @@ public class AnimalController {
         a.setNotes(r.notes()); a.setPhotoUrl(r.photoUrl());
     }
     public record AnimalRequest(
-        @NotBlank @Size(max=120) String name,@NotBlank @Size(max=30) String animalType,@NotBlank @Size(max=20) String sex,
+        @NotBlank @Size(max=120) String name,@NotBlank @Pattern(regexp="DOG|CAT|OTHER") String animalType,@NotBlank @Pattern(regexp="UNKNOWN|FEMALE|MALE") String sex,
         LocalDate dateOfBirth,@DecimalMin("0.001") @DecimalMax("9999.999") @Digits(integer=4,fraction=3) BigDecimal weightKg,@Size(max=80) String microchipNumber,
         @NotNull LocalDate intakeDate,@Size(max=255) String rescueSource,@Size(max=120) String location,
         @Pattern(regexp="ACTIVE|TREATMENT|HEALTHY|QUARANTINE|FOSTER|ADOPTED") String status,@Size(max=10000) String notes,@Size(max=1000) String photoUrl){}

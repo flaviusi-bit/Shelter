@@ -51,4 +51,24 @@ class AnimalControllerTest {
             violations.iterator().next().getMessage());
     }
 
+    @Test
+    void rejectsUnknownAnimalType() {
+        var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        var request = new AnimalController.AnimalRequest(
+            "Misha", "HORSE", "FEMALE", LocalDate.of(2020, 1, 1), null, null,
+            LocalDate.of(2024, 1, 1), null, null, null, null, null);
+        var violations = validator.validate(request);
+        assertEquals(1, violations.size());
+    }
+
+    @Test
+    void rejectsUnknownAnimalSex() {
+        var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        var request = new AnimalController.AnimalRequest(
+            "Misha", "DOG", "UNKNOWN_SEX", LocalDate.of(2020, 1, 1), null, null,
+            LocalDate.of(2024, 1, 1), null, null, null, null, null);
+        var violations = validator.validate(request);
+        assertEquals(1, violations.size());
+    }
+
 }
