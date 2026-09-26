@@ -1,6 +1,7 @@
 package com.shelter.api.treatment;
 
 import com.shelter.api.animal.AnimalRepository;
+import com.shelter.api.audit.AuditLogService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -21,15 +22,18 @@ public class TreatmentAdministrationController {
     private final TreatmentRepository treatments;
     private final AnimalRepository animals;
     private final ZoneId zone;
+    private final AuditLogService auditLog;
 
     public TreatmentAdministrationController(
             TreatmentAdministrationRepository administrations,
             TreatmentRepository treatments,
             AnimalRepository animals,
+            AuditLogService auditLog,
             @Value("${shelter.timezone:Europe/Bucharest}") String timezone) {
         this.administrations = administrations;
         this.treatments = treatments;
         this.animals = animals;
+        this.auditLog = auditLog;
         this.zone = ZoneId.of(timezone);
     }
 
@@ -123,7 +127,9 @@ public class TreatmentAdministrationController {
         if (request != null) {
             a.setNotes(request.notes());
         }
-        return administrations.save(a);
+        TreatmentAdministration saved = administrations.save(a);
+        auditLog.record(authentication.getName(), "ADMINISTER_TREATMENT", "TREATMENT_ADMINISTRATION", saved.getId(), "status=ADMINISTERED");
+        return saved;
     }
 
     @PostMapping("/{administrationId}/status")
@@ -146,7 +152,9 @@ public class TreatmentAdministrationController {
         }
         a.setStatus(request.status());
         a.setNotes(request.notes());
-        return administrations.save(a);
+        TreatmentAdministration saved = administrations.save(a);
+        auditLog.record("SYSTEM", "UPDATE_TREATMENT_ADMINISTRATION_STATUS", "TREATMENT_ADMINISTRATION", saved.getId(), "status=" + request.status());
+        return saved;
     }
 
     private Treatment ensureTreatment(UUID animalId, UUID treatmentId) {
