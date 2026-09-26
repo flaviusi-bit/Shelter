@@ -46,7 +46,6 @@ export async function getAuditLogs(limit=200):Promise<AuditLog[]>{return json(aw
 
 export type ShelterUser={id:string;username:string;displayName:string;role:string;active:boolean}
 export async function getUsers():Promise<ShelterUser[]>{return json(await fetch('/api/users',{headers:headers()}))}
-export async function updateUser(id:string,a:{displayName:string;role:string}):Promise<ShelterUser>{return json(await fetch('/api/users/'+id,{method:'PUT',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
 export async function deactivateUser(id:string):Promise<ShelterUser>{return json(await fetch('/api/users/'+id+'/deactivate',{method:'POST',headers:headers()}))}
 export async function reactivateUser(id:string):Promise<ShelterUser>{return json(await fetch('/api/users/'+id+'/reactivate',{method:'POST',headers:headers()}))}
 export async function createUser(a:{username:string;displayName:string;password:string;role:string}):Promise<ShelterUser>{return json(await fetch('/api/users',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
