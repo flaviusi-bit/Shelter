@@ -89,8 +89,8 @@ public class MedicalDocumentController {
     }
 
     private void validateMetadata(String documentType,String title,String notes){
-        if(documentType==null||documentType.isBlank()||documentType.length()>50)
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Document type is required and must be at most 50 characters");
+        if(documentType==null||!java.util.Set.of("LAB_RESULT","VET_REPORT","VACCINE_CERTIFICATE","OTHER").contains(documentType))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid document type");
         if(title==null||title.isBlank()||title.length()>200)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Title is required and must be at most 200 characters");
         if(notes!=null&&notes.length()>10000)

@@ -258,4 +258,16 @@ class MedicalDocumentControllerTest {
         document.setContentType(contentType);
         return document;
     }
+    @Test
+    void rejectsUnknownDocumentType() {
+        var method = MedicalDocumentController.class.getDeclaredMethods();
+        var validate = java.util.Arrays.stream(method)
+            .filter(m -> m.getName().equals("validateMetadata"))
+            .findFirst().orElseThrow();
+        validate.setAccessible(true);
+        var ex = assertThrows(java.lang.reflect.InvocationTargetException.class,
+            () -> validate.invoke(controller, "UNKNOWN", "Report", null));
+        assertEquals("Invalid document type", ex.getCause().getMessage());
+    }
+
 }
