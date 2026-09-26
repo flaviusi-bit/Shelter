@@ -7,3 +7,5 @@
 .record-list{display:grid;gap:10px}.record{padding:14px;border:1px solid #e2e8f0;border-radius:12px;background:#f8fafc;display:grid;gap:5px}.record span,.record small{color:#64748b;font-size:13px}.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.38);display:grid;place-items:center;padding:18px;z-index:20}.modal-card{width:min(760px,100%);max-height:92vh;overflow:auto;box-shadow:0 24px 70px rgba(15,23,42,.22)}.modal-card>.primary{margin-top:16px}
 
 .section-head-actions{display:flex;align-items:center;gap:10px}.task-actions{display:flex;align-items:center;gap:7px}.document-hint{margin-top:14px;font-size:12px}@media(max-width:700px){.section-head-actions,.task-actions{flex-wrap:wrap}.task-actions .dashboard-time{width:100%;align-items:flex-start}}
+
+.document-link{border:0;background:none;padding:0;font:inherit;color:inherit;text-align:left;text-decoration:underline;cursor:pointer}.document-link:disabled{opacity:.6;cursor:wait}
