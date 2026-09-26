@@ -19,15 +19,15 @@ function Login({onLogin}:{onLogin:()=>void}){
  return <main className="login-shell"><form className="login-card" onSubmit={submit}><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Sign in</h1><p className="muted">Access the animal care system.</p><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username" autoComplete="username"/><input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" autoComplete="current-password"/>{error&&<div className="inline-error">{error}</div>}<button className="primary" type="submit">Sign in</button></form></main>
 }
 function ShelterApp({onLogout}:{onLogout:()=>void}){
- const [role,setRole]=useState('VIEWER')
- useEffect(()=>{getCurrentUser().then(u=>setRole(u.role)).catch(()=>setRole('VIEWER'))},[])
+ const [role,setRole]=useState('VIEWER'),[username,setUsername]=useState('')
+ useEffect(()=>{getCurrentUser().then(u=>{setRole(u.role);setUsername(u.username)}).catch(()=>setRole('VIEWER'))},[])
  const isAdmin=role==='ADMIN'
  const [view,setView]=useState<'dashboard'|'animals'|'backups'|'audit'|'users'>('dashboard')
  if(view==='dashboard')return <Dashboard isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
  if(view==='backups'&&!isAdmin)return <Dashboard isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
  if(view==='backups')return <Backups onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  if(view==='users'&&!isAdmin)return <Dashboard isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
- if(view==='users')return <Users onBack={()=>setView('dashboard')} onLogout={onLogout}/>
+ if(view==='users')return <Users currentUsername={username} onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  if(view==='audit'&&!isAdmin)return <Dashboard isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
  if(view==='audit')return <Audit onBack={()=>setView('dashboard')} onLogout={onLogout}/>
  return <Animals onBack={()=>setView('dashboard')} onLogout={onLogout}/>
@@ -88,7 +88,7 @@ function Dashboard({isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenUsers,
   {showTask&&<TaskForm onCancel={()=>setShowTask(false)} onSaved={()=>{setShowTask(false);load()}}/>}
   {showPassword&&<ChangePasswordForm onCancel={()=>setShowPassword(false)} onChanged={onLogout}/>}\n </main>
 }
-function Users({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
+function Users({currentUsername,onBack,onLogout}:{currentUsername:string;onBack:()=>void;onLogout:()=>void}){
  const [items,setItems]=useState<import('./api').ShelterUser[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(''),[showCreate,setShowCreate]=useState(false),[resetUser,setResetUser]=useState<import('./api').ShelterUser|null>(null),[editUser,setEditUser]=useState<import('./api').ShelterUser|null>(null)
  async function load(){try{setItems(await getUsers());setError('')}catch(e){setError(e instanceof Error?e.message:'Could not load users')}}
  useEffect(()=>{load()},[])
@@ -98,10 +98,10 @@ function Users({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
  <section className="panel"><div className="section-head"><div><p className="eyebrow">USER ACCOUNTS</p><h2>{items.length} users</h2></div><div className="section-head-actions"><button className="secondary" onClick={load}>Refresh</button><button className="primary" onClick={()=>setShowCreate(true)}>+ New user</button></div></div>
  {items.length===0?<p className="muted">No users available.</p>:<div className="record-list">{items.map(u=><div className="record" key={u.id}><div><strong>{u.displayName}</strong><span>@{u.username} · {u.role}</span><small className={u.active?'':'muted'}>{u.active?'Active':'Inactive'}</small></div><div className="actions"><button className={u.active?'secondary small':'primary small'} disabled={busy===u.id} onClick={()=>toggle(u)}>{busy===u.id?'Saving…':u.active?'Deactivate':'Reactivate'}</button><button className="secondary small" disabled={busy===u.id} onClick={()=>setEditUser(u)}>Edit</button>{u.active&&<button className="secondary small" disabled={busy===u.id} onClick={()=>setResetUser(u)}>Reset password</button>}</div></div>)}</div>}
  </section>
- {editUser&&<EditUserForm user={editUser} onCancel={()=>setEditUser(null)} onSaved={u=>{setItems(xs=>xs.map(x=>x.id===u.id?u:x));setEditUser(null)}}/>}{showCreate&&<UserForm onCancel={()=>setShowCreate(false)} onSaved={u=>{setItems(xs=>[...xs,u].sort((x,y)=>x.username.localeCompare(y.username)));setShowCreate(false)}}/>}{resetUser&&<ResetUserPasswordForm user={resetUser} onCancel={()=>setResetUser(null)} onSaved={()=>setResetUser(null)}/>}
+ {editUser&&<EditUserForm user={editUser} currentUsername={currentUsername} onCancel={()=>setEditUser(null)} onSaved={u=>{setItems(xs=>xs.map(x=>x.id===u.id?u:x));setEditUser(null)}}/>}{showCreate&&<UserForm onCancel={()=>setShowCreate(false)} onSaved={u=>{setItems(xs=>[...xs,u].sort((x,y)=>x.username.localeCompare(y.username)));setShowCreate(false)}}/>}{resetUser&&<ResetUserPasswordForm user={resetUser} onCancel={()=>setResetUser(null)} onSaved={()=>setResetUser(null)}/>}
  </main>
 }
-function EditUserForm({user,onCancel,onSaved}:{user:import('./api').ShelterUser;onCancel:()=>void;onSaved:(u:import('./api').ShelterUser)=>void}){
+function EditUserForm({user,currentUsername,onCancel,onSaved}:{user:import('./api').ShelterUser;currentUsername:string;onCancel:()=>void;onSaved:(u:import('./api').ShelterUser)=>void}){
  const currentUsername=localStorage.getItem('shelterUsername')||'';
  const [f,setF]=useState({displayName:user.displayName,role:user.role}),[busy,setBusy]=useState(false),[error,setError]=useState('');
  async function save(){if(!f.displayName.trim()){setError('Display name is required');return}setBusy(true);setError('');try{onSaved(await updateUser(user.id,{displayName:f.displayName,role:f.role}))}catch(e){setError(e instanceof Error?e.message:'Could not update user')}finally{setBusy(false)}}
