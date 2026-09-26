@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -70,6 +71,29 @@ public class TreatmentAdministrationController {
                 var a = new TreatmentAdministration();
                 a.setTreatment(treatment);
                 a.setScheduledAt(cursor);
+                created.add(administrations.save(a));
+            }
+            cursor = cursor.plus(interval);
+        }
+        return created;
+    }
+
+    @Scheduled(fixedDelayString = "${shelter.treatment-schedule-sync-ms:900000}")
+    public void generateActiveSchedules() {
+        treatments.findByStatusIgnoreCase("ACTIVE").forEach(t -> generateForTreatment(t, 14));
+    }
+
+    private List<TreatmentAdministration> generateForTreatment(Treatment treatment, int days) {
+        Duration interval = parseFrequency(treatment.getFrequency());
+        LocalDate end = treatment.getEndDate() != null ? treatment.getEndDate() : treatment.getStartDate().plusDays(days - 1);
+        OffsetDateTime cursor = treatment.getStartDate().atStartOfDay(zone).toOffsetDateTime();
+        OffsetDateTime limit = end.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
+        var existingTimes = administrations.findByTreatmentIdOrderByScheduledAtAsc(treatment.getId()).stream()
+                .map(TreatmentAdministration::getScheduledAt).collect(java.util.stream.Collectors.toSet());
+        java.util.ArrayList<TreatmentAdministration> created = new java.util.ArrayList<>();
+        while (cursor.isBefore(limit) && created.size() < 1000) {
+            if (!existingTimes.contains(cursor)) {
+                var a = new TreatmentAdministration(); a.setTreatment(treatment); a.setScheduledAt(cursor);
                 created.add(administrations.save(a));
             }
             cursor = cursor.plus(interval);
