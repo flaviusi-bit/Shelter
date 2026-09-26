@@ -106,7 +106,8 @@ public class DocumentStorageService {
                 stack.removeLast();
             } else stack.addLast(part);
         }
-        return String.join("/", stack);
+        String result = String.join("/", stack);
+        return result.isEmpty() ? null : result;
     }
     private boolean consumeEntryWithinLimit(java.io.InputStream input, long[] totalEntrySize) throws IOException {
         byte[] buffer = new byte[8192];
