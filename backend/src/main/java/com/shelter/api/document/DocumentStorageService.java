@@ -57,15 +57,21 @@ public class DocumentStorageService {
     private boolean isValidDocx(MultipartFile file) throws IOException {
         boolean contentTypes = false;
         boolean document = false;
+        boolean duplicateRequiredPart = false;
         try (var in = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
                 if (entry.isDirectory()) continue;
-                if (entry.getName().equals("[Content_Types].xml")) contentTypes = isWellFormedXml(readEntry(in), "Types");
-                else if (entry.getName().equals("word/document.xml")) document = isWellFormedXml(readEntry(in), "document");
+                if (entry.getName().equals("[Content_Types].xml")) {
+                    if (contentTypes) duplicateRequiredPart = true;
+                    contentTypes = isWellFormedXml(readEntry(in), "Types");
+                } else if (entry.getName().equals("word/document.xml")) {
+                    if (document) duplicateRequiredPart = true;
+                    document = isWellFormedXml(readEntry(in), "document");
+                }
             }
         }
-        return contentTypes && document;
+        return contentTypes && document && !duplicateRequiredPart;
     }
     private byte[] readEntry(java.io.InputStream input) throws IOException {
         var output = new ByteArrayOutputStream();
