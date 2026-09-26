@@ -9,5 +9,5 @@ public class MedicalEventController {
  @PostMapping public MedicalEvent create(@PathVariable UUID animalId,@Valid @RequestBody Request r,org.springframework.security.core.Authentication auth){
   MedicalEvent e=new MedicalEvent();e.setAnimal(animals.findById(animalId).orElseThrow());e.setEventType(r.eventType());e.setEventDate(r.eventDate());e.setTitle(r.title());e.setDiagnosis(r.diagnosis());e.setProvider(r.provider());e.setNotes(r.notes());e.setCreatedBy(auth.getName());e=repo.save(e);
   audit.record(auth.getName(),"CREATE_MEDICAL_EVENT","MEDICAL_EVENT",e.getId(),r.title()); return e;}
- public record Request(@NotBlank @Size(max=30) String eventType,@NotNull LocalDate eventDate,@NotBlank @Size(max=200) String title,@Size(max=255) String diagnosis,@Size(max=160) String provider,@Size(max=10000) String notes){}
+ public record Request(@NotBlank @Pattern(regexp="VET_VISIT|DIAGNOSIS|LAB_RESULT|OTHER") String eventType,@NotNull LocalDate eventDate,@NotBlank @Size(max=200) String title,@Size(max=255) String diagnosis,@Size(max=160) String provider,@Size(max=10000) String notes){}
 }
