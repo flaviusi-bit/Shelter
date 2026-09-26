@@ -52,3 +52,5 @@ export async function createUser(a:{username:string;displayName:string;password:
 
 export type CurrentUser={username:string;role:string}
 export async function getCurrentUser():Promise<CurrentUser>{return json(await fetch('/api/me',{headers:headers()}))}
+
+export async function changeMyPassword(currentPassword:string,newPassword:string):Promise<void>{await json(await fetch('/api/users/me/password',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify({currentPassword,newPassword})}));}
