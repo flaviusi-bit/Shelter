@@ -33,6 +33,9 @@ public class MedicalDocumentController {
     @PostMapping
     public MedicalDocument create(@PathVariable UUID animalId,@RequestBody MedicalDocument input,Authentication auth){
         var animal=animals.findById(animalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Animal not found"));
+        validateMetadata(input.getDocumentType(),input.getTitle(),input.getNotes());
+        if(input.getFileUrl()==null||input.getFileUrl().isBlank()||input.getFileUrl().length()>1000)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"File URL is required and must be at most 1000 characters");
         input.setAnimal(animal); input.setUploadedBy(auth.getName());
         var saved=documents.save(input);
         audit.record(auth.getName(),"CREATE_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",saved.getId(),saved.getTitle());
