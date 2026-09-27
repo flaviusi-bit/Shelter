@@ -24,6 +24,7 @@ public class DocumentStorageService {
     private static final long MAX_DOCX_TOTAL_ENTRY_SIZE = 32L * 1024 * 1024;
     private static final long MAX_DOCX_COMPRESSION_RATIO = 100L;
     private static final long MIN_DOCX_RATIO_CHECK_SIZE = 1024L * 1024L;
+    private static final long MAX_FILE_SIZE = 25L * 1024L * 1024L;
     private final Path root;
     public DocumentStorageService(@Value("${shelter.storage.documents-path:./data/documents}") String path) {
         this.root=Paths.get(path).toAbsolutePath().normalize();
@@ -31,7 +32,7 @@ public class DocumentStorageService {
     public StoredFile store(UUID animalId, MultipartFile file) throws IOException {
         if(animalId==null) throw new IllegalArgumentException("Animal id is required");
         if(file==null||file.isEmpty()) throw new IllegalArgumentException("File is empty");
-        if(file.getSize()>25L*1024*1024) throw new IllegalArgumentException("Maximum file size is 25 MB");
+        if(file.getSize()>MAX_FILE_SIZE) throw new IllegalArgumentException("Maximum file size is 25 MB");
         String original=StringUtils.cleanPath(file.getOriginalFilename()==null?"document":file.getOriginalFilename());
         if(original.contains("..")) throw new IllegalArgumentException("Invalid filename");
         if(original.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("Invalid filename");
@@ -57,14 +58,37 @@ public class DocumentStorageService {
         if (!realTargetParent.equals(realParent)) {
             throw new IllegalArgumentException("Invalid storage path");
         }
-        try (var input = file.getInputStream();
-             var output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
-            input.transferTo(output);
-        } catch (FileAlreadyExistsException e) {
-            throw new IllegalArgumentException("Storage target already exists", e);
+        long storedSize;
+        try (var input = file.getInputStream()) {
+            try (var output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+                try {
+                    storedSize = copyWithinLimit(input, output, MAX_FILE_SIZE);
+                } catch (IllegalArgumentException | IOException e) {
+                    try {
+                        Files.deleteIfExists(target);
+                    } catch (IOException cleanupException) {
+                        e.addSuppressed(cleanupException);
+                    }
+                    throw e;
+                }
+            } catch (FileAlreadyExistsException e) {
+                throw new IllegalArgumentException("Storage target already exists", e);
+            }
         }
-        return new StoredFile(key,original,type,file.getSize());
+        return new StoredFile(key,original,type,storedSize);
     }
+    private long copyWithinLimit(java.io.InputStream input, java.io.OutputStream output, long maxBytes) throws IOException {
+        byte[] buffer = new byte[8192];
+        long total = 0;
+        int read;
+        while ((read = input.read(buffer)) != -1) {
+            if (total > maxBytes - read) throw new IllegalArgumentException("Maximum file size is 25 MB");
+            output.write(buffer, 0, read);
+            total += read;
+        }
+        return total;
+    }
+
     private boolean hasSymlinkComponent(Path rootPath, Path targetParent) {
         Path current = rootPath;
         Path relative;
