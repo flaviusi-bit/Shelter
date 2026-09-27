@@ -868,7 +868,7 @@ class DocumentStorageServiceTest {
 
     @Test void rejectsUnsafeStorageKeyCharacters() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
-        String[] keys={"animal/target\\file.txt","animal/target\\\\file.txt","animal/target" + Character.toString(0xE0100) + ".txt","animal/../outside.txt","animal/CON.txt","animal/target.txt ","animal/target\u200B.txt","animal/target%2Etxt"};
+        String[] keys={"animal/target\\file.txt","animal/target\\\\file.txt","animal/target" + Character.toString(0xE0001) + ".txt","animal/../outside.txt","animal/CON.txt","animal/target.txt ","animal/target\u200B.txt","animal/target%2Etxt"};
         for (String key : keys) {
             assertThrows(IllegalArgumentException.class,()->service.resolve(key));
         }
