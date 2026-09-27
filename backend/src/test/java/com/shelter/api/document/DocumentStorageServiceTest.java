@@ -866,6 +866,14 @@ class DocumentStorageServiceTest {
         }
     }
 
+    @Test void rejectsUnsafeStorageKeyCharacters() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String[] keys={"animal/target\\\\file.txt","animal/../outside.txt","animal/CON.txt","animal/target.txt ","animal/target\u200B.txt","animal/target%2Etxt"};
+        for (String key : keys) {
+            assertThrows(IllegalArgumentException.class,()->service.resolve(key));
+        }
+    }
+
     @Test void rejectsPathTraversalKey() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         assertThrows(IllegalArgumentException.class,()->service.resolve("../outside.txt"));
