@@ -28,6 +28,12 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File content does not match content type",error.getMessage());
     }
+    @Test void rejectsSizeAccountingOverflow() {
+        assertFalse(DocumentStorageService.addWithinLimit(Long.MAX_VALUE, 1L, Long.MAX_VALUE));
+        assertFalse(DocumentStorageService.addWithinLimit(10L, Long.MAX_VALUE, 100L));
+        assertTrue(DocumentStorageService.addWithinLimit(90L, 10L, 100L));
+    }
+
     @Test void acceptsPdfWithMatchingSignature() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","report.pdf","application/pdf","%PDF-1.7".getBytes());
