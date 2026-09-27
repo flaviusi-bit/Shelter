@@ -44,6 +44,27 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File content does not match content type",error.getMessage());
     }
+    @Test void rejectsDocxWithExternalDocumentRelationship() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                zipBytes("[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>",
+                        "_rels/.rels","<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>",
+                        "word/document.xml","<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>",
+                        "word/_rels/document.xml.rels","<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" TargetMode=\"External\" Target=\"https://example.com/template.dotx\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/attachedTemplate\"/></Relationships>"));
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
+
+    @Test void rejectsDocxWithExtremeCompressionRatio() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        byte[] payload=new byte[2 * 1024 * 1024];
+        var output=new ByteArrayOutputStream();
+        try(var zip=new ZipOutputStream(output)){ zip.putNextEntry(new ZipEntry("word/large.bin")); zip.write(payload); zip.closeEntry(); }
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",output.toByteArray());
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
+
     @Test void rejectsDocxWithDoctypeInRequiredXml() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         String xml="<!DOCTYPE Types [<!ENTITY xxe SYSTEM \"file:///etc/passwd\">]><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\">&xxe;</Types>";
@@ -459,7 +480,15 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File content does not match content type",error.getMessage());
     }
-    private byte[] minimalDocx() throws Exception { return zipBytes("[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"/>","word/document.xml","<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>"); }
+    private byte[] minimalDocx() throws Exception {
+        return zipBytes(
+                "[Content_Types].xml",
+                "<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>",
+                "_rels/.rels",
+                "<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>",
+                "word/document.xml",
+                "<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>");
+    }
     private byte[] zipBytes(String... entries) throws Exception {
         var output=new ByteArrayOutputStream();
         try(var zip=new ZipOutputStream(output)){ for(int i=0;i<entries.length;i+=2){ zip.putNextEntry(new ZipEntry(entries[i])); zip.write(entries[i+1].getBytes(StandardCharsets.UTF_8)); zip.closeEntry(); } }

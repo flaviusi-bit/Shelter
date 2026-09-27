@@ -22,6 +22,8 @@ public class DocumentStorageService {
     private static final int MAX_DOCX_ENTRIES = 1000;
     private static final long MAX_DOCX_ENTRY_SIZE = 10L * 1024 * 1024;
     private static final long MAX_DOCX_TOTAL_ENTRY_SIZE = 32L * 1024 * 1024;
+    private static final long MAX_DOCX_COMPRESSION_RATIO = 100L;
+    private static final long MIN_DOCX_RATIO_CHECK_SIZE = 1024L * 1024L;
     private final Path root;
     public DocumentStorageService(@Value("${shelter.storage.documents-path:./data/documents}") String path) {
         this.root=Paths.get(path).toAbsolutePath().normalize();
@@ -64,6 +66,7 @@ public class DocumentStorageService {
         boolean document = false;
         boolean duplicateRequiredPart = false;
         boolean unsafeEntryPath = false;
+        byte[] rootRelationshipsXml = null;
         int entryCount = 0;
         Set<String> entryNames = new HashSet<>();
         long[] totalEntrySize = {0};
@@ -73,6 +76,12 @@ public class DocumentStorageService {
                 if (++entryCount > MAX_DOCX_ENTRIES) return false;
                 if (entry.getName() == null || entry.getName().isBlank()) return false;
                 if (entry.getName().length() > 255) return false;
+                long declaredSize = entry.getSize();
+                long declaredCompressedSize = entry.getCompressedSize();
+                if (declaredSize < -1L || declaredCompressedSize < -1L) return false;
+                if (declaredSize > 0L && declaredCompressedSize == 0L) return false;
+                if (declaredSize >= MIN_DOCX_RATIO_CHECK_SIZE && declaredCompressedSize > 0L
+                        && declaredSize / declaredCompressedSize > MAX_DOCX_COMPRESSION_RATIO) return false;
                 if (entry.getName().indexOf('\0') >= 0) return false;
                 if (entry.getName().charAt(0) == '\uFEFF') return false;
                 if (entry.getName().indexOf(':') >= 0) return false;
@@ -107,7 +116,16 @@ public class DocumentStorageService {
                 if (entryName.equals("[Content_Types].xml")) {
                     if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     if (contentTypes) duplicateRequiredPart = true;
-                    contentTypes = isWellFormedXml(readEntry(in, totalEntrySize), "Types", "http://schemas.openxmlformats.org/package/2006/content-types");
+                    byte[] xml = readEntry(in, totalEntrySize);
+                    contentTypes = isWellFormedXml(xml, "Types", "http://schemas.openxmlformats.org/package/2006/content-types")
+                            && isValidContentTypes(xml);
+                } else if (entryName.equals("_rels/.rels")) {
+                    if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
+                    if (rootRelationshipsXml != null) duplicateRequiredPart = true;
+                    rootRelationshipsXml = readEntry(in, totalEntrySize);
+                } else if (entryName.endsWith(".rels")) {
+                    if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
+                    if (!isWellFormedRelationshipsXml(readEntry(in, totalEntrySize))) return false;
                 } else if (entryName.equals("word/document.xml")) {
                     if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     if (document) duplicateRequiredPart = true;
@@ -119,8 +137,65 @@ public class DocumentStorageService {
         } catch (java.util.zip.ZipException e) {
             return false;
         }
-        return contentTypes && document && !duplicateRequiredPart && !unsafeEntryPath;
+        return contentTypes && document && rootRelationshipsXml != null
+                && isValidRootRelationships(rootRelationshipsXml) && !duplicateRequiredPart && !unsafeEntryPath;
     }
+    private boolean isValidContentTypes(byte[] input) {
+        if (input == null) return false;
+        try {
+            var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
+            var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/content-types", "Override");
+            for (int i = 0; i < nodes.getLength(); i++) {
+                var node = nodes.item(i);
+                var part = node.getAttributes().getNamedItem("PartName");
+                var type = node.getAttributes().getNamedItem("ContentType");
+                if (part != null && type != null
+                        && "/word/document.xml".equals(part.getNodeValue())
+                        && "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml".equals(type.getNodeValue())) return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return false;
+    }
+
+    private boolean isValidRootRelationships(byte[] input) {
+        if (!isWellFormedRelationshipsXml(input)) return false;
+        try {
+            var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
+            var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/relationships", "Relationship");
+            for (int i = 0; i < nodes.getLength(); i++) {
+                var node = nodes.item(i);
+                var type = node.getAttributes().getNamedItem("Type");
+                var target = node.getAttributes().getNamedItem("Target");
+                if (type != null && target != null
+                        && "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument".equals(type.getNodeValue())
+                        && "word/document.xml".equals(target.getNodeValue())) return true;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+        return false;
+    }
+
+    private boolean isWellFormedRelationshipsXml(byte[] input) {
+        if (!isWellFormedXml(input, "Relationships", "http://schemas.openxmlformats.org/package/2006/relationships")) return false;
+        try {
+            var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
+            var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/relationships", "Relationship");
+            for (int i = 0; i < nodes.getLength(); i++) {
+                var node = nodes.item(i);
+                var mode = node.getAttributes().getNamedItem("TargetMode");
+                var target = node.getAttributes().getNamedItem("Target");
+                if (mode != null && "External".equalsIgnoreCase(mode.getNodeValue())) return false;
+                if (target == null || target.getNodeValue().isBlank()) return false;
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     private String normalizeZipEntryName(String name) {
         if (name == null || name.isBlank()) return null;
         String normalized = name.replace('\\', '/');
@@ -166,17 +241,7 @@ public class DocumentStorageService {
     private boolean isWellFormedXml(byte[] input, String expectedRoot, String... expectedNamespaces) throws IOException {
         if (input == null) return false;
         try {
-            var factory = DocumentBuilderFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
-            factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
-            factory.setXIncludeAware(false);
-            factory.setExpandEntityReferences(false);
+            var factory = secureXmlFactory();
             var root = factory.newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
             String localName = root.getLocalName() != null ? root.getLocalName() : root.getNodeName();
             String namespace = root.getNamespaceURI();
