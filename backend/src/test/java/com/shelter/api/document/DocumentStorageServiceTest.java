@@ -14,6 +14,14 @@ import static org.junit.jupiter.api.Assertions.*;
 class DocumentStorageServiceTest {
     @TempDir Path tempDir;
 
+    @Test void rejectsStorageRootThatIsAFile() throws Exception {
+        Path rootFile=tempDir.resolve("storage-root-file");
+        java.nio.file.Files.writeString(rootFile,"not a directory");
+        DocumentStorageService service=new DocumentStorageService(rootFile.toString());
+        var file=new MockMultipartFile("file","photo.png","image/png",new byte[]{(byte)0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A});
+        assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+    }
+
     @Test void storesAllowedImageType() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","photo.png","image/png",new byte[]{(byte)0x89,0x50,0x4E,0x47,0x0D,0x0A,0x1A,0x0A});
