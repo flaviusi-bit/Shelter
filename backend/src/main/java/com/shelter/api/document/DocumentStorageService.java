@@ -64,6 +64,9 @@ public class DocumentStorageService {
         if (!realTargetParent.equals(realParent)) {
             throw new IllegalArgumentException("Invalid storage path");
         }
+        if (Files.isSymbolicLink(target)) {
+            throw new IllegalArgumentException("Invalid storage path");
+        }
         long storedSize;
         try (var input = file.getInputStream()) {
             try (var output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)) {
