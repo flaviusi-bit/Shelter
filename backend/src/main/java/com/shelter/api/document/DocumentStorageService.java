@@ -34,6 +34,10 @@ public class DocumentStorageService {
         if(file.getSize()>25L*1024*1024) throw new IllegalArgumentException("Maximum file size is 25 MB");
         String original=StringUtils.cleanPath(file.getOriginalFilename()==null?"document":file.getOriginalFilename());
         if(original.contains("..")) throw new IllegalArgumentException("Invalid filename");
+        if(original.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("Invalid filename");
+        if(original.indexOf('\uFEFF') >= 0 || original.indexOf('\uFF0E') >= 0
+                || original.indexOf('\u2024') >= 0 || original.indexOf('\u2025') >= 0
+                || original.indexOf('\u2026') >= 0) throw new IllegalArgumentException("Invalid filename");
         if(original.length()>255) throw new IllegalArgumentException("Filename is too long");
         String type=file.getContentType()==null?"application/octet-stream":file.getContentType();
         if(!(type.equals("application/pdf")||isSafeImageType(type)||type.equals("text/plain")||type.equals("application/msword")||type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) throw new IllegalArgumentException("File type is not allowed");
