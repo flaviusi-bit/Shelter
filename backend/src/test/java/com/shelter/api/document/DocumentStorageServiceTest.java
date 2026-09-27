@@ -706,6 +706,16 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(null,file));
         assertEquals("Animal id is required",error.getMessage());
     }
+    @Test void rejectsFilenameWithUnsafeControlOrConfusableCharacter() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String[] names={"bad\u0000.txt","bad\uFEFF.txt","bad\u2024.txt","bad\u2025.txt","bad\u2026.txt"};
+        for (String name : names) {
+            var file=new MockMultipartFile("file",name,"text/plain","hello".getBytes());
+            var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+            assertEquals("Invalid filename",error.getMessage());
+        }
+    }
+
     @Test void rejectsOverlongFilename() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","a".repeat(256)+".txt","text/plain","hello".getBytes());
