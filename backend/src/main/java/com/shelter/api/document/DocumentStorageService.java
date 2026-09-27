@@ -73,6 +73,7 @@ public class DocumentStorageService {
                 if (++entryCount > MAX_DOCX_ENTRIES) return false;
                 if (entry.getName() == null || entry.getName().isBlank()) return false;
                 if (entry.getName().length() > 255) return false;
+                if (entry.getName().indexOf('\0') >= 0) return false;
                 if (entry.isDirectory()) {
                     String directoryName = normalizeZipEntryName(entry.getName());
                     if (directoryName == null) return false;
