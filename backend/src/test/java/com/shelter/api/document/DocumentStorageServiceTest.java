@@ -816,8 +816,10 @@ class DocumentStorageServiceTest {
     }
 
     @Test void rejectsStorageWriteThroughFinalSymlink() throws Exception {
-        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         UUID animalId=UUID.randomUUID();
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString()) {
+            @Override String generateStorageKey(UUID id, String ext) { return id+"/target"+ext; }
+        };
         Path animalDirectory=tempDir.resolve(animalId.toString());
         Path outside=tempDir.resolveSibling("shelter-final-symlink-outside.txt");
         java.nio.file.Files.createDirectories(animalDirectory);
