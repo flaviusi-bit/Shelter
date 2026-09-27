@@ -84,6 +84,14 @@ class DocumentStorageServiceTest {
         assertEquals("File content does not match content type",error.getMessage());
     }
 
+    @Test void rejectsMalformedDocxZip() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        byte[] malformed="not-a-zip".getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",malformed);
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
+
     @Test void rejectsDocxWithExplicitCurrentDirectoryZipPrefix() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var output=new ByteArrayOutputStream();

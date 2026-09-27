@@ -116,6 +116,8 @@ public class DocumentStorageService {
                     return false;
                 }
             }
+        } catch (java.util.zip.ZipException e) {
+            return false;
         }
         return contentTypes && document && !duplicateRequiredPart && !unsafeEntryPath;
     }
