@@ -933,6 +933,14 @@ class DocumentStorageServiceTest {
         }
     }
 
+    @Test void rejectsFilenameWithSupplementaryUnicodeFormatCharacter() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String name="bad"+Character.toString(0xE0001)+".txt";
+        var file=new MockMultipartFile("file",name,"text/plain","hello".getBytes(StandardCharsets.UTF_8));
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("Invalid filename",error.getMessage());
+    }
+
     @Test void rejectsFilenameWithWindowsReservedOrTrailingCharacters() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         String[] names={"CON.txt","PRN.doc","AUX.txt","NUL.pdf","COM1.txt","LPT9.txt","report.txt ","report.txt."};
