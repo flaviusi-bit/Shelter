@@ -710,6 +710,27 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File extension does not match content type",error.getMessage());
     }
+    @Test void rejectsUploadThatExceedsSizeLimitDuringStreaming() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        UUID animalId=UUID.randomUUID();
+        byte[] oversized=new byte[(25 * 1024 * 1024) + 1];
+        var file=new MockMultipartFile("file","payload.txt","text/plain",new byte[]{'o','k'}) {
+            @Override public long getSize() {
+                return 1L;
+            }
+            @Override public java.io.InputStream getInputStream() {
+                return new java.io.ByteArrayInputStream(oversized);
+            }
+        };
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(animalId,file));
+        assertEquals("Maximum file size is 25 MB",error.getMessage());
+        Path animalDirectory=tempDir.resolve(animalId.toString());
+        assertTrue(java.nio.file.Files.exists(animalDirectory));
+        try (var files=java.nio.file.Files.list(animalDirectory)) {
+            assertTrue(files.findAny().isEmpty());
+        }
+    }
+
     @Test void rejectsStorageWriteWhenRootIsSymlink() throws Exception {
         Path realRoot=tempDir.resolve("real-root");
         Path linkRoot=tempDir.resolve("link-root");
