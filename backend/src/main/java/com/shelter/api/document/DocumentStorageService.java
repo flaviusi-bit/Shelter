@@ -74,6 +74,7 @@ public class DocumentStorageService {
                 if (entry.isDirectory()) {
                     String directoryName = normalizeZipEntryName(entry.getName());
                     if (directoryName == null) return false;
+                    if (!entryNames.add(directoryName)) return false;
                     if (!consumeEntryWithinLimit(in, totalEntrySize)) return false;
                     continue;
                 }
