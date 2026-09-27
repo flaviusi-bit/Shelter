@@ -102,8 +102,7 @@ public class DocumentStorageService {
                 if (entry.getName().endsWith(".") || entry.getName().endsWith(" ")) return false;
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("./")) return false;
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("//")) return false;
-                if (entry.getName().startsWith("\u2024") || entry.getName().startsWith("\u2215")
-                        || entry.getName().startsWith("\u2044")) return false;
+                if (containsUnicodePathConfusable(entry.getName())) return false;
                 if (entry.isDirectory()) {
                     String directoryName = normalizeZipEntryName(entry.getName());
                     if (directoryName == null) return false;
@@ -194,7 +193,8 @@ public class DocumentStorageService {
         if (target.startsWith("/") || target.startsWith("\\")
                 || target.contains("..") || target.contains("%")
                 || target.contains(":") || target.indexOf('\\') >= 0
-                || target.chars().anyMatch(Character::isISOControl)) return null;
+                || target.chars().anyMatch(Character::isISOControl)
+                || containsUnicodePathConfusable(target)) return null;
         String combined = sourcePart == null || sourcePart.isEmpty()
                 ? target
                 : Paths.get(sourcePart).getParent().resolve(target).normalize().toString().replace('\\', '/');
@@ -264,7 +264,8 @@ public class DocumentStorageService {
                 if (targetValue.chars().anyMatch(Character::isISOControl)) return false;
                 if (targetValue.startsWith("/") || targetValue.startsWith("\\")
                         || targetValue.contains("..") || targetValue.contains("%")
-                        || targetValue.contains(":") || targetValue.indexOf('\\') >= 0) return false;
+                        || targetValue.contains(":") || targetValue.indexOf('\\') >= 0
+                        || containsUnicodePathConfusable(targetValue)) return false;
             }
             return true;
         } catch (Exception e) {
@@ -285,6 +286,15 @@ public class DocumentStorageService {
         factory.setXIncludeAware(false);
         factory.setExpandEntityReferences(false);
         return factory;
+    }
+
+    private boolean containsUnicodePathConfusable(String value) {
+        if (value == null) return false;
+        return value.indexOf('\u2215') >= 0 || value.indexOf('\u2044') >= 0
+                || value.indexOf('\u29F8') >= 0 || value.indexOf('\uFF0F') >= 0
+                || value.indexOf('\uFF3C') >= 0 || value.indexOf('\u2216') >= 0
+                || value.indexOf('\u2024') >= 0 || value.indexOf('\u2025') >= 0
+                || value.indexOf('\u2026') >= 0 || value.indexOf('\uFF0E') >= 0;
     }
 
     private String normalizeZipEntryName(String name) {
