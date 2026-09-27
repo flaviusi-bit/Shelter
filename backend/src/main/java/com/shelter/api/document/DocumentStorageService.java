@@ -192,6 +192,8 @@ public class DocumentStorageService {
                 var target = node.getAttributes().getNamedItem("Target");
                 if (id == null || id.getNodeValue().isBlank() || !relationshipIds.add(id.getNodeValue())) return false;
                 if (type == null || type.getNodeValue().isBlank()) return false;
+                if (mode != null && !"External".equalsIgnoreCase(mode.getNodeValue())
+                        && !"Internal".equalsIgnoreCase(mode.getNodeValue())) return false;
                 if (mode != null && "External".equalsIgnoreCase(mode.getNodeValue())) return false;
                 if (target == null || target.getNodeValue().isBlank()) return false;
                 String targetValue = target.getNodeValue();
