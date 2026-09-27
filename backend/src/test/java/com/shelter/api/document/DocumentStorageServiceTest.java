@@ -92,6 +92,20 @@ class DocumentStorageServiceTest {
         assertEquals("File content does not match content type",error.getMessage());
     }
 
+    @Test void rejectsDocxWithUnsupportedCompressionMethod() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        var output=new ByteArrayOutputStream();
+        try(var zip=new ZipOutputStream(output)){
+            zip.putNextEntry(new ZipEntry("[Content_Types].xml"));
+            zip.write("<Types/>".getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+        }
+        var bytes=output.toByteArray();
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",bytes);
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
+
     @Test void rejectsDocxWithInvalidRelationshipTargetMode() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var relationships="<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Target=\"word/document.xml\" TargetMode=\"Unexpected\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\"/></Relationships>";

@@ -75,6 +75,7 @@ public class DocumentStorageService {
             ZipEntry entry;
             while ((entry = in.getNextEntry()) != null) {
                 if (++entryCount > MAX_DOCX_ENTRIES) return false;
+                if (entry.getMethod() != ZipEntry.STORED && entry.getMethod() != ZipEntry.DEFLATED) return false;
                 if (entry.getName() == null || entry.getName().isBlank()) return false;
                 if (entry.getName().length() > 255) return false;
                 long declaredSize = entry.getSize();
