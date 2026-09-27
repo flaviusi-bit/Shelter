@@ -199,6 +199,7 @@ public class DocumentStorageService {
                 if (mode != null && "External".equalsIgnoreCase(mode.getNodeValue())) return false;
                 if (target == null || target.getNodeValue().isBlank()) return false;
                 String targetValue = target.getNodeValue();
+                if (targetValue.chars().anyMatch(Character::isISOControl)) return false;
                 if (targetValue.startsWith("/") || targetValue.startsWith("\\")
                         || targetValue.contains("..") || targetValue.contains("%")
                         || targetValue.contains(":") || targetValue.indexOf('\\') >= 0) return false;
