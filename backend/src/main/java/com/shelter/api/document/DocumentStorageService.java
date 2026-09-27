@@ -149,6 +149,7 @@ public class DocumentStorageService {
         if (!contentTypes || !document || rootRelationshipsXml == null
                 || !isValidRootRelationships(rootRelationshipsXml)
                 || duplicateRequiredPart || unsafeEntryPath) return false;
+        if (!areInternalRelationshipTargetsPresent("_rels/.rels", rootRelationshipsXml, entryNames)) return false;
         for (String[] relationshipPart : relationshipParts) {
             byte[] xml;
             try {
