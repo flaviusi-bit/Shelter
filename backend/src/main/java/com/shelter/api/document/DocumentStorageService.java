@@ -83,6 +83,7 @@ public class DocumentStorageService {
                 if (entry.getName().indexOf('|') >= 0) return false;
                 if (entry.getName().indexOf('<') >= 0 || entry.getName().indexOf('>') >= 0) return false;
                 if (entry.getName().indexOf('"') >= 0) return false;
+                if (entry.getName().indexOf(''') >= 0) return false;
                 if (entry.isDirectory()) {
                     String directoryName = normalizeZipEntryName(entry.getName());
                     if (directoryName == null) return false;
