@@ -99,11 +99,11 @@ class DocumentStorageServiceTest {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         String[] targets={"word/document.xml ","word./document.xml","word/document.xml."};
         for (String target : targets) {
-            var relationships="<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="" + target + "" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink"/></Relationships>";
+            var relationships="<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Target=\"" + target + "\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink\"/></Relationships>";
             var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                    zipBytes("[Content_Types].xml","<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>",
-                            "_rels/.rels","<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="word/document.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"/></Relationships>",
-                            "word/document.xml","<document xmlns="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>",
+                    zipBytes("[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>",
+                            "_rels/.rels","<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Target=\"word/document.xml\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\"/></Relationships>",
+                            "word/document.xml","<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>",
                             "word/_rels/document.xml.rels",relationships));
             var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
             assertEquals("File content does not match content type",error.getMessage());
