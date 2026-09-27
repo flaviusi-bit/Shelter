@@ -140,7 +140,7 @@ public class DocumentStorageService {
         return contentTypes && document && rootRelationshipsXml != null
                 && isValidRootRelationships(rootRelationshipsXml) && !duplicateRequiredPart && !unsafeEntryPath;
     }
-    private boolean isValidContentTypes(byte[] input) {
+    private boolean isValidContentTypes(byte[] input) throws IOException {
         if (input == null) return false;
         try {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
@@ -159,7 +159,7 @@ public class DocumentStorageService {
         return false;
     }
 
-    private boolean isValidRootRelationships(byte[] input) {
+    private boolean isValidRootRelationships(byte[] input) throws IOException {
         if (!isWellFormedRelationshipsXml(input)) return false;
         try {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
@@ -178,7 +178,7 @@ public class DocumentStorageService {
         return false;
     }
 
-    private boolean isWellFormedRelationshipsXml(byte[] input) {
+    private boolean isWellFormedRelationshipsXml(byte[] input) throws IOException {
         if (!isWellFormedXml(input, "Relationships", "http://schemas.openxmlformats.org/package/2006/relationships")) return false;
         try {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
