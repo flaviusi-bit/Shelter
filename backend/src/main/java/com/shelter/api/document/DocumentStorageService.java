@@ -198,7 +198,8 @@ public class DocumentStorageService {
                 || target.contains("..") || target.contains("%")
                 || target.contains(":") || target.indexOf('\\') >= 0
                 || target.chars().anyMatch(Character::isISOControl)
-                || containsUnicodePathConfusable(target)) return null;
+                || containsUnicodePathConfusable(target)
+                || containsWindowsReservedPathSegment(target)) return null;
         String combined = sourcePart == null || sourcePart.isEmpty()
                 ? target
                 : Paths.get(sourcePart).getParent().resolve(target).normalize().toString().replace('\\', '/');
