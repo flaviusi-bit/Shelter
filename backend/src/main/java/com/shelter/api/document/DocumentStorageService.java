@@ -50,7 +50,7 @@ public class DocumentStorageService {
         Path parent = target.getParent();
         Files.createDirectories(parent);
         Path realParent = parent.toRealPath();
-        if (Files.isSymbolicLink(parent) || !realParent.startsWith(realRoot)) {
+        if (!realParent.startsWith(realRoot) || hasSymlinkComponent(root, parent)) {
             throw new IllegalArgumentException("Invalid storage path");
         }
         Path realTargetParent = target.getParent().toRealPath();
@@ -65,6 +65,21 @@ public class DocumentStorageService {
         }
         return new StoredFile(key,original,type,file.getSize());
     }
+    private boolean hasSymlinkComponent(Path rootPath, Path targetParent) {
+        Path current = rootPath;
+        Path relative;
+        try {
+            relative = rootPath.relativize(targetParent);
+        } catch (IllegalArgumentException e) {
+            return true;
+        }
+        for (Path component : relative) {
+            current = current.resolve(component);
+            if (Files.isSymbolicLink(current)) return true;
+        }
+        return false;
+    }
+
     private boolean contentMatchesType(MultipartFile file,String type) throws IOException {
         if(type.equals("text/plain")) return isSafePlainText(file);
         byte[] header;
