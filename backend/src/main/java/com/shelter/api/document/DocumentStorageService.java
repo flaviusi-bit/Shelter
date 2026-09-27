@@ -186,6 +186,7 @@ public class DocumentStorageService {
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("./")) return false;
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("//")) return false;
                 if (containsUnicodePathConfusable(entry.getName())) return false;
+                if (containsUnsafePathCharacter(entry.getName())) return false;
                 if (containsWindowsReservedPathSegment(entry.getName())) return false;
                 if (containsWindowsTrailingDotOrSpaceSegment(entry.getName())) return false;
                 if (entry.isDirectory()) {
