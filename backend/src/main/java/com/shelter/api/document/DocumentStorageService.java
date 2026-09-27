@@ -169,6 +169,7 @@ public class DocumentStorageService {
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("//")) return false;
                 if (containsUnicodePathConfusable(entry.getName())) return false;
                 if (containsWindowsReservedPathSegment(entry.getName())) return false;
+                if (containsWindowsTrailingDotOrSpaceSegment(entry.getName())) return false;
                 if (entry.isDirectory()) {
                     String directoryName = normalizeZipEntryName(entry.getName());
                     if (directoryName == null) return false;
@@ -393,6 +394,14 @@ public class DocumentStorageService {
                 || value.indexOf('\uFF3C') >= 0 || value.indexOf('\u2216') >= 0
                 || value.indexOf('\u2024') >= 0 || value.indexOf('\u2025') >= 0
                 || value.indexOf('\u2026') >= 0 || value.indexOf('\uFF0E') >= 0;
+    }
+
+    private boolean containsWindowsTrailingDotOrSpaceSegment(String value) {
+        if (value == null) return true;
+        for (String segment : value.split("/")) {
+            if (!segment.isEmpty() && (segment.endsWith(".") || segment.endsWith(" "))) return true;
+        }
+        return false;
     }
 
     private boolean containsWindowsReservedPathSegment(String value) {
