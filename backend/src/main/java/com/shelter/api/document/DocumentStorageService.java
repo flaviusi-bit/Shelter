@@ -157,6 +157,7 @@ public class DocumentStorageService {
                 long declaredSize = entry.getSize();
                 long declaredCompressedSize = entry.getCompressedSize();
                 if (declaredSize < -1L || declaredCompressedSize < -1L) return false;
+                if (declaredSize > MAX_DOCX_ENTRY_SIZE) return false;
                 if (declaredSize > 0L && declaredCompressedSize == 0L) return false;
                 if (declaredSize >= MIN_DOCX_RATIO_CHECK_SIZE && declaredCompressedSize > 0L
                         && exceedsCompressionRatio(declaredSize, declaredCompressedSize)) return false;
@@ -453,9 +454,10 @@ public class DocumentStorageService {
         long total = 0;
         int read;
         while ((read = input.read(buffer)) != -1) {
+            if (!addWithinLimit(total, read, MAX_DOCX_ENTRY_SIZE)) return false;
+            if (!addWithinLimit(totalEntrySize[0], read, MAX_DOCX_TOTAL_ENTRY_SIZE)) return false;
             total += read;
             totalEntrySize[0] += read;
-            if (total > MAX_DOCX_ENTRY_SIZE || totalEntrySize[0] > MAX_DOCX_TOTAL_ENTRY_SIZE) return false;
         }
         return true;
     }
@@ -465,12 +467,17 @@ public class DocumentStorageService {
         long total = 0;
         int read;
         while ((read = input.read(buffer)) != -1) {
+            if (!addWithinLimit(total, read, MAX_DOCX_XML_ENTRY_SIZE)) return null;
+            if (!addWithinLimit(totalEntrySize[0], read, MAX_DOCX_TOTAL_ENTRY_SIZE)) return null;
             total += read;
             totalEntrySize[0] += read;
-            if (total > MAX_DOCX_XML_ENTRY_SIZE || totalEntrySize[0] > MAX_DOCX_TOTAL_ENTRY_SIZE) return null;
             output.write(buffer, 0, read);
         }
         return output.toByteArray();
+    }
+
+    static boolean addWithinLimit(long current, long increment, long limit) {
+        return increment >= 0L && current >= 0L && current <= limit && increment <= limit - current;
     }
     private boolean isWellFormedXml(byte[] input, String expectedRoot, String... expectedNamespaces) throws IOException {
         if (input == null) return false;
