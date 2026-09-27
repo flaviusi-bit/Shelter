@@ -185,10 +185,12 @@ public class DocumentStorageService {
 
     private String relationshipSourcePart(String relationshipsPart) {
         if ("_rels/.rels".equals(relationshipsPart)) return "";
+        if (relationshipsPart == null || !relationshipsPart.endsWith(".rels")) return null;
         int relsMarker = relationshipsPart.indexOf("/_rels/");
-        if (!relationshipsPart.startsWith("word/") || relsMarker < 0 || !relationshipsPart.endsWith(".rels")) return null;
-        return relationshipsPart.substring(0, relsMarker + 1)
+        if (relsMarker <= 0) return null;
+        String source = relationshipsPart.substring(0, relsMarker + 1)
                 + relationshipsPart.substring(relsMarker + 7, relationshipsPart.length() - 5);
+        return source.isBlank() ? null : source;
     }
 
     private String resolveRelationshipTarget(String sourcePart, String target) {
