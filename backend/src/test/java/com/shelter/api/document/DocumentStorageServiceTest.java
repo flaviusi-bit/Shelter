@@ -595,7 +595,7 @@ class DocumentStorageServiceTest {
         assertEquals("File content does not match content type",error.getMessage());
     }
     @Test void rejectsDocxCompressionRatioJustAboveLimit() {
-        long compressedSize=10_000L;
+        long compressedSize=20_000L;
         long justAboveLimit=(compressedSize * 100L) + 1L;
         long justAtLimit=compressedSize * 100L;
         assertFalse(DocumentStorageService.exceedsCompressionRatio(justAtLimit,compressedSize));
