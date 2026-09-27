@@ -190,7 +190,9 @@ public class DocumentStorageService {
                 var type = node.getAttributes().getNamedItem("Type");
                 var mode = node.getAttributes().getNamedItem("TargetMode");
                 var target = node.getAttributes().getNamedItem("Target");
-                if (id == null || id.getNodeValue().isBlank() || !relationshipIds.add(id.getNodeValue())) return false;
+                if (id == null || id.getNodeValue().isBlank()
+                        || !id.getNodeValue().matches("[A-Za-z_][A-Za-z0-9_.-]*")
+                        || !relationshipIds.add(id.getNodeValue())) return false;
                 if (type == null || type.getNodeValue().isBlank()) return false;
                 if (mode != null && !"External".equalsIgnoreCase(mode.getNodeValue())
                         && !"Internal".equalsIgnoreCase(mode.getNodeValue())) return false;
