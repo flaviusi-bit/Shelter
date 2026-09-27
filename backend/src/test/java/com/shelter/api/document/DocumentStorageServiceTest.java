@@ -212,6 +212,17 @@ class DocumentStorageServiceTest {
         assertEquals("File content does not match content type",error.getMessage());
     }
 
+    @Test void rejectsDocxWithEmbeddedCurrentDirectoryZipEntryPath() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String[] names={"word/./document.xml","word/./extra.xml","word/sub/./part.xml"};
+        for (String name : names) {
+            var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    zipBytes(name,"x"));
+            var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+            assertEquals("File content does not match content type",error.getMessage());
+        }
+    }
+
     @Test void rejectsDocxWithEmptyZipEntryNameAfterNormalization() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
