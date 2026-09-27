@@ -211,6 +211,7 @@ public class DocumentStorageService {
                 || target.contains("..") || target.contains("%")
                 || target.contains(":") || target.indexOf('\\') >= 0
                 || target.chars().anyMatch(Character::isISOControl)
+                || containsUnsafePathCharacter(target)
                 || containsUnicodePathConfusable(target)
                 || containsWindowsReservedPathSegment(target)) return null;
         String combined = sourcePart == null || sourcePart.isEmpty()
@@ -280,6 +281,7 @@ public class DocumentStorageService {
                 if (target == null || target.getNodeValue().isBlank()) return false;
                 String targetValue = target.getNodeValue();
                 if (targetValue.chars().anyMatch(Character::isISOControl)) return false;
+                if (containsUnsafePathCharacter(targetValue)) return false;
                 if (targetValue.startsWith("/") || targetValue.startsWith("\\")
                         || targetValue.contains("..") || targetValue.contains("%")
                         || targetValue.contains(":") || targetValue.indexOf('\\') >= 0
@@ -305,6 +307,19 @@ public class DocumentStorageService {
         factory.setXIncludeAware(false);
         factory.setExpandEntityReferences(false);
         return factory;
+    }
+
+    private boolean containsUnsafePathCharacter(String value) {
+        if (value == null) return true;
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if ((ch >= '\u202A' && ch <= '\u202E')
+                    || (ch >= '\u2066' && ch <= '\u2069')
+                    || ch == '\u200B' || ch == '\u200C' || ch == '\u200D'
+                    || ch == '\u2060' || (ch >= '\u2061' && ch <= '\u2064')
+                    || ch == '\uFEFF') return true;
+        }
+        return false;
     }
 
     private boolean containsUnsafeFilenameCharacter(String value) {
