@@ -377,13 +377,10 @@ public class DocumentStorageService {
 
     private boolean containsUnsafePathCharacter(String value) {
         if (value == null) return true;
-        for (int i = 0; i < value.length(); i++) {
-            char ch = value.charAt(i);
-            if ((ch >= '\u202A' && ch <= '\u202E')
-                    || (ch >= '\u2066' && ch <= '\u2069')
-                    || ch == '\u200B' || ch == '\u200C' || ch == '\u200D'
-                    || ch == '\u2060' || (ch >= '\u2061' && ch <= '\u2064')
-                    || ch == '\uFEFF') return true;
+        for (int i = 0; i < value.length();) {
+            int codePoint = value.codePointAt(i);
+            if (Character.getType(codePoint) == Character.FORMAT) return true;
+            i += Character.charCount(codePoint);
         }
         return false;
     }
