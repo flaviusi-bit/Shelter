@@ -550,7 +550,7 @@ public class DocumentStorageService {
     }
 
     private boolean isSafeStorageKey(String key) {
-        if (key.startsWith("/") || key.startsWith("\\\\") || key.contains("\\\\")
+        if (key.startsWith("/") || key.startsWith("\\") || key.contains("\\")
                 || key.contains("..") || key.contains("%") || key.contains(":")
                 || key.startsWith("~") || key.chars().anyMatch(Character::isISOControl)
                 || containsUnsafePathCharacter(key)
