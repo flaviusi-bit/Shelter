@@ -44,7 +44,15 @@ public class DocumentStorageService {
         if(!contentMatchesType(file,type)) throw new IllegalArgumentException("File content does not match content type");
         String key=animalId+"/"+UUID.randomUUID()+ext;
         Path target=root.resolve(key).normalize(); if(!target.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
-        Files.createDirectories(target.getParent()); file.transferTo(target);
+        Path parent = target.getParent();
+        Files.createDirectories(parent);
+        if (Files.isSymbolicLink(parent) || !parent.toRealPath().startsWith(root.toRealPath())) {
+            throw new IllegalArgumentException("Invalid storage path");
+        }
+        try (var input = file.getInputStream();
+             var output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+            input.transferTo(output);
+        }
         return new StoredFile(key,original,type,file.getSize());
     }
     private boolean contentMatchesType(MultipartFile file,String type) throws IOException {
