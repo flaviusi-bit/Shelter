@@ -35,9 +35,7 @@ public class DocumentStorageService {
         String original=StringUtils.cleanPath(file.getOriginalFilename()==null?"document":file.getOriginalFilename());
         if(original.contains("..")) throw new IllegalArgumentException("Invalid filename");
         if(original.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("Invalid filename");
-        if(original.indexOf('\uFEFF') >= 0 || original.indexOf('\uFF0E') >= 0
-                || original.indexOf('\u2024') >= 0 || original.indexOf('\u2025') >= 0
-                || original.indexOf('\u2026') >= 0) throw new IllegalArgumentException("Invalid filename");
+        if (containsUnsafeFilenameCharacter(original)) throw new IllegalArgumentException("Invalid filename");
         if(original.length()>255) throw new IllegalArgumentException("Filename is too long");
         String type=file.getContentType()==null?"application/octet-stream":file.getContentType();
         if(!(type.equals("application/pdf")||isSafeImageType(type)||type.equals("text/plain")||type.equals("application/msword")||type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) throw new IllegalArgumentException("File type is not allowed");
@@ -296,6 +294,18 @@ public class DocumentStorageService {
         factory.setXIncludeAware(false);
         factory.setExpandEntityReferences(false);
         return factory;
+    }
+
+    private boolean containsUnsafeFilenameCharacter(String value) {
+        if (value == null) return true;
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (ch == '\uFEFF' || ch == '\u200B' || ch == '\u200C' || ch == '\u200D'
+                    || ch == '\u2060' || ch == '\u2061' || ch == '\u2062' || ch == '\u2063'
+                    || ch == '\u2064' || (ch >= '\u202A' && ch <= '\u202E')
+                    || (ch >= '\u2066' && ch <= '\u2069')) return true;
+        }
+        return containsUnicodePathConfusable(value);
     }
 
     private boolean containsUnicodePathConfusable(String value) {
