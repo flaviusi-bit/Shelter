@@ -189,6 +189,10 @@ public class DocumentStorageService {
                 var target = node.getAttributes().getNamedItem("Target");
                 if (mode != null && "External".equalsIgnoreCase(mode.getNodeValue())) return false;
                 if (target == null || target.getNodeValue().isBlank()) return false;
+                String targetValue = target.getNodeValue();
+                if (targetValue.startsWith("/") || targetValue.startsWith("\\")
+                        || targetValue.contains("..") || targetValue.contains("%")
+                        || targetValue.contains(":") || targetValue.indexOf('\\') >= 0) return false;
             }
             return true;
         } catch (Exception e) {
