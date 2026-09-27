@@ -185,6 +185,7 @@ public class DocumentStorageService {
                 if (entry.getName().endsWith(".") || entry.getName().endsWith(" ")) return false;
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("./")) return false;
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("//")) return false;
+                if (containsEmptyZipPathSegment(entry.getName(), entry.isDirectory())) return false;
                 if (containsUnicodePathConfusable(entry.getName())) return false;
                 if (containsUnsafePathCharacter(entry.getName())) return false;
                 if (containsWindowsReservedPathSegment(entry.getName())) return false;
@@ -285,6 +286,7 @@ public class DocumentStorageService {
                 || target.chars().anyMatch(Character::isISOControl)
                 || containsUnsafePathCharacter(target)
                 || containsCurrentDirectoryPathSegment(target)
+                || containsEmptyPathSegment(target)
                 || containsUnicodePathConfusable(target)
                 || containsWindowsReservedPathSegment(target)
                 || containsWindowsTrailingDotOrSpaceSegment(target)) return null;
@@ -355,7 +357,8 @@ public class DocumentStorageService {
                 if (target == null || target.getNodeValue().isBlank()) return false;
                 String targetValue = target.getNodeValue();
                 if (targetValue.chars().anyMatch(Character::isISOControl)) return false;
-                if (containsUnsafePathCharacter(targetValue) || containsCurrentDirectoryPathSegment(targetValue)) return false;
+                if (containsUnsafePathCharacter(targetValue) || containsCurrentDirectoryPathSegment(targetValue)
+                        || containsEmptyPathSegment(targetValue)) return false;
                 if (targetValue.startsWith("/") || targetValue.startsWith("\\")
                         || targetValue.contains("..") || targetValue.contains("%")
                         || targetValue.contains(":") || targetValue.indexOf('\\') >= 0
@@ -390,6 +393,29 @@ public class DocumentStorageService {
             int codePoint = value.codePointAt(i);
             if (Character.getType(codePoint) == Character.FORMAT) return true;
             i += Character.charCount(codePoint);
+        }
+        return false;
+    }
+
+    private boolean containsEmptyZipPathSegment(String value, boolean directory) {
+        if (value == null || value.isBlank()) return true;
+        int length = value.length();
+        if (directory) {
+            if (!value.endsWith("/")) return true;
+            length--;
+        }
+        if (length == 0) return true;
+        for (int i = 0; i < length; i++) {
+            if (value.charAt(i) == '/' && (i == 0 || value.charAt(i - 1) == '/')) return true;
+        }
+        return false;
+    }
+
+    private boolean containsEmptyPathSegment(String value) {
+        if (value == null) return true;
+        String[] segments = value.split("/", -1);
+        for (int i = 0; i < segments.length; i++) {
+            if (segments[i].isEmpty() && !(i == segments.length - 1 && i > 0)) return true;
         }
         return false;
     }
