@@ -822,6 +822,16 @@ class DocumentStorageServiceTest {
         }
     }
 
+    @Test void rejectsFilenameWithWindowsReservedOrTrailingCharacters() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String[] names={"CON.txt","PRN.doc","AUX.txt","NUL.pdf","COM1.txt","LPT9.txt","report.txt ","report.txt."};
+        for (String name : names) {
+            var file=new MockMultipartFile("file",name,"text/plain","hello".getBytes());
+            var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+            assertEquals("Invalid filename",error.getMessage());
+        }
+    }
+
     @Test void rejectsOverlongFilename() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","a".repeat(256)+".txt","text/plain","hello".getBytes());
