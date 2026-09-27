@@ -270,7 +270,8 @@ public class DocumentStorageService {
                 if (targetValue.startsWith("/") || targetValue.startsWith("\\")
                         || targetValue.contains("..") || targetValue.contains("%")
                         || targetValue.contains(":") || targetValue.indexOf('\\') >= 0
-                        || containsUnicodePathConfusable(targetValue)) return false;
+                        || containsUnicodePathConfusable(targetValue)
+                        || containsWindowsReservedPathSegment(targetValue)) return false;
             }
             return true;
         } catch (Exception e) {
