@@ -664,6 +664,13 @@ class DocumentStorageServiceTest {
         try(var zip=new ZipOutputStream(output)){ for(int i=0;i<entries.length;i+=2){ zip.putNextEntry(new ZipEntry(entries[i])); zip.write(entries[i+1].getBytes(StandardCharsets.UTF_8)); zip.closeEntry(); } }
         return output.toByteArray();
     }
+    @Test void rejectsPlainTextWithBinaryControlBytes() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        var file=new MockMultipartFile("file","payload.txt","text/plain",new byte[]{'o','k',0,'x'});
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
+
     @Test void rejectsSvgEvenThoughItIsAnImageMimeType() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","payload.svg","image/svg+xml","<svg/>".getBytes());
