@@ -183,10 +183,15 @@ public class DocumentStorageService {
         try {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
             var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/relationships", "Relationship");
+            Set<String> relationshipIds = new HashSet<>();
             for (int i = 0; i < nodes.getLength(); i++) {
                 var node = nodes.item(i);
+                var id = node.getAttributes().getNamedItem("Id");
+                var type = node.getAttributes().getNamedItem("Type");
                 var mode = node.getAttributes().getNamedItem("TargetMode");
                 var target = node.getAttributes().getNamedItem("Target");
+                if (id == null || id.getNodeValue().isBlank() || !relationshipIds.add(id.getNodeValue())) return false;
+                if (type == null || type.getNodeValue().isBlank()) return false;
                 if (mode != null && "External".equalsIgnoreCase(mode.getNodeValue())) return false;
                 if (target == null || target.getNodeValue().isBlank()) return false;
                 String targetValue = target.getNodeValue();
