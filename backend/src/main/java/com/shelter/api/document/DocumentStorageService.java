@@ -266,7 +266,8 @@ public class DocumentStorageService {
                 || target.chars().anyMatch(Character::isISOControl)
                 || containsUnsafePathCharacter(target)
                 || containsUnicodePathConfusable(target)
-                || containsWindowsReservedPathSegment(target)) return null;
+                || containsWindowsReservedPathSegment(target)
+                || containsWindowsTrailingDotOrSpaceSegment(target)) return null;
         String combined = sourcePart == null || sourcePart.isEmpty()
                 ? target
                 : Paths.get(sourcePart).getParent().resolve(target).normalize().toString().replace('\\', '/');
@@ -339,7 +340,8 @@ public class DocumentStorageService {
                         || targetValue.contains("..") || targetValue.contains("%")
                         || targetValue.contains(":") || targetValue.indexOf('\\') >= 0
                         || containsUnicodePathConfusable(targetValue)
-                        || containsWindowsReservedPathSegment(targetValue)) return false;
+                        || containsWindowsReservedPathSegment(targetValue)
+                        || containsWindowsTrailingDotOrSpaceSegment(targetValue)) return false;
             }
             return true;
         } catch (Exception e) {
