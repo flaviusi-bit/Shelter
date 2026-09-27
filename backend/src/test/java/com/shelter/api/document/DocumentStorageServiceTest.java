@@ -720,6 +720,25 @@ class DocumentStorageServiceTest {
         assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
     }
 
+    @Test void rejectsStorageWriteThroughNestedSymlinkComponent() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        Path animal=tempDir.resolve(UUID.randomUUID().toString());
+        Path nested=animal.resolve("nested");
+        Path outside=tempDir.resolveSibling("shelter-nested-outside");
+        java.nio.file.Files.createDirectories(outside);
+        try {
+            java.nio.file.Files.createDirectories(animal);
+            java.nio.file.Files.createSymbolicLink(nested,outside);
+            var file=new MockMultipartFile("file","payload.txt","text/plain","hello".getBytes());
+            assertThrows(IllegalArgumentException.class,()->service.store(
+                    UUID.fromString(animal.getFileName().toString()),file));
+        } finally {
+            java.nio.file.Files.deleteIfExists(nested);
+            java.nio.file.Files.deleteIfExists(animal);
+            java.nio.file.Files.deleteIfExists(outside);
+        }
+    }
+
     @Test void rejectsStorageWriteThroughSymlinkedAnimalDirectory() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         Path outside=tempDir.resolveSibling("shelter-storage-outside");
