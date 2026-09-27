@@ -52,7 +52,9 @@ public class DocumentStorageService {
         String key=generateStorageKey(animalId, ext);
         Path target=root.resolve(key).normalize(); if(!target.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
         Files.createDirectories(root);
-        if (Files.isSymbolicLink(root)) throw new IllegalArgumentException("Invalid storage path");
+        if (Files.isSymbolicLink(root) || !Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS)) {
+            throw new IllegalArgumentException("Invalid storage path");
+        }
         Path realRoot = root.toRealPath();
         Path parent = target.getParent();
         Files.createDirectories(parent);
