@@ -541,8 +541,9 @@ public class DocumentStorageService {
     public Path resolve(String key){
         if(key==null||key.isBlank()) throw new IllegalArgumentException("Invalid storage path");
         Path p=root.resolve(key).normalize();
-        if(!p.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
-        if (Files.isSymbolicLink(root) || hasSymlinkComponent(root, p.getParent() == null ? root : p.getParent())) {
+        if(!p.startsWith(root) || p.equals(root)) throw new IllegalArgumentException("Invalid storage path");
+        if (Files.isSymbolicLink(root) || hasSymlinkComponent(root, p.getParent() == null ? root : p.getParent())
+                || Files.isSymbolicLink(p)) {
             throw new IllegalArgumentException("Invalid storage path");
         }
         return p;
