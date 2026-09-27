@@ -103,6 +103,17 @@ class DocumentStorageServiceTest {
         assertEquals("File content does not match content type",error.getMessage());
     }
 
+    @Test void rejectsDocxWithWindowsReservedZipEntryPathSegments() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String[] names={"CON.txt","word/PRN.xml","word/AUX","word/NUL.dat","word/COM1.bin","word/LPT9.bin"};
+        for (String name : names) {
+            var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    zipBytes(name,"x"));
+            var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+            assertEquals("File content does not match content type",error.getMessage());
+        }
+    }
+
     @Test void rejectsDocxWithUnicodePathConfusableZipEntryNames() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         String[] names={"\u29F8word/document.xml","word\uFF0Fdocument.xml","word\uFF3Cdocument.xml","word/\u2026/document.xml","\uFF0E\uFF0E/word/document.xml"};
