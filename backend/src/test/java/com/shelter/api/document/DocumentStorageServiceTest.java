@@ -716,6 +716,16 @@ class DocumentStorageServiceTest {
         }
     }
 
+    @Test void rejectsFilenameWithInvisibleOrBidiCharacter() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String[] names={"bad\u200B.txt","bad\u200C.txt","bad\u200D.txt","bad\u2060.txt","bad\u202Etxt.txt","bad\u2066.txt"};
+        for (String name : names) {
+            var file=new MockMultipartFile("file",name,"text/plain","hello".getBytes());
+            var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+            assertEquals("Invalid filename",error.getMessage());
+        }
+    }
+
     @Test void rejectsOverlongFilename() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","a".repeat(256)+".txt","text/plain","hello".getBytes());
