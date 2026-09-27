@@ -445,7 +445,8 @@ public class DocumentStorageService {
         if (normalized.startsWith("/")) return null;
         var stack = new java.util.ArrayDeque<String>();
         for (String part : normalized.split("/")) {
-            if (part.isEmpty() || part.equals(".")) continue;
+            if (part.isEmpty()) continue;
+            if (part.equals(".")) return null;
             if (part.equals("..")) {
                 if (stack.isEmpty()) return null;
                 stack.removeLast();
