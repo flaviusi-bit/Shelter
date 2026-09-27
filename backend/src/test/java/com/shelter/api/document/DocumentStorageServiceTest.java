@@ -594,6 +594,14 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File content does not match content type",error.getMessage());
     }
+    @Test void rejectsDocxCompressionRatioJustAboveLimit() {
+        long compressedSize=10_000L;
+        long justAboveLimit=(compressedSize * 100L) + 1L;
+        long justAtLimit=compressedSize * 100L;
+        assertFalse(DocumentStorageService.exceedsCompressionRatio(justAtLimit,compressedSize));
+        assertTrue(DocumentStorageService.exceedsCompressionRatio(justAboveLimit,compressedSize));
+    }
+
     @Test void rejectsDocxWithOversizedUndeclaredZipEntry() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         byte[] oversized=new byte[10 * 1024 * 1024 + 1];
