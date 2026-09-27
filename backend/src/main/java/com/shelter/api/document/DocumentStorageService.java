@@ -100,6 +100,7 @@ public class DocumentStorageService {
                 if (entry.getName().startsWith("~")) return false;
                 if (entry.getName().endsWith(".") || entry.getName().endsWith(" ")) return false;
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("./")) return false;
+                if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("//")) return false;
                 if (entry.isDirectory()) {
                     String directoryName = normalizeZipEntryName(entry.getName());
                     if (directoryName == null) return false;
