@@ -195,6 +195,15 @@ class DocumentStorageServiceTest {
         }
     }
 
+    @Test void rejectsDocxWithSupplementaryUnicodeFormatZipEntryName() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String name="word/doc" + Character.toString(0xE0001) + "ument.xml";
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                zipBytes(name,"<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>"));
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
+
     @Test void rejectsDocxWithUnicodeSlashPrefixedZipEntryPath() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
