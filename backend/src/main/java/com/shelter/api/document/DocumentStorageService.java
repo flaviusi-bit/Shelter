@@ -99,6 +99,9 @@ public class DocumentStorageService {
     private String normalizeZipEntryName(String name) {
         if (name == null || name.isBlank()) return null;
         String normalized = name.replace('\\', '/');
+        for (int i = 0; i < normalized.length(); i++) {
+            if (Character.isISOControl(normalized.charAt(i))) return null;
+        }
         if (normalized.startsWith("/")) return null;
         var stack = new java.util.ArrayDeque<String>();
         for (String part : normalized.split("/")) {
