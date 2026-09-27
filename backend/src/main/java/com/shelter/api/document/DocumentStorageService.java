@@ -53,6 +53,10 @@ public class DocumentStorageService {
         if (Files.isSymbolicLink(parent) || !realParent.startsWith(realRoot)) {
             throw new IllegalArgumentException("Invalid storage path");
         }
+        Path realTargetParent = target.getParent().toRealPath();
+        if (!realTargetParent.equals(realParent)) {
+            throw new IllegalArgumentException("Invalid storage path");
+        }
         try (var input = file.getInputStream();
              var output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
             input.transferTo(output);
