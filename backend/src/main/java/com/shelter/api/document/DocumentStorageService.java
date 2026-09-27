@@ -69,6 +69,7 @@ public class DocumentStorageService {
         byte[] rootRelationshipsXml = null;
         int entryCount = 0;
         Set<String> entryNames = new HashSet<>();
+        var relationshipParts = new java.util.ArrayList<String[]>();
         long[] totalEntrySize = {0};
         try (var in = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
@@ -125,7 +126,9 @@ public class DocumentStorageService {
                     rootRelationshipsXml = readEntry(in, totalEntrySize);
                 } else if (entryName.endsWith(".rels")) {
                     if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
-                    if (!isWellFormedRelationshipsXml(readEntry(in, totalEntrySize))) return false;
+                    byte[] relationshipsXml = readEntry(in, totalEntrySize);
+                    if (!isWellFormedRelationshipsXml(relationshipsXml)) return false;
+                    relationshipParts.add(new String[]{entryName, java.util.Base64.getEncoder().encodeToString(relationshipsXml)});
                 } else if (entryName.equals("word/document.xml")) {
                     if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     if (document) duplicateRequiredPart = true;
@@ -137,9 +140,62 @@ public class DocumentStorageService {
         } catch (java.util.zip.ZipException e) {
             return false;
         }
-        return contentTypes && document && rootRelationshipsXml != null
-                && isValidRootRelationships(rootRelationshipsXml) && !duplicateRequiredPart && !unsafeEntryPath;
+        if (!contentTypes || !document || rootRelationshipsXml == null
+                || !isValidRootRelationships(rootRelationshipsXml)
+                || !duplicateRequiredPart || unsafeEntryPath) return false;
+        for (String[] relationshipPart : relationshipParts) {
+            byte[] xml;
+            try {
+                xml = java.util.Base64.getDecoder().decode(relationshipPart[1]);
+            } catch (IllegalArgumentException e) {
+                return false;
+            }
+            if (!areInternalRelationshipTargetsPresent(relationshipPart[0], xml, entryNames)) return false;
+        }
+        return true;
     }
+    private boolean areInternalRelationshipTargetsPresent(String relationshipsPart, byte[] input, Set<String> entryNames) throws IOException {
+        if (input == null) return false;
+        try {
+            var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
+            var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/relationships", "Relationship");
+            String sourcePart = relationshipSourcePart(relationshipsPart);
+            for (int i = 0; i < nodes.getLength(); i++) {
+                var node = nodes.item(i);
+                var mode = node.getAttributes().getNamedItem("TargetMode");
+                var target = node.getAttributes().getNamedItem("Target");
+                if (mode != null && "External".equalsIgnoreCase(mode.getNodeValue())) continue;
+                if (target == null || target.getNodeValue().isBlank()) return false;
+                String resolved = resolveRelationshipTarget(sourcePart, target.getNodeValue());
+                if (resolved == null || !entryNames.contains(resolved)) return false;
+            }
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private String relationshipSourcePart(String relationshipsPart) {
+        if ("_rels/.rels".equals(relationshipsPart)) return "";
+        if (!relationshipsPart.startsWith("word/") || !relationshipsPart.startsWith("word/".substring(0, 0))) return null;
+        int relsMarker = relationshipsPart.indexOf("/_rels/");
+        if (relsMarker < 0 || !relationshipsPart.endsWith(".rels")) return null;
+        return relationshipsPart.substring(0, relsMarker + 1)
+                + relationshipsPart.substring(relsMarker + 7, relationshipsPart.length() - 5);
+    }
+
+    private String resolveRelationshipTarget(String sourcePart, String target) {
+        if (target.startsWith("/") || target.startsWith("\\")
+                || target.contains("..") || target.contains("%")
+                || target.contains(":") || target.indexOf('\\') >= 0
+                || target.chars().anyMatch(Character::isISOControl)) return null;
+        String combined = sourcePart == null || sourcePart.isEmpty()
+                ? target
+                : Paths.get(sourcePart).getParent().resolve(target).normalize().toString().replace('\\', '/');
+        if (combined.isEmpty() || combined.startsWith("../") || combined.equals("..")) return null;
+        return combined;
+    }
+
     private boolean isValidContentTypes(byte[] input) throws IOException {
         if (input == null) return false;
         try {
