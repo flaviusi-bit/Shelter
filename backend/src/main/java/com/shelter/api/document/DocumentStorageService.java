@@ -128,7 +128,9 @@ public class DocumentStorageService {
                     if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     byte[] relationshipsXml = readEntry(in, totalEntrySize);
                     if (!isWellFormedRelationshipsXml(relationshipsXml)) return false;
-                    relationshipParts.add(new String[]{entryName, java.util.Base64.getEncoder().encodeToString(relationshipsXml)});
+                    if (!"_rels/.rels".equals(entryName)) {
+                        relationshipParts.add(new String[]{entryName, java.util.Base64.getEncoder().encodeToString(relationshipsXml)});
+                    }
                 } else if (entryName.equals("word/document.xml")) {
                     if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     if (document) duplicateRequiredPart = true;
@@ -177,9 +179,8 @@ public class DocumentStorageService {
 
     private String relationshipSourcePart(String relationshipsPart) {
         if ("_rels/.rels".equals(relationshipsPart)) return "";
-        if (!relationshipsPart.startsWith("word/") || !relationshipsPart.startsWith("word/".substring(0, 0))) return null;
         int relsMarker = relationshipsPart.indexOf("/_rels/");
-        if (relsMarker < 0 || !relationshipsPart.endsWith(".rels")) return null;
+        if (!relationshipsPart.startsWith("word/") || relsMarker < 0 || !relationshipsPart.endsWith(".rels")) return null;
         return relationshipsPart.substring(0, relsMarker + 1)
                 + relationshipsPart.substring(relsMarker + 7, relationshipsPart.length() - 5);
     }
