@@ -8,6 +8,9 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.file.*;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.CodingErrorAction;
+import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.HashSet;
@@ -63,7 +66,7 @@ public class DocumentStorageService {
         }
         long storedSize;
         try (var input = file.getInputStream()) {
-            try (var output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
+            try (var output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS)) {
                 try {
                     storedSize = copyWithinLimit(input, output, MAX_FILE_SIZE);
                 } catch (IllegalArgumentException | IOException e) {
@@ -491,6 +494,14 @@ public class DocumentStorageService {
                     }
                 }
             }
+        }
+        try (var input = file.getInputStream()) {
+            var decoder = StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT);
+            decoder.decode(java.nio.ByteBuffer.wrap(input.readAllBytes()));
+        } catch (CharacterCodingException e) {
+            return false;
         }
         return true;
     }
