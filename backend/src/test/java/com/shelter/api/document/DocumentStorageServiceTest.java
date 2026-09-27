@@ -836,6 +836,20 @@ class DocumentStorageServiceTest {
         }
     }
 
+    @Test void validatesPlainTextWithoutWholeFileBuffering() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        var file=new MockMultipartFile("file","payload.txt","text/plain","hello".getBytes(StandardCharsets.UTF_8)) {
+            @Override public java.io.InputStream getInputStream() {
+                return new java.io.ByteArrayInputStream("hello".getBytes(StandardCharsets.UTF_8)) {
+                    @Override public byte[] readAllBytes() {
+                        throw new AssertionError("Whole-file buffering is not allowed");
+                    }
+                };
+            }
+        };
+        assertDoesNotThrow(() -> service.store(UUID.randomUUID(),file));
+    }
+
     @Test void rejectsMalformedUtf8PlainText() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var file=new MockMultipartFile("file","payload.txt","text/plain",new byte[]{(byte)0xC3,(byte)0x28});
