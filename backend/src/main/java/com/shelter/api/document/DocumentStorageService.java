@@ -103,6 +103,7 @@ public class DocumentStorageService {
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("./")) return false;
                 if (entry.getName().indexOf('/') >= 0 && entry.getName().startsWith("//")) return false;
                 if (containsUnicodePathConfusable(entry.getName())) return false;
+                if (containsWindowsReservedPathSegment(entry.getName())) return false;
                 if (entry.isDirectory()) {
                     String directoryName = normalizeZipEntryName(entry.getName());
                     if (directoryName == null) return false;
@@ -296,6 +297,22 @@ public class DocumentStorageService {
                 || value.indexOf('\uFF3C') >= 0 || value.indexOf('\u2216') >= 0
                 || value.indexOf('\u2024') >= 0 || value.indexOf('\u2025') >= 0
                 || value.indexOf('\u2026') >= 0 || value.indexOf('\uFF0E') >= 0;
+    }
+
+    private boolean containsWindowsReservedPathSegment(String value) {
+        if (value == null) return false;
+        for (String segment : value.split("/")) {
+            if (segment.isEmpty() || segment.equals(".") || segment.equals("..")) continue;
+            String base = segment;
+            int dot = base.indexOf('.');
+            if (dot >= 0) base = base.substring(0, dot);
+            if (base.equalsIgnoreCase("CON") || base.equalsIgnoreCase("PRN")
+                    || base.equalsIgnoreCase("AUX") || base.equalsIgnoreCase("NUL")) return true;
+            if (base.length() == 4 && (base.regionMatches(true, 0, "COM", 0, 3)
+                    || base.regionMatches(true, 0, "LPT", 0, 3))
+                    && base.charAt(3) >= '1' && base.charAt(3) <= '9') return true;
+        }
+        return false;
     }
 
     private String normalizeZipEntryName(String name) {
