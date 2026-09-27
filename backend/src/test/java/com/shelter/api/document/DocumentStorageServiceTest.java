@@ -843,6 +843,29 @@ class DocumentStorageServiceTest {
         assertEquals("File content does not match content type",error.getMessage());
     }
 
+    @Test void rejectsResolveOfStorageRoot() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        assertThrows(IllegalArgumentException.class,()->service.resolve("."));
+        assertThrows(IllegalArgumentException.class,()->service.resolve(""));
+    }
+
+    @Test void rejectsDeleteThroughFinalSymlink() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        Path animalDirectory=tempDir.resolve("delete-animal");
+        Path outside=tempDir.resolveSibling("shelter-delete-symlink-outside.txt");
+        java.nio.file.Files.createDirectories(animalDirectory);
+        java.nio.file.Files.writeString(outside,"outside");
+        Path target=animalDirectory.resolve("target.txt");
+        try {
+            java.nio.file.Files.createSymbolicLink(target,outside);
+            assertThrows(IllegalArgumentException.class,()->service.delete("delete-animal/target.txt"));
+            assertEquals("outside",java.nio.file.Files.readString(outside));
+        } finally {
+            java.nio.file.Files.deleteIfExists(target);
+            java.nio.file.Files.deleteIfExists(outside);
+        }
+    }
+
     @Test void rejectsPathTraversalKey() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         assertThrows(IllegalArgumentException.class,()->service.resolve("../outside.txt"));
