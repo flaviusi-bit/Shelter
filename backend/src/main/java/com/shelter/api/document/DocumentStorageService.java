@@ -46,7 +46,7 @@ public class DocumentStorageService {
         return new StoredFile(key,original,type,file.getSize());
     }
     private boolean contentMatchesType(MultipartFile file,String type) throws IOException {
-        if(type.equals("text/plain")) return true;
+        if(type.equals("text/plain")) return isSafePlainText(file);
         byte[] header;
         try(var in=file.getInputStream()){ header=in.readNBytes(12); }
         return switch(type) {
@@ -373,6 +373,22 @@ public class DocumentStorageService {
             return false;
         }
     }
+    private boolean isSafePlainText(MultipartFile file) throws IOException {
+        try (var input = file.getInputStream()) {
+            byte[] buffer = new byte[8192];
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                for (int i = 0; i < read; i++) {
+                    int value = buffer[i] & 0xFF;
+                    if ((value < 0x20 && value != '\t' && value != '\n' && value != '\r') || value == 0x7F) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     private boolean startsWith(byte[] value,byte[] prefix) {
         if(value.length<prefix.length) return false;
         for(int i=0;i<prefix.length;i++) if(value[i]!=prefix[i]) return false;
