@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -63,6 +65,7 @@ public class DocumentStorageService {
         boolean duplicateRequiredPart = false;
         boolean unsafeEntryPath = false;
         int entryCount = 0;
+        Set<String> entryNames = new HashSet<>();
         long[] totalEntrySize = {0};
         try (var in = new ZipInputStream(file.getInputStream())) {
             ZipEntry entry;
@@ -81,6 +84,7 @@ public class DocumentStorageService {
                     if (!consumeEntryWithinLimit(in, totalEntrySize)) return false;
                     continue;
                 }
+                if (!entryNames.add(entryName)) return false;
                 if (entryName.equals("[Content_Types].xml")) {
                     if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     if (contentTypes) duplicateRequiredPart = true;
