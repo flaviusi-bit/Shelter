@@ -44,6 +44,7 @@ public class DocumentStorageService {
         if(!contentMatchesType(file,type)) throw new IllegalArgumentException("File content does not match content type");
         String key=animalId+"/"+UUID.randomUUID()+ext;
         Path target=root.resolve(key).normalize(); if(!target.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
+        if (Files.isSymbolicLink(root)) throw new IllegalArgumentException("Invalid storage path");
         Path parent = target.getParent();
         Files.createDirectories(parent);
         Path realRoot = root.toRealPath();
