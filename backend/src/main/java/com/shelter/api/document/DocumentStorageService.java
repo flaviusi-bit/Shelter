@@ -49,7 +49,7 @@ public class DocumentStorageService {
         String ext=""; int dot=original.lastIndexOf('.'); if(dot>=0) ext=original.substring(dot).toLowerCase(Locale.ROOT);
         if(!extensionMatchesContentType(ext,type)) throw new IllegalArgumentException("File extension does not match content type");
         if(!contentMatchesType(file,type)) throw new IllegalArgumentException("File content does not match content type");
-        String key=animalId+"/"+UUID.randomUUID()+ext;
+        String key=generateStorageKey(animalId, ext);
         Path target=root.resolve(key).normalize(); if(!target.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
         Files.createDirectories(root);
         if (Files.isSymbolicLink(root)) throw new IllegalArgumentException("Invalid storage path");
@@ -86,6 +86,8 @@ public class DocumentStorageService {
         }
         return new StoredFile(key,original,type,storedSize);
     }
+    String generateStorageKey(UUID animalId, String ext) { return animalId+"/"+UUID.randomUUID()+ext; }
+
     private long copyWithinLimit(java.io.InputStream input, java.io.OutputStream output, long maxBytes) throws IOException {
         byte[] buffer = new byte[8192];
         long total = 0;
