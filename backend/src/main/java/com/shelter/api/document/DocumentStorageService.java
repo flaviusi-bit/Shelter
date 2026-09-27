@@ -284,6 +284,7 @@ public class DocumentStorageService {
                 || target.contains(":") || target.indexOf('\\') >= 0
                 || target.chars().anyMatch(Character::isISOControl)
                 || containsUnsafePathCharacter(target)
+                || containsCurrentDirectoryPathSegment(target)
                 || containsUnicodePathConfusable(target)
                 || containsWindowsReservedPathSegment(target)
                 || containsWindowsTrailingDotOrSpaceSegment(target)) return null;
@@ -354,7 +355,7 @@ public class DocumentStorageService {
                 if (target == null || target.getNodeValue().isBlank()) return false;
                 String targetValue = target.getNodeValue();
                 if (targetValue.chars().anyMatch(Character::isISOControl)) return false;
-                if (containsUnsafePathCharacter(targetValue)) return false;
+                if (containsUnsafePathCharacter(targetValue) || containsCurrentDirectoryPathSegment(targetValue)) return false;
                 if (targetValue.startsWith("/") || targetValue.startsWith("\\")
                         || targetValue.contains("..") || targetValue.contains("%")
                         || targetValue.contains(":") || targetValue.indexOf('\\') >= 0
@@ -389,6 +390,14 @@ public class DocumentStorageService {
             int codePoint = value.codePointAt(i);
             if (Character.getType(codePoint) == Character.FORMAT) return true;
             i += Character.charCount(codePoint);
+        }
+        return false;
+    }
+
+    private boolean containsCurrentDirectoryPathSegment(String value) {
+        if (value == null) return true;
+        for (String segment : value.split("/", -1)) {
+            if (segment.equals(".")) return true;
         }
         return false;
     }
