@@ -56,6 +56,8 @@ public class DocumentStorageService {
         try (var input = file.getInputStream();
              var output = Files.newOutputStream(target, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
             input.transferTo(output);
+        } catch (FileAlreadyExistsException e) {
+            throw new IllegalArgumentException("Storage target already exists", e);
         }
         return new StoredFile(key,original,type,file.getSize());
     }
