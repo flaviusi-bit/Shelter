@@ -7,8 +7,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.file.*;
-import java.nio.charset.CharacterCodingException;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipEntry;
@@ -497,12 +497,15 @@ public class DocumentStorageService {
                 }
             }
         }
-        try (var input = file.getInputStream()) {
-            var decoder = StandardCharsets.UTF_8.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPORT)
-                    .onUnmappableCharacter(CodingErrorAction.REPORT);
-            decoder.decode(java.nio.ByteBuffer.wrap(input.readAllBytes()));
-        } catch (CharacterCodingException e) {
+        try (var input = new InputStreamReader(file.getInputStream(),
+                StandardCharsets.UTF_8.newDecoder()
+                        .onMalformedInput(CodingErrorAction.REPORT)
+                        .onUnmappableCharacter(CodingErrorAction.REPORT))) {
+            char[] buffer = new char[8192];
+            while (input.read(buffer) != -1) {
+                // Decode incrementally to avoid buffering the entire upload in memory.
+            }
+        } catch (IOException e) {
             return false;
         }
         return true;
