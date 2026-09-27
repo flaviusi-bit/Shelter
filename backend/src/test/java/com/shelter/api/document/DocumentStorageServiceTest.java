@@ -791,6 +791,30 @@ class DocumentStorageServiceTest {
         }
     }
 
+    @Test void rejectsBlankFilenameAfterPathCleaning() {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        String[] names={"/","\\","."};
+        for (String name : names) {
+            var file=new MockMultipartFile("file",name,"text/plain","hello".getBytes());
+            var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+            assertEquals("Invalid filename",error.getMessage());
+        }
+    }
+
+    @Test void rejectsResolveThroughSymlinkedAnimalDirectory() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        Path outside=tempDir.resolveSibling("shelter-resolve-outside");
+        Path animalLink=tempDir.resolve("animal-link");
+        java.nio.file.Files.createDirectories(outside);
+        try {
+            java.nio.file.Files.createSymbolicLink(animalLink,outside);
+            assertThrows(IllegalArgumentException.class,()->service.resolve("animal-link/file.txt"));
+        } finally {
+            java.nio.file.Files.deleteIfExists(animalLink);
+            java.nio.file.Files.deleteIfExists(outside);
+        }
+    }
+
     @Test void rejectsPathTraversalKey() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         assertThrows(IllegalArgumentException.class,()->service.resolve("../outside.txt"));

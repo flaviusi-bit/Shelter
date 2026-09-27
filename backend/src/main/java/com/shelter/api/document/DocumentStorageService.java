@@ -13,6 +13,7 @@ import java.util.zip.ZipInputStream;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Locale;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 
@@ -34,6 +35,7 @@ public class DocumentStorageService {
         if(file==null||file.isEmpty()) throw new IllegalArgumentException("File is empty");
         if(file.getSize()>MAX_FILE_SIZE) throw new IllegalArgumentException("Maximum file size is 25 MB");
         String original=StringUtils.cleanPath(file.getOriginalFilename()==null?"document":file.getOriginalFilename());
+        if(original.isBlank()) throw new IllegalArgumentException("Invalid filename");
         if(original.contains("..")) throw new IllegalArgumentException("Invalid filename");
         if(original.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("Invalid filename");
         if (containsUnsafeFilenameCharacter(original)) throw new IllegalArgumentException("Invalid filename");
@@ -41,7 +43,7 @@ public class DocumentStorageService {
         if(original.length()>255) throw new IllegalArgumentException("Filename is too long");
         String type=file.getContentType()==null?"application/octet-stream":file.getContentType();
         if(!(type.equals("application/pdf")||isSafeImageType(type)||type.equals("text/plain")||type.equals("application/msword")||type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) throw new IllegalArgumentException("File type is not allowed");
-        String ext=""; int dot=original.lastIndexOf('.'); if(dot>=0) ext=original.substring(dot).toLowerCase();
+        String ext=""; int dot=original.lastIndexOf('.'); if(dot>=0) ext=original.substring(dot).toLowerCase(Locale.ROOT);
         if(!extensionMatchesContentType(ext,type)) throw new IllegalArgumentException("File extension does not match content type");
         if(!contentMatchesType(file,type)) throw new IllegalArgumentException("File content does not match content type");
         String key=animalId+"/"+UUID.randomUUID()+ext;
@@ -524,6 +526,9 @@ public class DocumentStorageService {
         if(key==null||key.isBlank()) throw new IllegalArgumentException("Invalid storage path");
         Path p=root.resolve(key).normalize();
         if(!p.startsWith(root)) throw new IllegalArgumentException("Invalid storage path");
+        if (Files.isSymbolicLink(root) || hasSymlinkComponent(root, p.getParent() == null ? root : p.getParent())) {
+            throw new IllegalArgumentException("Invalid storage path");
+        }
         return p;
     }
     public record StoredFile(String storageKey,String originalFileName,String contentType,long size){}
