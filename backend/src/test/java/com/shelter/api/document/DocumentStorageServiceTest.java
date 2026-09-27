@@ -80,6 +80,19 @@ class DocumentStorageServiceTest {
         assertEquals("File content does not match content type",error.getMessage());
     }
 
+    @Test void acceptsDocxWithNonWordInternalRelationshipTarget() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        var relationships="<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="core.xml" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties"/></Relationships>";
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                zipBytes("[Content_Types].xml","<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>",
+                        "_rels/.rels","<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Target="word/document.xml" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument"/></Relationships>",
+                        "word/document.xml","<document xmlns="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/>",
+                        "docProps/_rels/core.xml.rels",relationships,
+                        "docProps/core.xml","core"));
+        var stored=service.store(UUID.randomUUID(),file);
+        assertTrue(service.resolve(stored.storageKey()).toFile().isFile());
+    }
+
     @Test void rejectsDocxWithDanglingInternalRelationshipTarget() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         var relationships="<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Target=\"word/missing.xml\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink\"/></Relationships>";
