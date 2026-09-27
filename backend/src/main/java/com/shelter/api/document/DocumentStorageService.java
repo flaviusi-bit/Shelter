@@ -89,6 +89,12 @@ public class DocumentStorageService {
         return total;
     }
 
+    static boolean exceedsCompressionRatio(long uncompressedSize, long compressedSize) {
+        if (uncompressedSize < MIN_DOCX_RATIO_CHECK_SIZE || compressedSize <= 0L) return false;
+        if (compressedSize > Long.MAX_VALUE / MAX_DOCX_COMPRESSION_RATIO) return false;
+        return uncompressedSize > compressedSize * MAX_DOCX_COMPRESSION_RATIO;
+    }
+
     private boolean hasSymlinkComponent(Path rootPath, Path targetParent) {
         Path current = rootPath;
         Path relative;
@@ -142,7 +148,7 @@ public class DocumentStorageService {
                 if (declaredSize < -1L || declaredCompressedSize < -1L) return false;
                 if (declaredSize > 0L && declaredCompressedSize == 0L) return false;
                 if (declaredSize >= MIN_DOCX_RATIO_CHECK_SIZE && declaredCompressedSize > 0L
-                        && declaredSize / declaredCompressedSize > MAX_DOCX_COMPRESSION_RATIO) return false;
+                        && exceedsCompressionRatio(declaredSize, declaredCompressedSize)) return false;
                 if (entry.getName().indexOf('\0') >= 0) return false;
                 if (entry.getName().charAt(0) == '\uFEFF') return false;
                 if (entry.getName().indexOf(':') >= 0) return false;
