@@ -37,6 +37,7 @@ public class DocumentStorageService {
         if(original.contains("..")) throw new IllegalArgumentException("Invalid filename");
         if(original.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("Invalid filename");
         if (containsUnsafeFilenameCharacter(original)) throw new IllegalArgumentException("Invalid filename");
+        if (containsWindowsReservedPathSegment(original) || containsWindowsTrailingDotOrSpaceSegment(original)) throw new IllegalArgumentException("Invalid filename");
         if(original.length()>255) throw new IllegalArgumentException("Filename is too long");
         String type=file.getContentType()==null?"application/octet-stream":file.getContentType();
         if(!(type.equals("application/pdf")||isSafeImageType(type)||type.equals("text/plain")||type.equals("application/msword")||type.equals("application/vnd.openxmlformats-officedocument.wordprocessingml.document"))) throw new IllegalArgumentException("File type is not allowed");
