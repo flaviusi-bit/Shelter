@@ -35,7 +35,7 @@ public class DocumentStorageService {
         if(file==null||file.isEmpty()) throw new IllegalArgumentException("File is empty");
         if(file.getSize()>MAX_FILE_SIZE) throw new IllegalArgumentException("Maximum file size is 25 MB");
         String original=StringUtils.cleanPath(file.getOriginalFilename()==null?"document":file.getOriginalFilename());
-        if(original.isBlank()) throw new IllegalArgumentException("Invalid filename");
+        if(original.isBlank() || original.chars().allMatch(ch -> ch == '/' || ch == '\\')) throw new IllegalArgumentException("Invalid filename");
         if(original.contains("..")) throw new IllegalArgumentException("Invalid filename");
         if(original.chars().anyMatch(Character::isISOControl)) throw new IllegalArgumentException("Invalid filename");
         if (containsUnsafeFilenameCharacter(original)) throw new IllegalArgumentException("Invalid filename");
