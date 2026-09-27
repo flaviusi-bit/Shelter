@@ -539,7 +539,7 @@ public class DocumentStorageService {
         Files.deleteIfExists(p);
     }
     public Path resolve(String key){
-        if(key==null||key.isBlank()) throw new IllegalArgumentException("Invalid storage path");
+        if(key==null||key.isBlank() || !isSafeStorageKey(key)) throw new IllegalArgumentException("Invalid storage path");
         Path p=root.resolve(key).normalize();
         if(!p.startsWith(root) || p.equals(root)) throw new IllegalArgumentException("Invalid storage path");
         if (Files.isSymbolicLink(root) || hasSymlinkComponent(root, p.getParent() == null ? root : p.getParent())
@@ -547,6 +547,17 @@ public class DocumentStorageService {
             throw new IllegalArgumentException("Invalid storage path");
         }
         return p;
+    }
+
+    private boolean isSafeStorageKey(String key) {
+        if (key.startsWith("/") || key.startsWith("\\\\") || key.contains("\\\\")
+                || key.contains("..") || key.contains("%") || key.contains(":")
+                || key.startsWith("~") || key.chars().anyMatch(Character::isISOControl)
+                || containsUnsafePathCharacter(key)
+                || containsUnicodePathConfusable(key)
+                || containsWindowsReservedPathSegment(key)
+                || containsWindowsTrailingDotOrSpaceSegment(key)) return false;
+        return true;
     }
     public record StoredFile(String storageKey,String originalFileName,String contentType,long size){}
 }
