@@ -714,6 +714,7 @@ class DocumentStorageServiceTest {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         UUID animalId=UUID.randomUUID();
         byte[] oversized=new byte[(25 * 1024 * 1024) + 1];
+        java.util.Arrays.fill(oversized, (byte) 'x');
         var file=new MockMultipartFile("file","payload.txt","text/plain",new byte[]{'o','k'}) {
             @Override public long getSize() {
                 return 1L;
