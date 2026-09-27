@@ -77,6 +77,7 @@ public class DocumentStorageService {
                 if (entry.getName().charAt(0) == '\uFEFF') return false;
                 if (entry.getName().indexOf(':') >= 0) return false;
                 if (entry.getName().indexOf('%') >= 0) return false;
+                if (entry.getName().indexOf('\\') >= 0) return false;
                 if (entry.isDirectory()) {
                     String directoryName = normalizeZipEntryName(entry.getName());
                     if (directoryName == null) return false;
