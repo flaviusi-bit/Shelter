@@ -92,6 +92,17 @@ class DocumentStorageServiceTest {
         assertEquals("File content does not match content type",error.getMessage());
     }
 
+    @Test void rejectsDocxWithDanglingRootRelationshipTarget() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        var rootRelationships="<Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Target=\"word/document.xml\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\"/><Relationship Id=\"rId2\" Target=\"docProps/missing.xml\" Type=\"http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties\"/></Relationships>";
+        var file=new MockMultipartFile("file","payload.docx","application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                zipBytes("[Content_Types].xml","<Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>",
+                        "_rels/.rels",rootRelationships,
+                        "word/document.xml","<document xmlns=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"/>"));
+        var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
+        assertEquals("File content does not match content type",error.getMessage());
+    }
+
     @Test void rejectsDocxWithUnicodePathConfusableZipEntryNames() throws Exception {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         String[] names={"\u29F8word/document.xml","word\uFF0Fdocument.xml","word\uFF3Cdocument.xml","word/\u2026/document.xml","\uFF0E\uFF0E/word/document.xml"};
