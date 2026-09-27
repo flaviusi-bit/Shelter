@@ -695,6 +695,21 @@ class DocumentStorageServiceTest {
         var error=assertThrows(IllegalArgumentException.class,()->service.store(UUID.randomUUID(),file));
         assertEquals("File extension does not match content type",error.getMessage());
     }
+    @Test void rejectsStorageWriteThroughSymlinkedAnimalDirectory() throws Exception {
+        DocumentStorageService service=new DocumentStorageService(tempDir.toString());
+        Path outside=tempDir.resolveSibling("shelter-storage-outside");
+        java.nio.file.Files.createDirectories(outside);
+        Path animalLink=tempDir.resolve(UUID.randomUUID().toString());
+        try {
+            java.nio.file.Files.createSymbolicLink(animalLink,outside);
+            var file=new MockMultipartFile("file","payload.txt","text/plain","hello".getBytes());
+            assertThrows(IllegalArgumentException.class,()->service.store(UUID.fromString(animalLink.getFileName().toString()),file));
+        } finally {
+            java.nio.file.Files.deleteIfExists(animalLink);
+            java.nio.file.Files.deleteIfExists(outside);
+        }
+    }
+
     @Test void rejectsPathTraversalKey() {
         DocumentStorageService service=new DocumentStorageService(tempDir.toString());
         assertThrows(IllegalArgumentException.class,()->service.resolve("../outside.txt"));
