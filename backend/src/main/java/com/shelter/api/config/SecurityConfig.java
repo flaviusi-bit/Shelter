@@ -42,7 +42,6 @@ public class SecurityConfig {
                 .anyRequest().authenticated())
             .httpBasic(basic -> {})
             .headers(headers -> headers
-                .contentTypeOptions(org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.ContentTypeOptionsConfig::disable)
                 .frameOptions(frame -> frame.deny())
                 .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
                 .permissionsPolicy(permissions -> permissions.policy("camera=(), microphone=(), geolocation=(), payment=()")))
