@@ -29,6 +29,7 @@ public class DocumentStorageService {
     private static final int MAX_DOCX_RELATIONSHIP_ID_LENGTH = 255;
     private static final int MAX_DOCX_RELATIONSHIP_TYPE_LENGTH = 1024;
     private static final int MAX_DOCX_RELATIONSHIP_TARGET_LENGTH = 2048;
+    private static final int MAX_DOCX_RELATIONSHIP_TYPE_URI_LENGTH = 512;
     private static final long MAX_DOCX_ENTRY_SIZE = 10L * 1024 * 1024;
     private static final long MAX_DOCX_TOTAL_ENTRY_SIZE = 32L * 1024 * 1024;
     private static final long MAX_DOCX_COMPRESSION_RATIO = 100L;
@@ -409,8 +410,10 @@ public class DocumentStorageService {
                         || !relationshipIds.add(id.getNodeValue())) return false;
                 if (type == null || type.getNodeValue().isBlank()
                         || type.getNodeValue().length() > MAX_DOCX_RELATIONSHIP_TYPE_LENGTH
+                        || type.getNodeValue().length() > MAX_DOCX_RELATIONSHIP_TYPE_URI_LENGTH
                         || type.getNodeValue().chars().anyMatch(Character::isISOControl)
-                        || type.getNodeValue().chars().anyMatch(Character::isWhitespace)) return false;
+                        || type.getNodeValue().chars().anyMatch(Character::isWhitespace)
+                        || !type.getNodeValue().contains(":")) return false;
                 if (mode != null && !"External".equalsIgnoreCase(mode.getNodeValue())
                         && !"Internal".equalsIgnoreCase(mode.getNodeValue())) return false;
                 if (mode != null && "External".equalsIgnoreCase(mode.getNodeValue())) return false;
