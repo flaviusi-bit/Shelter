@@ -340,7 +340,6 @@ public class DocumentStorageService {
         } catch (Exception e) {
             return false;
         }
-        return false;
     }
 
     private boolean isWellFormedRelationshipsXml(byte[] input) throws IOException {
