@@ -22,6 +22,7 @@ public class BackupController {
     private static final int MAX_BACKUPS = 200;
     private static final int MAX_CHECKSUM_ENTRIES = 10_000;
     private static final int MAX_MANIFEST_LINE_LENGTH = 4_096;
+    private static final int MAX_FAILURES = 100;
     private static final java.util.regex.Pattern SHA256_LINE = java.util.regex.Pattern.compile("([0-9a-fA-F]{64})\\s+(.+)");
 
     private final AuditLogService audit;
@@ -60,28 +61,28 @@ public class BackupController {
             while (iterator.hasNext()) {
                 String line = iterator.next();
                 if (line.length() > MAX_MANIFEST_LINE_LENGTH) {
-                    failures.add("SHA256SUMS: manifest line too long");
+                    if (failures.size() < MAX_FAILURES) failures.add("SHA256SUMS: manifest line too long");
                     break;
                 }
                 if (line.isBlank()) continue;
                 if (++entries > MAX_CHECKSUM_ENTRIES) {
-                    failures.add("SHA256SUMS: too many entries");
+                    if (failures.size() < MAX_FAILURES) failures.add("SHA256SUMS: too many entries");
                     break;
                 }
                 var match = SHA256_LINE.matcher(line.trim());
                 if (!match.matches()) {
-                    failures.add("SHA256SUMS: invalid entry");
+                    if (failures.size() < MAX_FAILURES) failures.add("SHA256SUMS: invalid entry");
                     continue;
                 }
                 String expected = match.group(1);
                 String relativeName = match.group(2).trim();
                 Path file = dir.resolve(relativeName).normalize();
                 if (!file.startsWith(dir) || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
-                    failures.add(relativeName + ": missing");
+                    if (failures.size() < MAX_FAILURES) failures.add(relativeName + ": missing");
                     continue;
                 }
                 String actual = sha256(file);
-                if (!actual.equalsIgnoreCase(expected)) failures.add(relativeName + ": checksum mismatch");
+                if (!actual.equalsIgnoreCase(expected) && failures.size() < MAX_FAILURES) failures.add(relativeName + ": checksum mismatch");
             }
         }
         boolean valid = failures.isEmpty();
