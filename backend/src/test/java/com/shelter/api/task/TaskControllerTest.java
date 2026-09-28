@@ -111,7 +111,7 @@ class TaskControllerTest {
     @Test
     void listAcceptsKnownStatus() {
         controller.list("COMPLETED");
-        verify(tasks).findByStatusOrderByDueAtAsc("COMPLETED");
+        verify(tasks).findByStatusOrderByDueAtAsc(eq("COMPLETED"), any(org.springframework.data.domain.Pageable.class));
     }
 
     @Test
