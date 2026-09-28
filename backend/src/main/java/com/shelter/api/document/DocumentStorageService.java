@@ -311,10 +311,11 @@ public class DocumentStorageService {
                 var node = nodes.item(i);
                 var part = node.getAttributes().getNamedItem("PartName");
                 var type = node.getAttributes().getNamedItem("ContentType");
-                if (part == null || type == null || part.getNodeValue().isBlank() || type.getNodeValue().isBlank()) return false;
+                if (part == null || type == null) continue;
                 String partName = part.getNodeValue();
                 if ("/word/document.xml".equals(partName)) {
-                    if (!isCanonicalContentTypePartName(partName)
+                    if (partName.isBlank() || type.getNodeValue().isBlank()
+                            || !isCanonicalContentTypePartName(partName)
                             || !"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml".equals(type.getNodeValue())) {
                         return false;
                     }
