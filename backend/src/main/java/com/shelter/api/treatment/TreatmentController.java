@@ -10,14 +10,16 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/animals/{animalId}/treatments")
 public class TreatmentController {
+ private static final int MAX_HISTORY_ENTRIES = 200;
  private final TreatmentRepository treatments; private final AnimalRepository animals; private final AuditLogService audit;
  public TreatmentController(TreatmentRepository treatments,AnimalRepository animals,AuditLogService audit){this.treatments=treatments;this.animals=animals;this.audit=audit;}
- @GetMapping public List<Treatment> list(@PathVariable UUID animalId){ensureAnimal(animalId);return treatments.findByAnimalIdOrderByStartDateDesc(animalId);}
+ @GetMapping public List<Treatment> list(@PathVariable UUID animalId){ensureAnimal(animalId);return treatments.findByAnimalIdOrderByStartDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
  @PostMapping @ResponseStatus(HttpStatus.CREATED) public Treatment create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){
   var animal=ensureAnimal(animalId); validateFrequency(r.frequency()); if (r.endDate()!=null && r.endDate().isBefore(r.startDate())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Treatment end date cannot be before start date"); var t=new Treatment(); t.setAnimal(animal); t.setMedication(r.medication()); t.setDose(r.dose()); t.setRoute(r.route()); t.setFrequency(r.frequency()); t.setStartDate(r.startDate()); t.setEndDate(r.endDate()); t.setStatus(r.status()==null?"ACTIVE":r.status()); t.setInstructions(r.instructions()); t.setPrescribedBy(r.prescribedBy()); var saved=treatments.save(t); audit.record(auth.getName(),"CREATE_TREATMENT","TREATMENT",saved.getId(),saved.getMedication()); return saved;
  }
