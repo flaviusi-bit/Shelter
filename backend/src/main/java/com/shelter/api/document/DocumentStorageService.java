@@ -31,6 +31,7 @@ public class DocumentStorageService {
     private static final int MAX_DOCX_RELATIONSHIP_TARGET_LENGTH = 2048;
     private static final int MAX_DOCX_RELATIONSHIP_TYPE_URI_LENGTH = 512;
     private static final int MAX_DOCX_RELATIONSHIP_MODE_LENGTH = 32;
+    private static final int MAX_DOCX_RELATIONSHIP_DEPTH = 64;
     private static final long MAX_DOCX_ENTRY_SIZE = 10L * 1024 * 1024;
     private static final long MAX_DOCX_TOTAL_ENTRY_SIZE = 32L * 1024 * 1024;
     private static final long MAX_DOCX_COMPRESSION_RATIO = 100L;
@@ -318,6 +319,8 @@ public class DocumentStorageService {
                 ? target
                 : Paths.get(sourcePart).getParent().resolve(target).normalize().toString().replace('\\', '/');
         if (combined.isEmpty() || combined.startsWith("../") || combined.equals("..")) return null;
+        if (combined.length() > MAX_DOCX_RELATIONSHIP_TARGET_LENGTH
+                || combined.split("/", -1).length > MAX_DOCX_RELATIONSHIP_DEPTH) return null;
         return combined;
     }
 
