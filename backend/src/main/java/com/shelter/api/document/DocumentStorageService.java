@@ -375,6 +375,14 @@ public class DocumentStorageService {
                 var type = node.getAttributes().getNamedItem("Type");
                 var mode = node.getAttributes().getNamedItem("TargetMode");
                 var target = node.getAttributes().getNamedItem("Target");
+                var attributes = node.getAttributes();
+                for (int a = 0; a < attributes.getLength(); a++) {
+                    var attribute = attributes.item(a);
+                    if (!"Id".equals(attribute.getNodeName())
+                            && !"Type".equals(attribute.getNodeName())
+                            && !"Target".equals(attribute.getNodeName())
+                            && !"TargetMode".equals(attribute.getNodeName())) return false;
+                }
                 if (id == null || id.getNodeValue().isBlank()
                         || !id.getNodeValue().matches("[A-Za-z_][A-Za-z0-9_.-]*")
                         || !relationshipIds.add(id.getNodeValue())) return false;
