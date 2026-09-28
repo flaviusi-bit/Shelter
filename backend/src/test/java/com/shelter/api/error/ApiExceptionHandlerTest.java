@@ -16,13 +16,13 @@ class ApiExceptionHandlerTest {
     void mapsInvalidInputToBadRequest() {
         var response = new ApiExceptionHandler().handleBadRequest(new IllegalArgumentException("Invalid role"));
         assertEquals(400, response.status());
-        assertEquals("Invalid role", response.message());
+        assertEquals("Invalid request", response.message());
     }
 
     @Test
     void mapsInvalidStateToConflict() {
         var response = new ApiExceptionHandler().handleConflict(new IllegalStateException("Only open tasks can be completed"));
         assertEquals(409, response.status());
-        assertEquals("Only open tasks can be completed", response.message());
+        assertEquals("Request conflicts with the current resource state", response.message());
     }
 }
