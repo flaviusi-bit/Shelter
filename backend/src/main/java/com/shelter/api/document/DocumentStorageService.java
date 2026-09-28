@@ -151,6 +151,7 @@ public class DocumentStorageService {
         byte[] rootRelationshipsXml = null;
         int entryCount = 0;
         Set<String> entryNames = new HashSet<>();
+        Set<String> fileEntryNames = new HashSet<>();
         var relationshipParts = new java.util.ArrayList<String[]>();
         long[] totalEntrySize = {0};
         try (var in = new ZipInputStream(file.getInputStream())) {
@@ -205,6 +206,7 @@ public class DocumentStorageService {
                     continue;
                 }
                 if (!entryNames.add(entryName)) return false;
+                if (!fileEntryNames.add(entryName)) return false;
                 if (entryName.equals("[Content_Types].xml")) {
                     if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     if (contentTypes) duplicateRequiredPart = true;
@@ -236,7 +238,7 @@ public class DocumentStorageService {
         if (!contentTypes || !document || rootRelationshipsXml == null
                 || !isValidRootRelationships(rootRelationshipsXml)
                 || duplicateRequiredPart || unsafeEntryPath) return false;
-        if (!areInternalRelationshipTargetsPresent("_rels/.rels", rootRelationshipsXml, entryNames)) return false;
+        if (!areInternalRelationshipTargetsPresent("_rels/.rels", rootRelationshipsXml, fileEntryNames)) return false;
         for (String[] relationshipPart : relationshipParts) {
             byte[] xml;
             try {
@@ -244,7 +246,7 @@ public class DocumentStorageService {
             } catch (IllegalArgumentException e) {
                 return false;
             }
-            if (!areInternalRelationshipTargetsPresent(relationshipPart[0], xml, entryNames)) return false;
+            if (!areInternalRelationshipTargetsPresent(relationshipPart[0], xml, fileEntryNames)) return false;
         }
         return true;
     }
