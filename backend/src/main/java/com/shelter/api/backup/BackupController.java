@@ -23,6 +23,7 @@ public class BackupController {
     private static final int MAX_CHECKSUM_ENTRIES = 10_000;
     private static final int MAX_MANIFEST_LINE_LENGTH = 4_096;
     private static final int MAX_FAILURES = 100;
+    private static final int MAX_BACKUP_NAME_LENGTH = 128;
     private static final java.util.regex.Pattern SHA256_LINE = java.util.regex.Pattern.compile("([0-9a-fA-F]{64})\\s+(.+)");
 
     private final AuditLogService audit;
@@ -107,6 +108,9 @@ public class BackupController {
     }
 
     private Path safeDirectory(String name) {
+        if (name == null || name.isBlank() || name.length() > MAX_BACKUP_NAME_LENGTH) {
+            throw new IllegalArgumentException("Invalid backup name");
+        }
         Path dir = root.resolve(name).normalize();
         if (!dir.startsWith(root) || !dir.getFileName().toString().equals(name))
             throw new IllegalArgumentException("Invalid backup name");
