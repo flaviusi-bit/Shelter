@@ -18,7 +18,7 @@ public class SecurityConfig {
         return http.csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/users/me/password").authenticated()
                 .requestMatchers("/api/users/**").hasRole("ADMIN")
@@ -41,6 +41,11 @@ public class SecurityConfig {
                 .requestMatchers("/api/**").denyAll()
                 .anyRequest().authenticated())
             .httpBasic(basic -> {})
+            .headers(headers -> headers
+                .contentTypeOptions(org.springframework.security.config.annotation.web.configurers.HeadersConfigurer.ContentTypeOptionsConfig::disable)
+                .frameOptions(frame -> frame.deny())
+                .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
+                .permissionsPolicy(permissions -> permissions.policy("camera=(), microphone=(), geolocation=(), payment=()")))
             .build();
     }
 
