@@ -248,6 +248,8 @@ public class DocumentStorageService {
             } catch (IllegalArgumentException e) {
                 return false;
             }
+            String sourcePart = relationshipSourcePart(relationshipPart[0]);
+            if (sourcePart == null || !fileEntryNames.contains(sourcePart)) return false;
             if (!areInternalRelationshipTargetsPresent(relationshipPart[0], xml, fileEntryNames)) return false;
         }
         return true;
