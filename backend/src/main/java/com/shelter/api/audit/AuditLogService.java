@@ -36,6 +36,9 @@ public class AuditLogService {
         if (!SAFE_TOKEN.matcher(entityType).matches()) throw new IllegalArgumentException("Audit entity type is invalid");
         validateLength("details", details, MAX_DETAILS_LENGTH);
         validateUtf8Bytes("details", details);
+        if (details != null && details.chars().anyMatch(Character::isISOControl)) {
+            throw new IllegalArgumentException("Audit details are invalid");
+        }
         AuditLog entry = new AuditLog();
         entry.setActor(safeActor);
         entry.setAction(action);
