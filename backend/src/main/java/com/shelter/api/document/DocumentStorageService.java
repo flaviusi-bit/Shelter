@@ -192,6 +192,7 @@ public class DocumentStorageService {
                 if (containsWindowsReservedPathSegment(entry.getName())) return false;
                 if (containsWindowsTrailingDotOrSpaceSegment(entry.getName())) return false;
                 if (entry.isDirectory()) {
+                    if (declaredSize > 0L) return false;
                     String directoryName = normalizeZipEntryName(entry.getName());
                     if (directoryName == null) return false;
                     if (!entryNames.add(directoryName)) return false;
