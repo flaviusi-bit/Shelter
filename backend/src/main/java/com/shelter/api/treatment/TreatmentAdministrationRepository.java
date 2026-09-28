@@ -7,6 +7,7 @@ import java.util.UUID;
 
 public interface TreatmentAdministrationRepository extends JpaRepository<TreatmentAdministration, UUID> {
     List<TreatmentAdministration> findByTreatmentIdOrderByScheduledAtAsc(UUID treatmentId);
+    List<TreatmentAdministration> findByScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(OffsetDateTime from, OffsetDateTime to);
     List<TreatmentAdministration> findByTreatmentAnimalIdAndScheduledAtBetweenOrderByScheduledAtAsc(
         UUID animalId, OffsetDateTime from, OffsetDateTime to);
 }
