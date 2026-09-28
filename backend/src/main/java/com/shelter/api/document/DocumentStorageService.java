@@ -220,6 +220,8 @@ public class DocumentStorageService {
                     if (rootRelationshipsXml != null) duplicateRequiredPart = true;
                     rootRelationshipsXml = readEntry(in, totalEntrySize);
                 } else if (entryName.endsWith(".rels")) {
+                    if (!"_rels/.rels".equals(entryName)
+                            && relationshipSourcePart(entryName) == null) return false;
                     if (entry.getSize() > MAX_DOCX_XML_ENTRY_SIZE) return false;
                     byte[] relationshipsXml = readEntry(in, totalEntrySize);
                     if (!isWellFormedRelationshipsXml(relationshipsXml)) return false;
@@ -279,9 +281,10 @@ public class DocumentStorageService {
         if ("_rels/.rels".equals(relationshipsPart)) return "";
         if (relationshipsPart == null || !relationshipsPart.endsWith(".rels")) return null;
         int relsMarker = relationshipsPart.indexOf("/_rels/");
-        if (relsMarker <= 0) return null;
-        String source = relationshipsPart.substring(0, relsMarker + 1)
-                + relationshipsPart.substring(relsMarker + 7, relationshipsPart.length() - 5);
+        if (relsMarker <= 0 || relsMarker != relationshipsPart.lastIndexOf("/_rels/")) return null;
+        String relationshipFile = relationshipsPart.substring(relsMarker + 7, relationshipsPart.length() - 5);
+        if (relationshipFile.isBlank() || relationshipFile.indexOf('/') >= 0) return null;
+        String source = relationshipsPart.substring(0, relsMarker + 1) + relationshipFile;
         return source.isBlank() ? null : source;
     }
 
