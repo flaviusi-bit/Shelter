@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import org.springframework.data.domain.PageRequest;
 
 @RestController
 @RequestMapping("/api/users")
@@ -29,7 +30,7 @@ public class UserController {
 
     @GetMapping
     public List<UserView> list() {
-        return users.findAll().stream()
+        return users.findAllByOrderByUsernameAsc(PageRequest.of(0, 200)).stream()
             .map(u -> new UserView(u.getId(), u.getUsername(), u.getDisplayName(), u.getRole(), u.isActive()))
             .toList();
     }
