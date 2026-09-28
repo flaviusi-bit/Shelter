@@ -349,7 +349,16 @@ public class DocumentStorageService {
         try {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
             var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/relationships", "Relationship");
+            var children = root.getChildNodes();
             Set<String> relationshipIds = new HashSet<>();
+            for (int i = 0; i < children.getLength(); i++) {
+                var child = children.item(i);
+                if (child.getNodeType() == org.w3c.dom.Node.TEXT_NODE
+                        || child.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) continue;
+                if (child.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE
+                        || !"http://schemas.openxmlformats.org/package/2006/relationships".equals(child.getNamespaceURI())
+                        || !"Relationship".equals(child.getLocalName())) return false;
+            }
             for (int i = 0; i < nodes.getLength(); i++) {
                 var node = nodes.item(i);
                 var id = node.getAttributes().getNamedItem("Id");
