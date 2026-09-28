@@ -325,14 +325,18 @@ public class DocumentStorageService {
         try {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
             var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/relationships", "Relationship");
+            int officeDocumentRelationships = 0;
             for (int i = 0; i < nodes.getLength(); i++) {
                 var node = nodes.item(i);
                 var type = node.getAttributes().getNamedItem("Type");
                 var target = node.getAttributes().getNamedItem("Target");
                 if (type != null && target != null
-                        && "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument".equals(type.getNodeValue())
-                        && "word/document.xml".equals(target.getNodeValue())) return true;
+                        && "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument".equals(type.getNodeValue())) {
+                    if (!"word/document.xml".equals(target.getNodeValue())) return false;
+                    officeDocumentRelationships++;
+                }
             }
+            return officeDocumentRelationships == 1;
         } catch (Exception e) {
             return false;
         }
