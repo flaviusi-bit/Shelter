@@ -306,40 +306,18 @@ public class DocumentStorageService {
         try {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
             var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/content-types", "Override");
-            boolean documentTypePresent = false;
             for (int i = 0; i < nodes.getLength(); i++) {
                 var node = nodes.item(i);
                 var part = node.getAttributes().getNamedItem("PartName");
                 var type = node.getAttributes().getNamedItem("ContentType");
-                if (part == null || type == null) continue;
-                String partName = part.getNodeValue();
-                if ("/word/document.xml".equals(partName)) {
-                    if (partName.isBlank() || type.getNodeValue().isBlank()
-                            || !isCanonicalContentTypePartName(partName)
-                            || !"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml".equals(type.getNodeValue())) {
-                        return false;
-                    }
-                    documentTypePresent = true;
-                }
+                if (part != null && type != null
+                        && "/word/document.xml".equals(part.getNodeValue())
+                        && "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml".equals(type.getNodeValue())) return true;
             }
-            return documentTypePresent;
         } catch (Exception e) {
             return false;
         }
         return false;
-    }
-
-    private boolean isCanonicalContentTypePartName(String partName) {
-        if (partName == null || partName.isBlank() || !partName.startsWith("/")
-                || partName.endsWith("/") || partName.contains("\\")
-                || partName.contains("%") || partName.contains("..")
-                || containsUnsafePathCharacter(partName)
-                || containsUnicodePathConfusable(partName)
-                || containsWindowsReservedPathSegment(partName)
-                || containsWindowsTrailingDotOrSpaceSegment(partName)
-                || containsEmptyPathSegment(partName.substring(1))) return false;
-        String normalized = normalizeZipEntryName(partName.substring(1));
-        return normalized != null && ("/" + normalized).equals(partName);
     }
 
     private boolean isValidRootRelationships(byte[] input) throws IOException {
