@@ -10,5 +10,7 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     List<Task> findByStatusOrderByDueAtAsc(String status);
     List<Task> findByStatusOrderByDueAtAsc(String status, Pageable pageable);
     List<Task> findByStatusAndDueAtBeforeOrderByDueAtAsc(String status, OffsetDateTime dueAt);
+    long countByStatusAndDueAtBefore(String status, OffsetDateTime dueAt);
+    long countByStatusAndDueAtGreaterThanEqualAndDueAtBefore(String status, OffsetDateTime from, OffsetDateTime to);
     java.util.Optional<Task> findBySourceKey(String sourceKey);
 }
