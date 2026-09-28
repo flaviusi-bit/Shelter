@@ -313,9 +313,11 @@ public class DocumentStorageService {
                 var type = node.getAttributes().getNamedItem("ContentType");
                 if (part == null || type == null || part.getNodeValue().isBlank() || type.getNodeValue().isBlank()) return false;
                 String partName = part.getNodeValue();
-                if (!isCanonicalContentTypePartName(partName)) return false;
-                if ("/word/document.xml".equals(partName)
-                        && "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml".equals(type.getNodeValue())) {
+                if ("/word/document.xml".equals(partName)) {
+                    if (!isCanonicalContentTypePartName(partName)
+                            || !"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml".equals(type.getNodeValue())) {
+                        return false;
+                    }
                     documentTypePresent = true;
                 }
             }
