@@ -45,8 +45,8 @@ public class SecurityConfig {
                 .frameOptions(frame -> frame.deny())
                 .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"))
                 .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
-                .permissionsPolicy(permissions -> permissions.policy("camera=(), microphone=(), geolocation=(), payment=()"))
-                .cacheControl(cache -> {}))
+                .cacheControl(cache -> {})
+                .permissionsPolicy(permissions -> permissions.policy("camera=(), microphone=(), geolocation=(), payment=()")))
             .build();
     }
 
