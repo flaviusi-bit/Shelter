@@ -35,7 +35,7 @@ public class BackupController {
     public List<BackupInfo> list() throws IOException {
         if (!Files.isDirectory(root)) return List.of();
         try (Stream<Path> stream = Files.list(root)) {
-            return stream.filter(Files::isDirectory)
+            return stream.filter(path -> Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS))
                 .map(this::describe)
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparing(BackupInfo::createdAt).reversed())
@@ -47,9 +47,9 @@ public class BackupController {
     @PostMapping("/{name}/verify")
     public BackupVerification verify(@PathVariable String name, Authentication auth) throws IOException {
         Path dir = safeDirectory(name);
-        if (!Files.isDirectory(dir)) throw new IllegalArgumentException("Backup not found");
+        if (!Files.isDirectory(dir, LinkOption.NOFOLLOW_LINKS)) throw new IllegalArgumentException("Backup not found");
         Path sums = dir.resolve("SHA256SUMS");
-        if (!Files.isRegularFile(sums)) {
+        if (!Files.isRegularFile(sums, LinkOption.NOFOLLOW_LINKS)) {
             audit.record(auth.getName(), "VERIFY_BACKUP", "BACKUP", null, "name=" + name + ", valid=false, reason=SHA256SUMS missing");
             return new BackupVerification(false, "SHA256SUMS is missing");
         }
@@ -76,7 +76,7 @@ public class BackupController {
                 String expected = match.group(1);
                 String relativeName = match.group(2).trim();
                 Path file = dir.resolve(relativeName).normalize();
-                if (!file.startsWith(dir) || !Files.isRegularFile(file)) {
+                if (!file.startsWith(dir) || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
                     failures.add(relativeName + ": missing");
                     continue;
                 }
@@ -96,10 +96,10 @@ public class BackupController {
             Path db = dir.resolve("database.dump");
             Path docs = dir.resolve("documents.tar.gz");
             Path sums = dir.resolve("SHA256SUMS");
-            if (!Files.isRegularFile(db) || !Files.isRegularFile(docs)) return null;
+            if (!Files.isRegularFile(db, LinkOption.NOFOLLOW_LINKS) || !Files.isRegularFile(docs, LinkOption.NOFOLLOW_LINKS)) return null;
             Instant created = Files.getLastModifiedTime(dir).toInstant();
             return new BackupInfo(dir.getFileName().toString(), created,
-                Files.size(db), Files.size(docs), Files.isRegularFile(sums));
+                Files.size(db), Files.size(docs), Files.isRegularFile(sums, LinkOption.NOFOLLOW_LINKS));
         } catch (IOException e) {
             return null;
         }
