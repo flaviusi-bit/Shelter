@@ -23,7 +23,11 @@ public class ShelterApplication {
                 AppUser admin = new AppUser();
                 admin.setUsername(System.getenv().getOrDefault("SHELTER_ADMIN_USERNAME", "admin"));
                 admin.setDisplayName(System.getenv().getOrDefault("SHELTER_ADMIN_DISPLAY_NAME", "Shelter Administrator"));
-                admin.setPasswordHash(encoder.encode(System.getenv().getOrDefault("SHELTER_ADMIN_PASSWORD", "change-me-now")));
+                String adminPassword = System.getenv("SHELTER_ADMIN_PASSWORD");
+                if (adminPassword == null || adminPassword.isBlank()) {
+                    throw new IllegalStateException("SHELTER_ADMIN_PASSWORD must be set when bootstrapping the initial administrator");
+                }
+                admin.setPasswordHash(encoder.encode(adminPassword));
                 admin.setRole("ADMIN");
                 admin.setActive(true);
                 users.save(admin);
