@@ -32,6 +32,7 @@ public class DocumentStorageService {
     private static final int MAX_DOCX_RELATIONSHIP_TYPE_URI_LENGTH = 512;
     private static final int MAX_DOCX_RELATIONSHIP_MODE_LENGTH = 32;
     private static final int MAX_DOCX_RELATIONSHIP_DEPTH = 64;
+    private static final int MAX_DOCX_CONTENT_TYPE_ATTRIBUTE_LENGTH = 1024;
     private static final long MAX_DOCX_ENTRY_SIZE = 10L * 1024 * 1024;
     private static final long MAX_DOCX_TOTAL_ENTRY_SIZE = 32L * 1024 * 1024;
     private static final long MAX_DOCX_COMPRESSION_RATIO = 100L;
@@ -335,6 +336,8 @@ public class DocumentStorageService {
                 var part = node.getAttributes().getNamedItem("PartName");
                 var type = node.getAttributes().getNamedItem("ContentType");
                 if (part != null && type != null
+                        && part.getNodeValue().length() <= MAX_DOCX_CONTENT_TYPE_ATTRIBUTE_LENGTH
+                        && type.getNodeValue().length() <= MAX_DOCX_CONTENT_TYPE_ATTRIBUTE_LENGTH
                         && "/word/document.xml".equals(part.getNodeValue())
                         && "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml".equals(type.getNodeValue())) return true;
             }
