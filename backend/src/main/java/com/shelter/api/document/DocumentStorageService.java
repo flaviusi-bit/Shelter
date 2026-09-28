@@ -394,7 +394,9 @@ public class DocumentStorageService {
                 if (id == null || id.getNodeValue().isBlank()
                         || !id.getNodeValue().matches("[A-Za-z_][A-Za-z0-9_.-]*")
                         || !relationshipIds.add(id.getNodeValue())) return false;
-                if (type == null || type.getNodeValue().isBlank()) return false;
+                if (type == null || type.getNodeValue().isBlank()
+                        || type.getNodeValue().chars().anyMatch(Character::isISOControl)
+                        || type.getNodeValue().chars().anyMatch(Character::isWhitespace)) return false;
                 if (mode != null && !"External".equalsIgnoreCase(mode.getNodeValue())
                         && !"Internal".equalsIgnoreCase(mode.getNodeValue())) return false;
                 if (mode != null && "External".equalsIgnoreCase(mode.getNodeValue())) return false;
