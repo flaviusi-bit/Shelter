@@ -25,6 +25,7 @@ public class DocumentStorageService {
     private static final int MAX_DOCX_XML_ENTRY_SIZE = 1024 * 1024;
     private static final int MAX_DOCX_ENTRIES = 1000;
     private static final int MAX_DOCX_RELATIONSHIPS = 1000;
+    private static final int MAX_DOCX_CONTENT_TYPE_OVERRIDES = 1000;
     private static final long MAX_DOCX_ENTRY_SIZE = 10L * 1024 * 1024;
     private static final long MAX_DOCX_TOTAL_ENTRY_SIZE = 32L * 1024 * 1024;
     private static final long MAX_DOCX_COMPRESSION_RATIO = 100L;
@@ -320,6 +321,7 @@ public class DocumentStorageService {
         try {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
             var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/content-types", "Override");
+            if (nodes.getLength() > MAX_DOCX_CONTENT_TYPE_OVERRIDES) return false;
             for (int i = 0; i < nodes.getLength(); i++) {
                 var node = nodes.item(i);
                 var part = node.getAttributes().getNamedItem("PartName");
@@ -340,6 +342,7 @@ public class DocumentStorageService {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
             var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/relationships", "Relationship");
             int officeDocumentRelationships = 0;
+            if (nodes.getLength() > MAX_DOCX_RELATIONSHIPS) return false;
             for (int i = 0; i < nodes.getLength(); i++) {
                 var node = nodes.item(i);
                 var type = node.getAttributes().getNamedItem("Type");
