@@ -26,6 +26,9 @@ public class DocumentStorageService {
     private static final int MAX_DOCX_ENTRIES = 1000;
     private static final int MAX_DOCX_RELATIONSHIPS = 1000;
     private static final int MAX_DOCX_CONTENT_TYPE_OVERRIDES = 1000;
+    private static final int MAX_DOCX_RELATIONSHIP_ID_LENGTH = 255;
+    private static final int MAX_DOCX_RELATIONSHIP_TYPE_LENGTH = 1024;
+    private static final int MAX_DOCX_RELATIONSHIP_TARGET_LENGTH = 2048;
     private static final long MAX_DOCX_ENTRY_SIZE = 10L * 1024 * 1024;
     private static final long MAX_DOCX_TOTAL_ENTRY_SIZE = 32L * 1024 * 1024;
     private static final long MAX_DOCX_COMPRESSION_RATIO = 100L;
@@ -401,15 +404,18 @@ public class DocumentStorageService {
                             && !"TargetMode".equals(attribute.getNodeName()))) return false;
                 }
                 if (id == null || id.getNodeValue().isBlank()
+                        || id.getNodeValue().length() > MAX_DOCX_RELATIONSHIP_ID_LENGTH
                         || !id.getNodeValue().matches("[A-Za-z_][A-Za-z0-9_.-]*")
                         || !relationshipIds.add(id.getNodeValue())) return false;
                 if (type == null || type.getNodeValue().isBlank()
+                        || type.getNodeValue().length() > MAX_DOCX_RELATIONSHIP_TYPE_LENGTH
                         || type.getNodeValue().chars().anyMatch(Character::isISOControl)
                         || type.getNodeValue().chars().anyMatch(Character::isWhitespace)) return false;
                 if (mode != null && !"External".equalsIgnoreCase(mode.getNodeValue())
                         && !"Internal".equalsIgnoreCase(mode.getNodeValue())) return false;
                 if (mode != null && "External".equalsIgnoreCase(mode.getNodeValue())) return false;
-                if (target == null || target.getNodeValue().isBlank()) return false;
+                if (target == null || target.getNodeValue().isBlank()
+                        || target.getNodeValue().length() > MAX_DOCX_RELATIONSHIP_TARGET_LENGTH) return false;
                 String targetValue = target.getNodeValue();
                 if (targetValue.chars().anyMatch(Character::isISOControl)) return false;
                 if (containsUnsafePathCharacter(targetValue) || containsCurrentDirectoryPathSegment(targetValue)
