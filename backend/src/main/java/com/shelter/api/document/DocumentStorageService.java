@@ -130,7 +130,10 @@ public class DocumentStorageService {
     private boolean contentMatchesType(MultipartFile file,String type) throws IOException {
         if(type.equals("text/plain")) return isSafePlainText(file);
         byte[] header;
-        try(var in=file.getInputStream()){ header=in.readNBytes(12); }
+        try(var in=file.getInputStream()){
+            header = in.readNBytes(12);
+        }
+        if (header.length == 0) return false;
         return switch(type) {
             case "application/pdf" -> startsWith(header,new byte[]{0x25,0x50,0x44,0x46,0x2D});
             case "image/jpeg" -> startsWith(header,new byte[]{(byte)0xFF,(byte)0xD8,(byte)0xFF});
