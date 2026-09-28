@@ -16,7 +16,7 @@ services:
     volumes:
       - shelter-postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-shelter} -d ${POSTGRES_DB:-shelter}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:?POSTGRES_USER must be set} -d ${POSTGRES_DB:?POSTGRES_DB must be set}"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -26,10 +26,14 @@ services:
       context: ./backend
     container_name: shelter-backend
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     environment:
-      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-shelter}
-      DATABASE_USERNAME: ${POSTGRES_USER:-shelter}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:?POSTGRES_DB must be set}
+      DATABASE_USERNAME: ${POSTGRES_USER:?POSTGRES_USER must be set}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
       SHELTER_ADMIN_USERNAME: ${SHELTER_ADMIN_USERNAME:-admin}
       SHELTER_ADMIN_DISPLAY_NAME: ${SHELTER_ADMIN_DISPLAY_NAME:-Shelter Administrator}
       SHELTER_ADMIN_PASSWORD: ${SHELTER_ADMIN_PASSWORD:?SHELTER_ADMIN_PASSWORD must be set}
