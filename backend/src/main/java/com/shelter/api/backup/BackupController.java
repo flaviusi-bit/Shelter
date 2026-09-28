@@ -19,6 +19,11 @@ import java.util.stream.Stream;
 @RequestMapping("/api/admin/backups")
 public class BackupController {
     private final Path root;
+    private static final int MAX_BACKUPS = 200;
+    private static final int MAX_CHECKSUM_ENTRIES = 10_000;
+    private static final int MAX_MANIFEST_LINE_LENGTH = 4_096;
+    private static final java.util.regex.Pattern SHA256_LINE = java.util.regex.Pattern.compile("([0-9a-fA-F]{64})\\s+(.+)");
+
     private final AuditLogService audit;
 
     public BackupController(@Value("${shelter.backup.directory:./backups}") String directory, AuditLogService audit) {
@@ -34,6 +39,7 @@ public class BackupController {
                 .map(this::describe)
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparing(BackupInfo::createdAt).reversed())
+                .limit(MAX_BACKUPS)
                 .collect(Collectors.toList());
         }
     }
@@ -48,16 +54,35 @@ public class BackupController {
             return new BackupVerification(false, "SHA256SUMS is missing");
         }
         List<String> failures = new ArrayList<>();
-        for (String line : Files.readAllLines(sums, StandardCharsets.UTF_8)) {
-            String[] parts = line.trim().split("\\s+", 2);
-            if (parts.length != 2) continue;
-            Path file = dir.resolve(parts[1]).normalize();
-            if (!file.startsWith(dir) || !Files.isRegularFile(file)) {
-                failures.add(parts[1] + ": missing");
-                continue;
+        int entries = 0;
+        try (Stream<String> lines = Files.lines(sums, StandardCharsets.UTF_8)) {
+            var iterator = lines.iterator();
+            while (iterator.hasNext()) {
+                String line = iterator.next();
+                if (line.length() > MAX_MANIFEST_LINE_LENGTH) {
+                    failures.add("SHA256SUMS: manifest line too long");
+                    break;
+                }
+                if (line.isBlank()) continue;
+                if (++entries > MAX_CHECKSUM_ENTRIES) {
+                    failures.add("SHA256SUMS: too many entries");
+                    break;
+                }
+                var match = SHA256_LINE.matcher(line.trim());
+                if (!match.matches()) {
+                    failures.add("SHA256SUMS: invalid entry");
+                    continue;
+                }
+                String expected = match.group(1);
+                String relativeName = match.group(2).trim();
+                Path file = dir.resolve(relativeName).normalize();
+                if (!file.startsWith(dir) || !Files.isRegularFile(file)) {
+                    failures.add(relativeName + ": missing");
+                    continue;
+                }
+                String actual = sha256(file);
+                if (!actual.equalsIgnoreCase(expected)) failures.add(relativeName + ": checksum mismatch");
             }
-            String actual = sha256(file);
-            if (!actual.equalsIgnoreCase(parts[0])) failures.add(parts[1] + ": checksum mismatch");
         }
         boolean valid = failures.isEmpty();
         audit.record(auth.getName(), "VERIFY_BACKUP", "BACKUP", null, "name=" + name + ", valid=" + valid);
