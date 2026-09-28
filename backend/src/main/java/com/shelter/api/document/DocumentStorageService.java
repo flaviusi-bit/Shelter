@@ -370,8 +370,11 @@ public class DocumentStorageService {
             Set<String> relationshipIds = new HashSet<>();
             for (int i = 0; i < children.getLength(); i++) {
                 var child = children.item(i);
-                if (child.getNodeType() == org.w3c.dom.Node.TEXT_NODE
-                        || child.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) continue;
+                if (child.getNodeType() == org.w3c.dom.Node.TEXT_NODE) {
+                    if (!child.getNodeValue().isBlank()) return false;
+                    continue;
+                }
+                if (child.getNodeType() == org.w3c.dom.Node.COMMENT_NODE) continue;
                 if (child.getNodeType() != org.w3c.dom.Node.ELEMENT_NODE
                         || !"http://schemas.openxmlformats.org/package/2006/relationships".equals(child.getNamespaceURI())
                         || !"Relationship".equals(child.getLocalName())) return false;
