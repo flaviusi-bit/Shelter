@@ -359,6 +359,13 @@ public class DocumentStorageService {
         try {
             var root = secureXmlFactory().newDocumentBuilder().parse(new ByteArrayInputStream(input)).getDocumentElement();
             var nodes = root.getElementsByTagNameNS("http://schemas.openxmlformats.org/package/2006/relationships", "Relationship");
+            var rootAttributes = root.getAttributes();
+            for (int a = 0; a < rootAttributes.getLength(); a++) {
+                var attribute = rootAttributes.item(a);
+                if (attribute.getNamespaceURI() != null
+                        && "http://www.w3.org/2000/xmlns/".equals(attribute.getNamespaceURI())) continue;
+                return false;
+            }
             var children = root.getChildNodes();
             Set<String> relationshipIds = new HashSet<>();
             for (int i = 0; i < children.getLength(); i++) {
