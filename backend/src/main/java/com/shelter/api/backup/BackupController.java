@@ -79,7 +79,7 @@ public class BackupController {
                 String expected = match.group(1);
                 String relativeName = match.group(2).trim();
                 Path file = dir.resolve(relativeName).normalize();
-                if (!file.startsWith(dir) || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
+                if (!file.startsWith(dir) || hasSymlinkComponent(dir, file.getParent()) || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
                     if (failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "missing"));
                     continue;
                 }
@@ -116,6 +116,17 @@ public class BackupController {
         if (!dir.startsWith(root) || !dir.getFileName().toString().equals(name))
             throw new IllegalArgumentException("Invalid backup name");
         return dir;
+    }
+
+    private boolean hasSymlinkComponent(Path rootPath, Path targetParent) {
+        if (targetParent == null || !targetParent.startsWith(rootPath)) return true;
+        Path current = rootPath;
+        Path relative = rootPath.relativize(targetParent);
+        for (Path component : relative) {
+            current = current.resolve(component);
+            if (Files.isSymbolicLink(current)) return true;
+        }
+        return false;
     }
 
     private String safeFailure(String name, String reason) {
