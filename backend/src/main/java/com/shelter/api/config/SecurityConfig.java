@@ -47,7 +47,6 @@ public class SecurityConfig {
                 .referrerPolicy(referrer -> referrer.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
                 .permissionsPolicy(permissions -> permissions.policy("camera=(), microphone=(), geolocation=(), payment=()"))
                 .cacheControl(cache -> {}))
-            .requiresChannel(channel -> channel.anyRequest().requiresSecure())
             .build();
     }
 
