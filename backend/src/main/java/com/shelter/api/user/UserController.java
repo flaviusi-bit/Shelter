@@ -11,6 +11,8 @@ import java.util.Set;
 @RestController
 @RequestMapping("/api/users")
 public class UserController {
+    private static final int MAX_PASSWORD_UTF8_BYTES = 72;
+
     private static final Set<String> ALLOWED_ROLES = Set.of(
         "ADMIN", "VETERINARIAN", "COORDINATOR", "VOLUNTEER", "VIEWER"
     );
@@ -45,9 +47,7 @@ public class UserController {
         if (displayName.isBlank() || displayName.length() > 120) {
             throw new IllegalArgumentException("Display name is required and must be at most 120 characters");
         }
-        if (password.length() < 12) {
-            throw new IllegalArgumentException("Password must be at least 12 characters");
-        }
+        validatePassword(password);
         if (!ALLOWED_ROLES.contains(role)) {
             throw new IllegalArgumentException("Invalid role");
         }
@@ -120,7 +120,7 @@ public class UserController {
     public void changeMyPassword(@RequestBody ChangePasswordRequest r, Authentication auth) {
         String current = r.currentPassword() == null ? "" : r.currentPassword();
         String next = r.newPassword() == null ? "" : r.newPassword();
-        if (next.length() < 12) throw new IllegalArgumentException("Password must be at least 12 characters");
+        validatePassword(next);
 
         AppUser u = users.findByUsername(auth.getName())
             .filter(AppUser::isActive)
@@ -148,6 +148,13 @@ public class UserController {
         u.setPasswordHash(passwordEncoder.encode(next));
         users.save(u);
         audit.record(auth.getName(), "RESET_PASSWORD", "USER", u.getId(), "username=" + u.getUsername());
+    }
+
+    private static void validatePassword(String password) {
+        if (password.length() < 12) throw new IllegalArgumentException("Password must be at least 12 characters");
+        if (password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > MAX_PASSWORD_UTF8_BYTES) {
+            throw new IllegalArgumentException("Password must be at most 72 UTF-8 bytes");
+        }
     }
 
     public record UpdateUserRequest(String displayName, String role) {}
