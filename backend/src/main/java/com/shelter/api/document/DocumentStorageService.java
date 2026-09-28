@@ -623,13 +623,17 @@ public class DocumentStorageService {
     }
 
     private boolean isSafeStorageKey(String key) {
-        if (key.startsWith("/") || key.startsWith("\\") || key.contains("\\")
+        if (key.startsWith("/") || key.startsWith("\\") || key.endsWith("/")
+                || key.contains("\\") || key.contains("//")
                 || key.contains("..") || key.contains("%") || key.contains(":")
                 || key.startsWith("~") || key.chars().anyMatch(Character::isISOControl)
                 || containsUnsafePathCharacter(key)
                 || containsUnicodePathConfusable(key)
                 || containsWindowsReservedPathSegment(key)
                 || containsWindowsTrailingDotOrSpaceSegment(key)) return false;
+        for (String segment : key.split("/")) {
+            if (segment.isBlank() || ".".equals(segment)) return false;
+        }
         return true;
     }
     public record StoredFile(String storageKey,String originalFileName,String contentType,long size){}
