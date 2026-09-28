@@ -13,6 +13,7 @@ public class AuditLogService {
     private static final int MAX_AUDIT_FIELD_BYTES = 8192;
     private static final Pattern SAFE_ACTOR = Pattern.compile("[\\p{L}\\p{N}._@:+\\- ]+");
     private static final Pattern SAFE_TOKEN = Pattern.compile("[A-Za-z0-9._:-]+");
+    private static final int MAX_AUDIT_ID_LENGTH = 64;
     private final AuditLogRepository repository;
 
     public AuditLogService(AuditLogRepository repository) {
@@ -28,6 +29,9 @@ public class AuditLogService {
         validateUtf8Bytes("action", action);
         if (!SAFE_TOKEN.matcher(action).matches()) throw new IllegalArgumentException("Audit action is invalid");
         validateLength("entityType", entityType, MAX_ENTITY_TYPE_LENGTH);
+        if (entityId != null && entityId.toString().length() > MAX_AUDIT_ID_LENGTH) {
+            throw new IllegalArgumentException("Audit entity id is invalid");
+        }
         validateUtf8Bytes("entityType", entityType);
         if (!SAFE_TOKEN.matcher(entityType).matches()) throw new IllegalArgumentException("Audit entity type is invalid");
         validateLength("details", details, MAX_DETAILS_LENGTH);
