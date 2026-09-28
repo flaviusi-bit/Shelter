@@ -385,10 +385,11 @@ public class DocumentStorageService {
                 var attributes = node.getAttributes();
                 for (int a = 0; a < attributes.getLength(); a++) {
                     var attribute = attributes.item(a);
-                    if (!"Id".equals(attribute.getNodeName())
+                    if (attribute.getNamespaceURI() != null
+                            || (!"Id".equals(attribute.getNodeName())
                             && !"Type".equals(attribute.getNodeName())
                             && !"Target".equals(attribute.getNodeName())
-                            && !"TargetMode".equals(attribute.getNodeName())) return false;
+                            && !"TargetMode".equals(attribute.getNodeName()))) return false;
                 }
                 if (id == null || id.getNodeValue().isBlank()
                         || !id.getNodeValue().matches("[A-Za-z_][A-Za-z0-9_.-]*")
