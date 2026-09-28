@@ -2,6 +2,7 @@ package com.shelter.api.audit;
 
 import org.springframework.stereotype.Service;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 @Service
 public class AuditLogService {
@@ -10,6 +11,8 @@ public class AuditLogService {
     private static final int MAX_ENTITY_TYPE_LENGTH = 80;
     private static final int MAX_DETAILS_LENGTH = 4096;
     private static final int MAX_AUDIT_FIELD_BYTES = 8192;
+    private static final Pattern SAFE_ACTOR = Pattern.compile("[\\p{L}\\p{N}._@:+\\- ]+");
+    private static final Pattern SAFE_TOKEN = Pattern.compile("[A-Za-z0-9._:-]+");
     private final AuditLogRepository repository;
 
     public AuditLogService(AuditLogRepository repository) {
@@ -20,10 +23,13 @@ public class AuditLogService {
         String safeActor = actor == null || actor.isBlank() ? "SYSTEM" : actor;
         validateLength("actor", safeActor, MAX_ACTOR_LENGTH);
         validateUtf8Bytes("actor", safeActor);
+        if (!SAFE_ACTOR.matcher(safeActor).matches()) throw new IllegalArgumentException("Audit actor is invalid");
         validateLength("action", action, MAX_ACTION_LENGTH);
         validateUtf8Bytes("action", action);
+        if (!SAFE_TOKEN.matcher(action).matches()) throw new IllegalArgumentException("Audit action is invalid");
         validateLength("entityType", entityType, MAX_ENTITY_TYPE_LENGTH);
         validateUtf8Bytes("entityType", entityType);
+        if (!SAFE_TOKEN.matcher(entityType).matches()) throw new IllegalArgumentException("Audit entity type is invalid");
         validateLength("details", details, MAX_DETAILS_LENGTH);
         validateUtf8Bytes("details", details);
         AuditLog entry = new AuditLog();
