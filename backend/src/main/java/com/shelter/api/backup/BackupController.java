@@ -24,6 +24,7 @@ public class BackupController {
     private static final int MAX_MANIFEST_LINE_LENGTH = 4_096;
     private static final int MAX_FAILURES = 100;
     private static final int MAX_BACKUP_NAME_LENGTH = 128;
+    private static final int MAX_FAILURE_MESSAGE_LENGTH = 256;
     private static final java.util.regex.Pattern SHA256_LINE = java.util.regex.Pattern.compile("([0-9a-fA-F]{64})\\s+(.+)");
 
     private final AuditLogService audit;
@@ -79,11 +80,11 @@ public class BackupController {
                 String relativeName = match.group(2).trim();
                 Path file = dir.resolve(relativeName).normalize();
                 if (!file.startsWith(dir) || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
-                    if (failures.size() < MAX_FAILURES) failures.add(relativeName + ": missing");
+                    if (failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "missing"));
                     continue;
                 }
                 String actual = sha256(file);
-                if (!actual.equalsIgnoreCase(expected) && failures.size() < MAX_FAILURES) failures.add(relativeName + ": checksum mismatch");
+                if (!actual.equalsIgnoreCase(expected) && failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "checksum mismatch"));
             }
         }
         boolean valid = failures.isEmpty();
@@ -115,6 +116,11 @@ public class BackupController {
         if (!dir.startsWith(root) || !dir.getFileName().toString().equals(name))
             throw new IllegalArgumentException("Invalid backup name");
         return dir;
+    }
+
+    private String safeFailure(String name, String reason) {
+        String value = name.length() > MAX_FAILURE_MESSAGE_LENGTH ? name.substring(0, MAX_FAILURE_MESSAGE_LENGTH) : name;
+        return value + ": " + reason;
     }
 
     private String sha256(Path file) throws IOException {
