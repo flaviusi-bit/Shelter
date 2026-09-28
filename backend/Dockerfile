@@ -13,9 +13,11 @@ FROM eclipse-temurin:21-jre
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
+RUN useradd --system --uid 10001 --create-home shelter
 WORKDIR /app
 
-COPY --from=build /workspace/target/shelter-api-0.1.0-SNAPSHOT.jar app.jar
+COPY --from=build --chown=shelter:shelter /workspace/target/shelter-api-0.1.0-SNAPSHOT.jar app.jar
+USER shelter
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
