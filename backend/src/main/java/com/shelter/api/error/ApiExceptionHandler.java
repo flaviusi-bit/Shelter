@@ -17,13 +17,13 @@ public class ApiExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErrorResponse handleBadRequest(IllegalArgumentException ex) {
-        return new ErrorResponse(HttpStatus.BAD_REQUEST.value(), ex.getMessage());
+        return new ErrorResponse(HttpStatus.BAD_REQUEST.value(), "Invalid request");
     }
 
     @ExceptionHandler(IllegalStateException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConflict(IllegalStateException ex) {
-        return new ErrorResponse(HttpStatus.CONFLICT.value(), ex.getMessage());
+        return new ErrorResponse(HttpStatus.CONFLICT.value(), "Request conflicts with the current resource state");
     }
 
     public record ErrorResponse(int status, String message) {}
