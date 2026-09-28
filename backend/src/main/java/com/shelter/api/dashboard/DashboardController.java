@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -40,10 +39,7 @@ public class DashboardController {
         OffsetDateTime start = zonedNow.toLocalDate().atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime end = start.plusDays(1);
 
-        List<TreatmentAdministration> rows = administrations.findAll().stream()
-            .filter(a -> !a.getScheduledAt().isBefore(start) && a.getScheduledAt().isBefore(end))
-            .sorted(Comparator.comparing(TreatmentAdministration::getScheduledAt))
-            .toList();
+        List<TreatmentAdministration> rows = administrations.findByScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(start, end);
 
         long overdue = rows.stream().filter(a -> "SCHEDULED".equals(a.getStatus()) && a.getScheduledAt().isBefore(now)).count();
         long administered = rows.stream().filter(a -> "ADMINISTERED".equals(a.getStatus())).count();
