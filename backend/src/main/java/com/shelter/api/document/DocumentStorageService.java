@@ -197,7 +197,11 @@ public class DocumentStorageService {
                     if (directoryName == null) return false;
                     if (!entryNames.add(directoryName)) return false;
                     byte[] directoryBuffer = new byte[8192];
-                    if (in.read(directoryBuffer) != -1) return false;
+                    int read;
+                    do {
+                        read = in.read(directoryBuffer);
+                        if (read > 0) return false;
+                    } while (read != -1);
                     continue;
                 }
                 if (entry.getSize() > MAX_DOCX_ENTRY_SIZE) return false;
