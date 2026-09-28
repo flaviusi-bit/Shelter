@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import java.util.UUID;
 
 @RestController
@@ -19,8 +20,9 @@ public class AnimalController {
     public AnimalController(AnimalRepository repository, AuditLogService audit){this.repository=repository;this.audit=audit;}
 
     @GetMapping public List<Animal> list(@RequestParam(required=false) String q){
-        if(q==null||q.isBlank()) return repository.findAll(org.springframework.data.domain.Sort.by("name").ascending());
-        return repository.findByNameContainingIgnoreCaseOrMicrochipNumberContainingIgnoreCaseOrAnimalCodeContainingIgnoreCaseOrderByNameAsc(q,q,q);
+        if(q==null||q.isBlank()) return repository.findAll(PageRequest.of(0, 200, org.springframework.data.domain.Sort.by("name").ascending())).getContent();
+        if(q.length()>100) throw new org.springframework.web.server.ResponseStatusException(HttpStatus.BAD_REQUEST,"Search query is too long");
+        return repository.findByNameContainingIgnoreCaseOrMicrochipNumberContainingIgnoreCaseOrAnimalCodeContainingIgnoreCaseOrderByNameAsc(q,q,q, PageRequest.of(0, 200));
     }
     @GetMapping("/{id}") public Animal get(@PathVariable UUID id){ return repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id)); }
     @PostMapping @ResponseStatus(HttpStatus.CREATED) public Animal create(@Valid @RequestBody AnimalRequest r, Authentication auth){ validateDates(r); Animal a=new Animal(); apply(a,r); var saved=repository.save(a); audit.record(auth.getName(),"CREATE_ANIMAL","ANIMAL",saved.getId(),saved.getName()); return saved; }
