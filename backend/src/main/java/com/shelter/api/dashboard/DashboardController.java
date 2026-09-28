@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.data.domain.PageRequest;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -51,12 +52,11 @@ public class DashboardController {
             a.getScheduledAt(), a.getAdministeredAt(), a.getAdministeredBy(), a.getStatus()
         )).toList();
 
-        List<Task> openTasks = tasks.findByStatusOrderByDueAtAsc("OPEN");
-        long overdueTasks = openTasks.stream().filter(t -> t.getDueAt().isBefore(now)).count();
-        long remainingTasks = openTasks.stream()
-            .filter(t -> !t.getDueAt().isBefore(now) && t.getDueAt().isBefore(end)).count();
+        long overdueTasks = tasks.countByStatusAndDueAtBefore("OPEN", now);
+        long remainingTasks = tasks.countByStatusAndDueAtGreaterThanEqualAndDueAtBefore("OPEN", now, end);
+        List<Task> openTasks = tasks.findByStatusOrderByDueAtAsc("OPEN", PageRequest.of(0, 50));
 
-        var taskItems = openTasks.stream().limit(50).map(t -> new TaskDue(
+        var taskItems = openTasks.stream().map(t -> new TaskDue(
             t.getId(), t.getAnimal() == null ? null : t.getAnimal().getId(),
             t.getAnimal() == null ? null : t.getAnimal().getName(), t.getTaskType(), t.getTitle(),
             t.getDueAt(), t.getStatus(), t.getPriority(), t.getAssignedTo(), t.getNotes()
