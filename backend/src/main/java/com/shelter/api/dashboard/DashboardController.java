@@ -40,11 +40,11 @@ public class DashboardController {
         OffsetDateTime start = zonedNow.toLocalDate().atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime end = start.plusDays(1);
 
-        List<TreatmentAdministration> rows = administrations.findByScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(start, end);
+        long overdue = administrations.countByStatusAndScheduledAtGreaterThanEqualAndScheduledAtLessThan("SCHEDULED", start, now);
+        long administered = administrations.countByStatusAndScheduledAtGreaterThanEqualAndScheduledAtLessThan("ADMINISTERED", start, end);
+        long remaining = administrations.countByStatusAndScheduledAtGreaterThanEqualAndScheduledAtLessThan("SCHEDULED", now, end);
 
-        long overdue = rows.stream().filter(a -> "SCHEDULED".equals(a.getStatus()) && a.getScheduledAt().isBefore(now)).count();
-        long administered = rows.stream().filter(a -> "ADMINISTERED".equals(a.getStatus())).count();
-        long remaining = rows.stream().filter(a -> "SCHEDULED".equals(a.getStatus()) && !a.getScheduledAt().isBefore(now)).count();
+        List<TreatmentAdministration> rows = administrations.findByScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(start, end, PageRequest.of(0, 500));
 
         var items = rows.stream().map(a -> new DashboardItem(
             a.getId(), a.getTreatment().getAnimal().getId(), a.getTreatment().getAnimal().getName(),
