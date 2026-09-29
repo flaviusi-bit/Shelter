@@ -18,7 +18,6 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/api/animals/{animalId}/treatments/{treatmentId}/administrations")
@@ -96,12 +95,12 @@ public class TreatmentAdministrationController {
     @Scheduled(fixedDelayString = "${shelter.treatment-schedule-sync-ms:900000}")
     public void generateActiveSchedules() {
         int pageNumber = 0;
-        Page<Treatment> page;
+        List<Treatment> page;
         do {
             page = treatments.findByStatusIgnoreCase("ACTIVE", PageRequest.of(pageNumber, ACTIVE_TREATMENT_PAGE_SIZE));
             page.forEach(t -> generateForTreatment(t, 14));
             pageNumber++;
-        } while (page.hasNext());
+        } while (page.size() == ACTIVE_TREATMENT_PAGE_SIZE);
     }
 
     private List<TreatmentAdministration> generateForTreatment(Treatment treatment, int days) {

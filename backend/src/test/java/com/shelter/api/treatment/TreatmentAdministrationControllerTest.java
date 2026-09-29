@@ -55,7 +55,7 @@ class TreatmentAdministrationControllerTest {
         administration.setScheduledAt(OffsetDateTime.now());
         when(administrations.findById(administrationId)).thenReturn(Optional.of(administration));
         when(administrations.findByTreatmentIdOrderByScheduledAtAsc(eq(treatmentId), any(Pageable.class))).thenReturn(java.util.List.of());
-        when(treatments.findByStatusIgnoreCase(eq("ACTIVE"), any(Pageable.class))).thenReturn(org.springframework.data.domain.Page.<Treatment>empty());
+        when(treatments.findByStatusIgnoreCase(eq("ACTIVE"), any(Pageable.class))).thenReturn(java.util.List.of());
         when(administrations.save(any(TreatmentAdministration.class))).thenAnswer(i -> i.getArgument(0));
     }
 
