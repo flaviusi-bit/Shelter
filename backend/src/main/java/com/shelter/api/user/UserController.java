@@ -2,8 +2,6 @@ package com.shelter.api.user;
 
 import com.shelter.api.audit.AuditLogService;
 import org.springframework.security.core.Authentication;
-import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
@@ -70,7 +68,6 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     public UserView update(@PathVariable java.util.UUID id, @RequestBody UpdateUserRequest r, Authentication auth) {
         AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
         String displayName = r.displayName() == null ? "" : r.displayName().trim();
@@ -97,7 +94,6 @@ public class UserController {
     }
 
     @PostMapping("/{id}/deactivate")
-    @Transactional(isolation = Isolation.SERIALIZABLE)
     public UserView deactivate(@PathVariable java.util.UUID id, Authentication auth) {
         AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
         if (!u.isActive()) throw new IllegalStateException("User is already inactive");
