@@ -70,7 +70,6 @@ public class TaskReminderService {
             }
             pageNumber++;
         } while (dewormingPage.hasNext());
-        }
         return created;
     }
 
