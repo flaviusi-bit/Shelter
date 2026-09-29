@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
+import org.springframework.data.domain.PageRequest;
 import java.util.UUID;
 
 @RestController
@@ -20,6 +21,9 @@ public class MedicalDocumentController {
     private final MedicalDocumentRepository documents;
     private final AnimalRepository animals;
     private final DocumentStorageService storage;
+    private static final int MAX_DOCUMENTS_PER_ANIMAL = 200;
+    private static final int MAX_TITLE_UTF8_BYTES = 800;
+    private static final int MAX_NOTES_UTF8_BYTES = 40000;
     private final AuditLogService audit;
 
     public MedicalDocumentController(MedicalDocumentRepository documents,AnimalRepository animals,DocumentStorageService storage,AuditLogService audit){
@@ -29,7 +33,7 @@ public class MedicalDocumentController {
     @GetMapping
     public List<MedicalDocument> list(@PathVariable UUID animalId){
         animals.findById(animalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Animal not found"));
-        return documents.findByAnimalIdOrderByDocumentDateDescCreatedAtDesc(animalId);
+        return documents.findByAnimalIdOrderByDocumentDateDescCreatedAtDesc(animalId, PageRequest.of(0, MAX_DOCUMENTS_PER_ANIMAL));
     }
 
 
@@ -91,9 +95,9 @@ public class MedicalDocumentController {
     private void validateMetadata(String documentType,String title,String notes){
         if(documentType==null||!java.util.Set.of("LAB_RESULT","VET_REPORT","VACCINE_CERTIFICATE","OTHER").contains(documentType))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid document type");
-        if(title==null||title.isBlank()||title.length()>200)
+        if(title==null||title.isBlank()||title.length()>200 || title.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>MAX_TITLE_UTF8_BYTES)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Title is required and must be at most 200 characters");
-        if(notes!=null&&notes.length()>10000)
+        if(notes!=null&&(notes.length()>10000 || notes.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>MAX_NOTES_UTF8_BYTES))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Notes must be at most 10000 characters");
     }
 
