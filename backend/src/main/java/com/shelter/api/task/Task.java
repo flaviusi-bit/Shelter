@@ -23,6 +23,10 @@ public class Task {
     private String notes;
     @Column(name="created_by",length=120) private String createdBy;
     @Column(name="source_key",length=180,unique=true) private String sourceKey;
+    @Version
+    @Column(nullable=false)
+    private long version;
+
     @Column(name="completed_at") private OffsetDateTime completedAt;
     @Column(name="completed_by",length=120) private String completedBy;
     @Column(name="created_at",nullable=false) private OffsetDateTime createdAt;

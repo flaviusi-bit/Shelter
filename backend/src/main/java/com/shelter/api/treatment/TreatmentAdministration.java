@@ -17,6 +17,10 @@ public class TreatmentAdministration {
     @Column(name = "scheduled_at", nullable = false)
     private OffsetDateTime scheduledAt;
 
+    @Version
+    @Column(nullable=false)
+    private long version;
+
     @Column(name = "administered_at")
     private OffsetDateTime administeredAt;
 

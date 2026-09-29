@@ -98,12 +98,14 @@ public class BackupController {
                     continue;
                 }
                 totalVerifiedBytes += fileSize;
-                VerificationResult verification = sha256(file);
-                if (verification.size() != fileSize) {
+                long sizeBeforeHash = fileSize;
+                String actual = sha256(file);
+                long sizeAfterHash = Files.size(file);
+                if (sizeBeforeHash != sizeAfterHash) {
                     if (failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "file changed during verification"));
                     continue;
                 }
-                if (!verification.hash().equalsIgnoreCase(expected) && failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "checksum mismatch"));
+                if (!actual.equalsIgnoreCase(expected) && failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "checksum mismatch"));
             }
         } catch (java.nio.charset.MalformedInputException e) {
             if (failures.size() < MAX_FAILURES) failures.add("SHA256SUMS: invalid UTF-8");
@@ -158,24 +160,19 @@ public class BackupController {
         return value + ": " + reason;
     }
 
-    private VerificationResult sha256(Path file) throws IOException {
+    private String sha256(Path file) throws IOException {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            try (var channel = java.nio.channels.FileChannel.open(file, StandardOpenOption.READ, LinkOption.NOFOLLOW_LINKS)) {
-                long size = channel.size();
-                try (var in = java.nio.channels.Channels.newInputStream(channel)) {
-                    byte[] buffer = new byte[8192];
-                    int read;
-                    while ((read = in.read(buffer)) > 0) digest.update(buffer, 0, read);
-                }
-                return new VerificationResult(HexFormat.of().formatHex(digest.digest()), size);
+            try (var in = Files.newInputStream(file)) {
+                byte[] buffer = new byte[8192];
+                int read;
+                while ((read = in.read(buffer)) > 0) digest.update(buffer, 0, read);
             }
+            return HexFormat.of().formatHex(digest.digest());
         } catch (java.security.NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
     }
-
-    private record VerificationResult(String hash, long size) {}
 
     public record BackupInfo(String name, Instant createdAt, long databaseBytes, long documentsBytes, boolean checksumAvailable) {}
     public record BackupVerification(boolean valid, String message) {}
