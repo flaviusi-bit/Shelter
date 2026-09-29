@@ -10,7 +10,7 @@ import org.springframework.security.core.Authentication;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -54,8 +54,8 @@ class TreatmentAdministrationControllerTest {
         administration.setTreatment(treatment);
         administration.setScheduledAt(OffsetDateTime.now());
         when(administrations.findById(administrationId)).thenReturn(Optional.of(administration));
-        when(administrations.findByTreatmentIdOrderByScheduledAtAsc(eq(treatmentId), any(PageRequest.class))).thenReturn(java.util.List.of());
-        when(treatments.findByStatusIgnoreCase(eq("ACTIVE"), any(PageRequest.class))).thenReturn(org.springframework.data.domain.Page.empty());
+        when(administrations.findByTreatmentIdOrderByScheduledAtAsc(eq(treatmentId), any(Pageable.class))).thenReturn(java.util.List.of());
+        when(treatments.findByStatusIgnoreCase(eq("ACTIVE"), any(PageRequest.class))).thenReturn(org.springframework.data.domain.Page.<Treatment>empty());
         when(administrations.save(any(TreatmentAdministration.class))).thenAnswer(i -> i.getArgument(0));
     }
 
