@@ -41,10 +41,10 @@ public class BackupController {
         if (!Files.isDirectory(root)) return List.of();
         try (Stream<Path> stream = Files.list(root)) {
             return stream.filter(path -> Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS))
+                .limit(MAX_BACKUPS)
                 .map(this::describe)
                 .filter(Objects::nonNull)
                 .sorted(Comparator.comparing(BackupInfo::createdAt).reversed())
-                .limit(MAX_BACKUPS)
                 .collect(Collectors.toList());
         }
     }
