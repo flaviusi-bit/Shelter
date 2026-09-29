@@ -31,9 +31,10 @@ public class MedicalDocumentController {
     }
 
     @GetMapping
-    public List<MedicalDocument> list(@PathVariable UUID animalId){
+    public ResponseEntity<List<MedicalDocument>> list(@PathVariable UUID animalId){
         animals.findById(animalId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Animal not found"));
-        return documents.findByAnimalIdOrderByDocumentDateDescCreatedAtDesc(animalId, PageRequest.of(0, MAX_DOCUMENTS_PER_ANIMAL));
+        return ResponseEntity.ok().cacheControl(CacheControl.noStore())
+            .body(documents.findByAnimalIdOrderByDocumentDateDescCreatedAtDesc(animalId, PageRequest.of(0, MAX_DOCUMENTS_PER_ANIMAL)));
     }
 
 

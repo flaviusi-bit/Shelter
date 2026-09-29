@@ -98,9 +98,17 @@ public class BackupController {
                     continue;
                 }
                 totalVerifiedBytes += fileSize;
+                long sizeBeforeHash = fileSize;
                 String actual = sha256(file);
+                long sizeAfterHash = Files.size(file);
+                if (sizeBeforeHash != sizeAfterHash) {
+                    if (failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "file changed during verification"));
+                    continue;
+                }
                 if (!actual.equalsIgnoreCase(expected) && failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "checksum mismatch"));
             }
+        } catch (java.nio.charset.MalformedInputException e) {
+            if (failures.size() < MAX_FAILURES) failures.add("SHA256SUMS: invalid UTF-8");
         }
         if (!verifiedFiles.containsAll(EXPECTED_BACKUP_FILES)) {
             if (failures.size() < MAX_FAILURES) failures.add("SHA256SUMS: required backup file missing");
