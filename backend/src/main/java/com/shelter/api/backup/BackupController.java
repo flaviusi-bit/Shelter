@@ -38,7 +38,7 @@ public class BackupController {
 
     @GetMapping
     public List<BackupInfo> list() throws IOException {
-        if (!Files.isDirectory(root)) return List.of();
+        if (Files.isSymbolicLink(root) || !Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS)) return List.of();
         try (Stream<Path> stream = Files.list(root)) {
             return stream.filter(path -> Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS))
                 .limit(MAX_BACKUPS)

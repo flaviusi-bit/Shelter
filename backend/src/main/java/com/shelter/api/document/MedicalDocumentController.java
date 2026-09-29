@@ -80,7 +80,7 @@ public class MedicalDocumentController {
             PathResource resource=new PathResource(storage.resolve(doc.getStorageKey()));
             if(!resource.exists()||!resource.isReadable()) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File not found");
             MediaType type=MediaType.parseMediaType(doc.getContentType()==null?"application/octet-stream":doc.getContentType());
-            ResponseEntity<PathResource> response = ResponseEntity.ok().contentType(type)
+            ResponseEntity<PathResource> response = ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(type)
                 .header(HttpHeaders.CONTENT_DISPOSITION,"inline; filename=\"" + safeDownloadFileName(doc.getOriginalFileName()) + "\"")
                 .body(resource);
             audit.record(auth.getName(),"ACCESS_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
@@ -112,6 +112,14 @@ public class MedicalDocumentController {
 
     private String safeDownloadFileName(String name){
         if(name==null||name.isBlank()) return "document";
-        return name.replace("\\","_").replaceAll("[\\r\\n\"]","_");
+        String safe = name.replace("\\","_").replaceAll("[\\r\\n\"]","_");
+        StringBuilder result = new StringBuilder(Math.min(safe.length(), 255));
+        for (int i = 0; i < safe.length() && result.length() < 255;) {
+            int cp = safe.codePointAt(i);
+            if (Character.isISOControl(cp)) cp = '_';
+            result.appendCodePoint(cp);
+            i += Character.charCount(safe.codePointAt(i));
+        }
+        return result.length() == 0 ? "document" : result.toString();
     }
 }
