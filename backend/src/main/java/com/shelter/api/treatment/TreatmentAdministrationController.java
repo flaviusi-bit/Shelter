@@ -17,10 +17,12 @@ import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.data.domain.PageRequest;
 
 @RestController
 @RequestMapping("/api/animals/{animalId}/treatments/{treatmentId}/administrations")
 public class TreatmentAdministrationController {
+    private static final int MAX_ADMINISTRATIONS_PER_TREATMENT = 500;
     private final TreatmentAdministrationRepository administrations;
     private final TreatmentRepository treatments;
     private final AnimalRepository animals;
@@ -45,7 +47,7 @@ public class TreatmentAdministrationController {
             @PathVariable UUID animalId,
             @PathVariable UUID treatmentId) {
         ensureTreatment(animalId, treatmentId);
-        return administrations.findByTreatmentIdOrderByScheduledAtAsc(treatmentId);
+        return administrations.findByTreatmentIdOrderByScheduledAtAsc(treatmentId, PageRequest.of(0, MAX_ADMINISTRATIONS_PER_TREATMENT));
     }
 
     @PostMapping("/generate")
@@ -68,7 +70,7 @@ public class TreatmentAdministrationController {
         OffsetDateTime cursor = treatment.getStartDate().atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime limit = end.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
 
-        var existing = administrations.findByTreatmentIdOrderByScheduledAtAsc(treatmentId);
+        var existing = administrations.findByTreatmentIdOrderByScheduledAtAsc(treatmentId, PageRequest.of(0, 5000));
         var existingTimes = existing.stream()
                 .map(TreatmentAdministration::getScheduledAt)
                 .collect(java.util.stream.Collectors.toSet());
@@ -99,7 +101,7 @@ public class TreatmentAdministrationController {
         LocalDate end = treatment.getEndDate() != null ? treatment.getEndDate() : treatment.getStartDate().plusDays(days - 1);
         OffsetDateTime cursor = treatment.getStartDate().atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime limit = end.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
-        var existingTimes = administrations.findByTreatmentIdOrderByScheduledAtAsc(treatment.getId()).stream()
+        var existingTimes = administrations.findByTreatmentIdOrderByScheduledAtAsc(treatment.getId(), PageRequest.of(0, 5000)).stream()
                 .map(TreatmentAdministration::getScheduledAt).collect(java.util.stream.Collectors.toSet());
         java.util.ArrayList<TreatmentAdministration> created = new java.util.ArrayList<>();
         while (cursor.isBefore(limit) && created.size() < 1000) {
