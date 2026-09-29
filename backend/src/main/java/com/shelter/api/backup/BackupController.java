@@ -26,6 +26,7 @@ public class BackupController {
     private static final int MAX_BACKUP_NAME_LENGTH = 128;
     private static final int MAX_FAILURE_MESSAGE_LENGTH = 256;
     private static final java.util.regex.Pattern SHA256_LINE = java.util.regex.Pattern.compile("([0-9a-fA-F]{64})\\s+(.+)");
+    private static final Set<String> EXPECTED_BACKUP_FILES = Set.of("database.dump", "documents.tar.gz");
 
     private final AuditLogService audit;
 
@@ -57,6 +58,7 @@ public class BackupController {
             return new BackupVerification(false, "SHA256SUMS is missing");
         }
         List<String> failures = new ArrayList<>();
+        Set<String> verifiedFiles = new HashSet<>();
         int entries = 0;
         try (Stream<String> lines = Files.lines(sums, StandardCharsets.UTF_8)) {
             var iterator = lines.iterator();
@@ -78,6 +80,10 @@ public class BackupController {
                 }
                 String expected = match.group(1);
                 String relativeName = match.group(2).trim();
+                if (!EXPECTED_BACKUP_FILES.contains(relativeName) || !verifiedFiles.add(relativeName)) {
+                    if (failures.size() < MAX_FAILURES) failures.add("SHA256SUMS: invalid or duplicate entry");
+                    continue;
+                }
                 Path file = dir.resolve(relativeName).normalize();
                 if (!file.startsWith(dir) || hasSymlinkComponent(dir, file.getParent()) || !Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)) {
                     if (failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "missing"));
@@ -87,7 +93,10 @@ public class BackupController {
                 if (!actual.equalsIgnoreCase(expected) && failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "checksum mismatch"));
             }
         }
-        boolean valid = failures.isEmpty();
+        if (!verifiedFiles.containsAll(EXPECTED_BACKUP_FILES)) {
+            if (failures.size() < MAX_FAILURES) failures.add("SHA256SUMS: required backup file missing");
+        }
+        boolean valid = failures.isEmpty() && verifiedFiles.size() == EXPECTED_BACKUP_FILES.size();
         audit.record(auth.getName(), "VERIFY_BACKUP", "BACKUP", null, "name=" + name + ", valid=" + valid);
         return valid
             ? new BackupVerification(true, "Backup integrity verified")
