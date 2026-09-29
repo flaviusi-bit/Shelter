@@ -1,0 +1,5 @@
+ALTER TABLE tasks
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
+
+ALTER TABLE treatment_administrations
+    ADD COLUMN version BIGINT NOT NULL DEFAULT 0;
