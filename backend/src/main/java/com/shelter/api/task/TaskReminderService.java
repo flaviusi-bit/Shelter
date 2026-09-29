@@ -11,10 +11,13 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import java.time.ZoneId;
 
 @Service
 public class TaskReminderService {
+    private static final int MEDICAL_PAGE_SIZE = 200;
     private final TaskRepository tasks;
     private final VaccinationRepository vaccinations;
     private final DewormingRepository dewormings;
@@ -42,17 +45,31 @@ public class TaskReminderService {
 
     public int syncAll() {
         int created = 0;
-        for (Vaccination v : vaccinations.findAll()) {
-            if (v.getNextDueDate() != null && tasks.findBySourceKey("VACCINATION_DUE:" + v.getId()).isEmpty()) {
-                syncVaccination(v);
-                created++;
+        int pageNumber = 0;
+        Page<Vaccination> vaccinationPage;
+        do {
+            vaccinationPage = vaccinations.findAll(PageRequest.of(pageNumber, MEDICAL_PAGE_SIZE));
+            for (Vaccination v : vaccinationPage) {
+                if (v.getNextDueDate() != null && tasks.findBySourceKey("VACCINATION_DUE:" + v.getId()).isEmpty()) {
+                    syncVaccination(v);
+                    created++;
+                }
             }
-        }
-        for (Deworming d : dewormings.findAll()) {
-            if (d.getNextDueDate() != null && tasks.findBySourceKey("DEWORMING_DUE:" + d.getId()).isEmpty()) {
-                syncDeworming(d);
-                created++;
+            pageNumber++;
+        } while (vaccinationPage.hasNext());
+
+        pageNumber = 0;
+        Page<Deworming> dewormingPage;
+        do {
+            dewormingPage = dewormings.findAll(PageRequest.of(pageNumber, MEDICAL_PAGE_SIZE));
+            for (Deworming d : dewormingPage) {
+                if (d.getNextDueDate() != null && tasks.findBySourceKey("DEWORMING_DUE:" + d.getId()).isEmpty()) {
+                    syncDeworming(d);
+                    created++;
+                }
             }
+            pageNumber++;
+        } while (dewormingPage.hasNext());
         }
         return created;
     }
