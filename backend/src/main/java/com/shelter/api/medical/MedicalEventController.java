@@ -1,6 +1,8 @@
 package com.shelter.api.medical;
 import com.shelter.api.animal.AnimalRepository; import com.shelter.api.audit.AuditLogService;
-import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*; import java.time.LocalDate; import java.util.List;
+import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException; import java.time.LocalDate; import java.util.List;
 import org.springframework.data.domain.PageRequest; import java.util.UUID;
 @RestController @RequestMapping("/api/animals/{animalId}/medical-events")
 public class MedicalEventController {

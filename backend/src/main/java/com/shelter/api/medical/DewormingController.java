@@ -1,5 +1,7 @@
 package com.shelter.api.medical;
-import com.shelter.api.animal.AnimalRepository; import com.shelter.api.audit.AuditLogService; import com.shelter.api.task.TaskReminderService; import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*; import java.time.LocalDate; import java.util.*;
+import com.shelter.api.animal.AnimalRepository; import com.shelter.api.audit.AuditLogService; import com.shelter.api.task.TaskReminderService; import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException; import java.time.LocalDate; import java.util.*;
 import org.springframework.data.domain.PageRequest; import org.springframework.security.core.Authentication;
 @RestController @RequestMapping("/api/animals/{animalId}/dewormings") public class DewormingController {
  private static final int MAX_HISTORY_ENTRIES = 200;
