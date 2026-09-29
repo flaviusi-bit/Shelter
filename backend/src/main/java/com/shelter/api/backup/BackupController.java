@@ -51,6 +51,7 @@ public class BackupController {
 
     @PostMapping("/{name}/verify")
     public BackupVerification verify(@PathVariable String name, Authentication auth) throws IOException {
+        if (Files.isSymbolicLink(root) || !Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS)) throw new IllegalArgumentException("Backup storage unavailable");
         Path dir = safeDirectory(name);
         if (!Files.isDirectory(dir, LinkOption.NOFOLLOW_LINKS)) throw new IllegalArgumentException("Backup not found");
         Path sums = dir.resolve("SHA256SUMS");
@@ -136,7 +137,7 @@ public class BackupController {
     }
 
     private boolean hasSymlinkComponent(Path rootPath, Path targetParent) {
-        if (targetParent == null || !targetParent.startsWith(rootPath)) return true;
+        if (targetParent == null || !targetParent.startsWith(rootPath) || Files.isSymbolicLink(rootPath)) return true;
         Path current = rootPath;
         Path relative = rootPath.relativize(targetParent);
         for (Path component : relative) {
