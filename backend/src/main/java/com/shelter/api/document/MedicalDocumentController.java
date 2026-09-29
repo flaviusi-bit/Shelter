@@ -65,7 +65,7 @@ public class MedicalDocumentController {
             audit.record(auth.getName(),"UPLOAD_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
             return doc;
         }catch(IOException|IllegalArgumentException e){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,e.getMessage(),e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid medical document upload");
         }
     }
 
@@ -112,7 +112,7 @@ public class MedicalDocumentController {
 
     private String safeDownloadFileName(String name){
         if(name==null||name.isBlank()) return "document";
-        String safe = name.replace("\\","_").replaceAll("[\\r\\n\"]","_");
+        String safe = name.replace("\\","_").replace("/","_").replaceAll("[\\r\\n\"]","_");
         StringBuilder result = new StringBuilder(Math.min(safe.length(), 255));
         for (int i = 0; i < safe.length() && result.length() < 255;) {
             int cp = safe.codePointAt(i);
