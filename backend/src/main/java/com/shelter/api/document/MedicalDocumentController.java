@@ -81,8 +81,14 @@ public class MedicalDocumentController {
             java.nio.file.Path resolved = storage.resolve(doc.getStorageKey());
             if(!java.nio.file.Files.isRegularFile(resolved, java.nio.file.LinkOption.NOFOLLOW_LINKS)
                     || !java.nio.file.Files.isReadable(resolved)) throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File not found");
-            if(doc.getFileSize()!=null && java.nio.file.Files.size(resolved)!=doc.getFileSize())
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable");
+            if(doc.getFileSize()!=null) {
+                try {
+                    if(java.nio.file.Files.size(resolved)!=doc.getFileSize())
+                        throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable");
+                } catch (java.io.IOException e) {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND,"File unavailable",e);
+                }
+            }
             PathResource resource=new PathResource(resolved);
             MediaType type=MediaType.parseMediaType(doc.getContentType()==null?"application/octet-stream":doc.getContentType());
             ResponseEntity<PathResource> response = ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(type)
