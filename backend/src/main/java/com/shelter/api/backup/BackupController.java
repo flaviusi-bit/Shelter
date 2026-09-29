@@ -20,6 +20,7 @@ import java.util.stream.Stream;
 public class BackupController {
     private final Path root;
     private static final int MAX_BACKUPS = 200;
+    private static final long MAX_TOTAL_VERIFY_BYTES = 1_073_741_824L;
     private static final int MAX_CHECKSUM_ENTRIES = 10_000;
     private static final int MAX_MANIFEST_LINE_LENGTH = 4_096;
     private static final int MAX_FAILURES = 100;
@@ -59,6 +60,7 @@ public class BackupController {
         }
         List<String> failures = new ArrayList<>();
         Set<String> verifiedFiles = new HashSet<>();
+        long totalVerifiedBytes = 0L;
         int entries = 0;
         try (Stream<String> lines = Files.lines(sums, StandardCharsets.UTF_8)) {
             var iterator = lines.iterator();
@@ -89,6 +91,12 @@ public class BackupController {
                     if (failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "missing"));
                     continue;
                 }
+                long fileSize = Files.size(file);
+                if (fileSize > MAX_TOTAL_VERIFY_BYTES - totalVerifiedBytes) {
+                    if (failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "verification size limit exceeded"));
+                    continue;
+                }
+                totalVerifiedBytes += fileSize;
                 String actual = sha256(file);
                 if (!actual.equalsIgnoreCase(expected) && failures.size() < MAX_FAILURES) failures.add(safeFailure(relativeName, "checksum mismatch"));
             }
