@@ -7,7 +7,12 @@ PGHOST="${PGHOST:-localhost}"
 PGPORT="${PGPORT:-5432}"
 PGDATABASE="${PGDATABASE:-${POSTGRES_DB:-shelter}}"
 PGUSER="${PGUSER:-${POSTGRES_USER:-shelter}}"
-PGPASSWORD="${PGPASSWORD:-${POSTGRES_PASSWORD:-change-me}}"
+PGPASSWORD="${PGPASSWORD:-${POSTGRES_PASSWORD:-}}"
+
+if [ -z "${PGPASSWORD}" ]; then
+  echo "PGPASSWORD or POSTGRES_PASSWORD must be set." >&2
+  exit 1
+fi
 
 timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 target="${BACKUP_DIR}/${timestamp}"
