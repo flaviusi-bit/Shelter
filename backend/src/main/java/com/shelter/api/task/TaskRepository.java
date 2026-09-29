@@ -13,4 +13,5 @@ public interface TaskRepository extends JpaRepository<Task, UUID> {
     long countByStatusAndDueAtBefore(String status, OffsetDateTime dueAt);
     long countByStatusAndDueAtGreaterThanEqualAndDueAtBefore(String status, OffsetDateTime from, OffsetDateTime to);
     java.util.Optional<Task> findBySourceKey(String sourceKey);
+    List<Task> findBySourceKeyIn(java.util.Collection<String> sourceKeys);
 }

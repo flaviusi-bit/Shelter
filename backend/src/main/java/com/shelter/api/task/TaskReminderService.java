@@ -49,8 +49,13 @@ public class TaskReminderService {
         Page<Vaccination> vaccinationPage;
         do {
             vaccinationPage = vaccinations.findAll(PageRequest.of(pageNumber, MEDICAL_PAGE_SIZE));
+            java.util.Set<String> existingKeys = new java.util.HashSet<>(
+                tasks.findBySourceKeyIn(vaccinationPage.getContent().stream()
+                    .map(v -> "VACCINATION_DUE:" + v.getId()).toList())
+                    .stream().map(Task::getSourceKey).toList());
             for (Vaccination v : vaccinationPage) {
-                if (v.getNextDueDate() != null && tasks.findBySourceKey("VACCINATION_DUE:" + v.getId()).isEmpty()) {
+                String key = "VACCINATION_DUE:" + v.getId();
+                if (v.getNextDueDate() != null && !existingKeys.contains(key)) {
                     syncVaccination(v);
                     created++;
                 }
@@ -62,8 +67,13 @@ public class TaskReminderService {
         Page<Deworming> dewormingPage;
         do {
             dewormingPage = dewormings.findAll(PageRequest.of(pageNumber, MEDICAL_PAGE_SIZE));
+            java.util.Set<String> existingKeys = new java.util.HashSet<>(
+                tasks.findBySourceKeyIn(dewormingPage.getContent().stream()
+                    .map(d -> "DEWORMING_DUE:" + d.getId()).toList())
+                    .stream().map(Task::getSourceKey).toList());
             for (Deworming d : dewormingPage) {
-                if (d.getNextDueDate() != null && tasks.findBySourceKey("DEWORMING_DUE:" + d.getId()).isEmpty()) {
+                String key = "DEWORMING_DUE:" + d.getId();
+                if (d.getNextDueDate() != null && !existingKeys.contains(key)) {
                     syncDeworming(d);
                     created++;
                 }
