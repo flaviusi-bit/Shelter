@@ -142,7 +142,7 @@ public class UserController {
     @PostMapping("/{id}/password")
     public void resetPassword(@PathVariable java.util.UUID id, @RequestBody ResetPasswordRequest r, Authentication auth) {
         String next = r.newPassword() == null ? "" : r.newPassword();
-        if (next.length() < 12) throw new IllegalArgumentException("Password must be at least 12 characters");
+        validatePassword(next);
         AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
         if (!u.isActive()) throw new IllegalStateException("Cannot reset password for an inactive user");
         if (u.getUsername().equalsIgnoreCase(auth.getName())) throw new IllegalStateException("Use change password for your own account");
