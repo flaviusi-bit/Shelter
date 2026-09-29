@@ -18,11 +18,13 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 
 @RestController
 @RequestMapping("/api/animals/{animalId}/treatments/{treatmentId}/administrations")
 public class TreatmentAdministrationController {
     private static final int MAX_ADMINISTRATIONS_PER_TREATMENT = 500;
+    private static final int ACTIVE_TREATMENT_PAGE_SIZE = 200;
     private final TreatmentAdministrationRepository administrations;
     private final TreatmentRepository treatments;
     private final AnimalRepository animals;
@@ -93,7 +95,13 @@ public class TreatmentAdministrationController {
 
     @Scheduled(fixedDelayString = "${shelter.treatment-schedule-sync-ms:900000}")
     public void generateActiveSchedules() {
-        treatments.findByStatusIgnoreCase("ACTIVE").forEach(t -> generateForTreatment(t, 14));
+        int pageNumber = 0;
+        Page<Treatment> page;
+        do {
+            page = treatments.findByStatusIgnoreCase("ACTIVE", PageRequest.of(pageNumber, ACTIVE_TREATMENT_PAGE_SIZE));
+            page.forEach(t -> generateForTreatment(t, 14));
+            pageNumber++;
+        } while (page.hasNext());
     }
 
     private List<TreatmentAdministration> generateForTreatment(Treatment treatment, int days) {

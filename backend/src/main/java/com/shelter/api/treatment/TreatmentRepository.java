@@ -8,5 +8,5 @@ import java.util.UUID;
 
 public interface TreatmentRepository extends JpaRepository<Treatment,UUID>{
  List<Treatment> findByAnimalIdOrderByStartDateDesc(UUID animalId, Pageable pageable);
- List<Treatment> findByStatusIgnoreCase(String status);
+ List<Treatment> findByStatusIgnoreCase(String status, Pageable pageable);
 }
