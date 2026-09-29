@@ -5,7 +5,7 @@ import com.shelter.api.audit.AuditLogService;
 import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
-import org.springframework.http.CacheControl; import org.springframework.http.HttpStatus; import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
@@ -19,7 +19,7 @@ public class TreatmentController {
  private static final int MAX_HISTORY_ENTRIES = 200;
  private final TreatmentRepository treatments; private final AnimalRepository animals; private final AuditLogService audit;
  public TreatmentController(TreatmentRepository treatments,AnimalRepository animals,AuditLogService audit){this.treatments=treatments;this.animals=animals;this.audit=audit;}
- @GetMapping public ResponseEntity<List<Treatment>> list(@PathVariable UUID animalId){ensureAnimal(animalId);return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(treatments.findByAnimalIdOrderByStartDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES)));}
+ @GetMapping public List<Treatment> list(@PathVariable UUID animalId){ensureAnimal(animalId);return treatments.findByAnimalIdOrderByStartDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
  @PostMapping @ResponseStatus(HttpStatus.CREATED) public Treatment create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){
         validateUtf8(r.medication(), 640, "medication");
         validateUtf8(r.dose(), 320, "dose");

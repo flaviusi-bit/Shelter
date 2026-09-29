@@ -1,7 +1,7 @@
 package com.shelter.api.medical;
 import com.shelter.api.animal.AnimalRepository; import com.shelter.api.audit.AuditLogService;
 import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*;
-import org.springframework.http.CacheControl; import org.springframework.http.HttpStatus; import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException; import java.time.LocalDate; import java.util.List;
 import org.springframework.data.domain.PageRequest; import java.util.UUID;
 @RestController @RequestMapping("/api/animals/{animalId}/medical-events")
@@ -9,7 +9,7 @@ public class MedicalEventController {
  private static final int MAX_HISTORY_ENTRIES = 200;
  private final MedicalEventRepository repo; private final AnimalRepository animals; private final AuditLogService audit;
  public MedicalEventController(MedicalEventRepository r,AnimalRepository a,AuditLogService audit){repo=r;animals=a;this.audit=audit;}
- @GetMapping public ResponseEntity<List<MedicalEvent>> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(repo.findByAnimalIdOrderByEventDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES)));}
+ @GetMapping public List<MedicalEvent> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByEventDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
  @PostMapping public MedicalEvent create(@PathVariable UUID animalId,@Valid @RequestBody Request r,org.springframework.security.core.Authentication auth){
         validateUtf8(r.eventType(), 160, "eventType");
         validateUtf8(r.title(), 800, "title");
