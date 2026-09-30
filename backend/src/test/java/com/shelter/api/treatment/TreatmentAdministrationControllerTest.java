@@ -74,10 +74,13 @@ class TreatmentAdministrationControllerTest {
             .thenReturn(java.util.List.of());
         when(administrations.existsByTreatmentIdAndScheduledAt(eq(treatmentId), eq(scheduled)))
             .thenReturn(true);
-        when(scheduleService.createAndAudit(eq(treatment), eq(scheduled), anyString()))
+        when(scheduleService.createAndAudit(eq(treatment), eq(scheduled), eq("vet")))
             .thenThrow(new DataIntegrityViolationException("duplicate schedule"));
 
-        var result = controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class));
+        Authentication authentication = Mockito.mock(Authentication.class);
+        when(authentication.getName()).thenReturn("vet");
+
+        var result = controller.generate(animalId, treatmentId, 1, authentication);
 
         org.junit.jupiter.api.Assertions.assertTrue(result.isEmpty());
     }
