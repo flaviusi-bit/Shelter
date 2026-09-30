@@ -77,7 +77,12 @@ public class TreatmentAdministrationController {
                 ? treatment.getEndDate()
                 : treatment.getStartDate().plusDays(days - 1);
 
-        OffsetDateTime cursor = treatment.getStartDate().atStartOfDay(zone).toOffsetDateTime();
+        LocalDate today = LocalDate.now(zone);
+        LocalDate start = treatment.getStartDate().isAfter(today) ? treatment.getStartDate() : today;
+        if (end.isBefore(start)) {
+            return List.of();
+        }
+        OffsetDateTime cursor = start.atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime limit = end.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
 
         var existing = administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(treatmentId, cursor, limit);
