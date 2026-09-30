@@ -24,6 +24,11 @@ while :; do
   sleep 1
 done
 
+cleanup_target() {
+  rm -rf -- "${target:-}"
+}
+trap cleanup_target ERR
+
 export PGPASSWORD
 if [ -L "${DOCUMENTS_PATH}" ] || [ ! -d "${DOCUMENTS_PATH}" ]; then
   echo "Document directory must exist and must not be a symlink." >&2
@@ -37,6 +42,7 @@ echo "Backing up documents from '${DOCUMENTS_PATH}'..."
 tar -C "${DOCUMENTS_PATH}" -czf "${target}/documents.tar.gz" .
 
 (cd "${target}" && sha256sum database.dump documents.tar.gz > SHA256SUMS)
+trap - ERR
 
 echo "Backup completed: ${target}"
 ls -lh "${target}"
