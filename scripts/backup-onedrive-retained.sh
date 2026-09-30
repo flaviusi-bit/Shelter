@@ -6,6 +6,12 @@ if [ -z "${ONEDRIVE_BACKUP_DIR:-}" ]; then
   exit 2
 fi
 
+if [ -L "${ONEDRIVE_BACKUP_DIR}" ] || [ ! -d "${ONEDRIVE_BACKUP_DIR}" ]; then
+  echo "ONEDRIVE_BACKUP_DIR must be an existing directory and must not be a symlink." >&2
+  exit 2
+fi
+ONEDRIVE_BACKUP_DIR="$(cd -- "${ONEDRIVE_BACKUP_DIR}" && pwd -P)"
+
 RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 if ! [[ "$RETENTION_DAYS" =~ ^[0-9]+$ ]] || [ "$RETENTION_DAYS" -lt 1 ]; then
   echo "BACKUP_RETENTION_DAYS must be a positive integer."
