@@ -10,7 +10,7 @@ public class MedicalEventController {
  private static final int MAX_HISTORY_ENTRIES = 200;
  private final MedicalEventRepository repo; private final AnimalRepository animals; private final AuditLogService audit;
  public MedicalEventController(MedicalEventRepository r,AnimalRepository a,AuditLogService audit){repo=r;animals=a;this.audit=audit;}
- @GetMapping public List<MedicalEvent> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByEventDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
+ @GetMapping public List<MedicalEvent> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByEventDateDescIdAsc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
  @PostMapping @Transactional public MedicalEvent create(@PathVariable UUID animalId,@Valid @RequestBody Request r,org.springframework.security.core.Authentication auth){
         validateUtf8(r.eventType(), 160, "eventType");
         validateUtf8(r.title(), 800, "title");
