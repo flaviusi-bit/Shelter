@@ -8,7 +8,8 @@ fi
 
 BACKUP_DIR="${2:-}"
 if [ -z "${BACKUP_DIR}" ]; then echo "Backup directory is required."; exit 2; fi
-if [ ! -f "${BACKUP_DIR}/database.dump" ] || [ ! -f "${BACKUP_DIR}/documents.tar.gz" ]; then
+BACKUP_DIR="$(cd -- "${BACKUP_DIR}" 2>/dev/null && pwd -P)" || { echo "Backup directory is invalid."; exit 2; }
+if [ ! -d "${BACKUP_DIR}" ] || [ ! -f "${BACKUP_DIR}/database.dump" ] || [ ! -f "${BACKUP_DIR}/documents.tar.gz" ]; then
   echo "Backup directory must contain database.dump and documents.tar.gz."
   exit 2
 fi
@@ -18,7 +19,11 @@ PGHOST="${PGHOST:-localhost}"
 PGPORT="${PGPORT:-5432}"
 PGDATABASE="${PGDATABASE:-${POSTGRES_DB:-shelter}}"
 PGUSER="${PGUSER:-${POSTGRES_USER:-shelter}}"
-PGPASSWORD="${PGPASSWORD:-${POSTGRES_PASSWORD:-change-me}}"
+PGPASSWORD="${PGPASSWORD:-${POSTGRES_PASSWORD:-}}"
+if [ -z "${PGPASSWORD}" ]; then
+  echo "PGPASSWORD or POSTGRES_PASSWORD must be set."
+  exit 2
+fi
 export PGPASSWORD
 
 if [ -f "${BACKUP_DIR}/SHA256SUMS" ]; then
