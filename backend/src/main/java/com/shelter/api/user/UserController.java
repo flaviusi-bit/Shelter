@@ -4,6 +4,7 @@ import com.shelter.api.audit.AuditLogService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Locale;
@@ -64,7 +65,11 @@ public class UserController {
         u.setPasswordHash(passwordEncoder.encode(password));
         u.setRole(role);
         u.setActive(true);
-        u = users.save(u);
+        try {
+            u = users.save(u);
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException("Username already exists");
+        }
         audit.record(auth.getName(), "CREATE_USER", "USER", u.getId(), "username=" + u.getUsername() + ", role=" + u.getRole());
         return new UserView(u.getId(), u.getUsername(), u.getDisplayName(), u.getRole(), u.isActive());
     }

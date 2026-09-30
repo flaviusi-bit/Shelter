@@ -97,6 +97,20 @@ class UserControllerTest {
         verify(users, never()).save(any());
         verifyNoInteractions(passwordEncoder, audit);
     }
+    @Test
+    void createUserRejectsConcurrentDuplicateUsername() {
+        when(users.findByUsername("viewer1")).thenReturn(Optional.empty());
+        when(passwordEncoder.encode("secure-password-123")).thenReturn("encoded");
+        when(users.save(any(AppUser.class))).thenThrow(new org.springframework.dao.DataIntegrityViolationException("duplicate username"));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> controller.create(
+                new UserController.CreateUserRequest("viewer1", "Viewer", "secure-password-123", "VIEWER"), auth));
+
+        assertEquals("Username already exists", ex.getMessage());
+        verify(audit, never()).record(anyString(), anyString(), anyString(), any(), anyString());
+    }
+
 
     @Test
     void updateUserRejectsInvalidRole() {
