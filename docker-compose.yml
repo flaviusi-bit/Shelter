@@ -70,7 +70,7 @@ services:
       start_period: 30s
     volumes:
       - shelter-documents-data:/app/data/documents
-      - ${SHELTER_BACKUP_PATH:-./backups}:/app/data/backups
+      - ${BACKUP_DIR:-./backups}:/app/data/backups
     depends_on:
       postgres:
         condition: service_healthy
