@@ -10,6 +10,7 @@ import java.util.UUID;
 @Table(name = "animals")
 public class Animal {
     @Id private UUID id;
+    @Version private long version;
     @Column(name="animal_code",nullable=false,length=40,unique=true) private String animalCode;
     @Column(nullable=false,length=120) private String name;
     @Column(name="animal_type",nullable=false,length=30) private String animalType;
