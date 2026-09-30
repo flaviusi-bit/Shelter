@@ -25,6 +25,10 @@ if ([string]::IsNullOrWhiteSpace($BackupName)) {
   throw "BackupName is required for restore."
 }
 
+if ($BackupName -notmatch "^[0-9]{8}T[0-9]{6}Z$") {
+  throw "Invalid backup folder name."
+}
+
 $backupPath = Join-Path $OneDriveBackupDir $BackupName
 if (-not (Test-Path (Join-Path $backupPath "SHA256SUMS"))) {
   throw "Backup checksum file not found: $backupPath"
