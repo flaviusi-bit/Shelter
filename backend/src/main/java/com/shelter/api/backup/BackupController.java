@@ -41,10 +41,11 @@ public class BackupController {
         if (Files.isSymbolicLink(root) || !Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS)) return List.of();
         try (Stream<Path> stream = Files.list(root)) {
             return stream.filter(path -> Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS))
-                .limit(MAX_BACKUPS)
                 .map(this::describe)
                 .filter(Objects::nonNull)
-                .sorted(Comparator.comparing(BackupInfo::createdAt).reversed())
+                .sorted(Comparator.comparing(BackupInfo::createdAt).reversed()
+                    .thenComparing(BackupInfo::name))
+                .limit(MAX_BACKUPS)
                 .collect(Collectors.toList());
         }
     }
