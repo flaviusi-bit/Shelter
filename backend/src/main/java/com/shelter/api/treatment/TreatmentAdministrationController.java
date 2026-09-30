@@ -182,7 +182,8 @@ public class TreatmentAdministrationController {
             @PathVariable UUID administrationId,
             @Valid @RequestBody ActionRequest request,
             Authentication authentication) {
-        ensureTreatment(animalId, treatmentId);
+        Treatment treatment = ensureTreatment(animalId, treatmentId);
+        ensureActive(treatment);
         TreatmentAdministration a = administrations.findById(administrationId)
                 .orElseThrow(() -> new IllegalArgumentException("Administration not found: " + administrationId));
         if (!a.getTreatment().getId().equals(treatmentId)) {

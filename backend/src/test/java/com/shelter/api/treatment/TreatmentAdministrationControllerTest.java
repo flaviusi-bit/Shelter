@@ -171,6 +171,24 @@ class TreatmentAdministrationControllerTest {
     }
 
     @Test
+    void cannotAdministerAdministrationForCompletedTreatment() {
+        when(treatment.getStatus()).thenReturn("COMPLETED");
+        assertThrows(IllegalStateException.class, () ->
+            controller.administer(animalId, treatmentId, administrationId,
+                new TreatmentAdministrationController.ActionRequest("given", null), Mockito.mock(Authentication.class)));
+        verify(administrations, never()).save(any());
+    }
+
+    @Test
+    void cannotMarkAdministrationForCancelledTreatment() {
+        when(treatment.getStatus()).thenReturn("CANCELLED");
+        assertThrows(IllegalStateException.class, () ->
+            controller.setStatus(animalId, treatmentId, administrationId,
+                new TreatmentAdministrationController.ActionRequest("not given", "SKIPPED"), Mockito.mock(Authentication.class)));
+        verify(administrations, never()).save(any());
+    }
+
+    @Test
     void cannotAdministerAlreadyFinalizedAdministration() {
         Authentication authentication = Mockito.mock(Authentication.class);
         when(authentication.getName()).thenReturn("vet");
