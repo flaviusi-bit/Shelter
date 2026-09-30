@@ -20,6 +20,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 @RestController
 @RequestMapping("/api/animals/{animalId}/treatments/{treatmentId}/administrations")
@@ -104,7 +105,7 @@ public class TreatmentAdministrationController {
         int pageNumber = 0;
         List<Treatment> page;
         do {
-            page = treatments.findByStatusIgnoreCase("ACTIVE", PageRequest.of(pageNumber, ACTIVE_TREATMENT_PAGE_SIZE));
+            page = treatments.findByStatusIgnoreCase("ACTIVE", PageRequest.of(pageNumber, ACTIVE_TREATMENT_PAGE_SIZE, Sort.by(Sort.Direction.ASC, "id")));
             page.forEach(t -> generateForTreatment(t, 14));
             pageNumber++;
         } while (page.size() == ACTIVE_TREATMENT_PAGE_SIZE);

@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.time.ZoneId;
 
@@ -49,7 +50,7 @@ public class TaskReminderService {
         int pageNumber = 0;
         Page<Vaccination> vaccinationPage;
         do {
-            vaccinationPage = vaccinations.findAll(PageRequest.of(pageNumber, MEDICAL_PAGE_SIZE));
+            vaccinationPage = vaccinations.findAll(PageRequest.of(pageNumber, MEDICAL_PAGE_SIZE, Sort.by(Sort.Direction.ASC, "id")));
             java.util.Set<String> existingKeys = new java.util.HashSet<>(
                 tasks.findBySourceKeyIn(vaccinationPage.getContent().stream()
                     .map(v -> "VACCINATION_DUE:" + v.getId()).toList())
