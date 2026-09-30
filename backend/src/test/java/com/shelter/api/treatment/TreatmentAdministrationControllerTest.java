@@ -120,7 +120,9 @@ class TreatmentAdministrationControllerTest {
             .thenReturn(java.util.List.of());
 
         var scheduled = org.mockito.ArgumentCaptor.forClass(OffsetDateTime.class);
-        controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class));
+        Authentication authentication = Mockito.mock(Authentication.class);
+        when(authentication.getName()).thenReturn("vet");
+        controller.generate(animalId, treatmentId, 1, authentication);
 
         verify(scheduleService, times(1)).createAndAudit(eq(treatment), scheduled.capture(), anyString());
         assertEquals(today, scheduled.getValue().toLocalDate());
