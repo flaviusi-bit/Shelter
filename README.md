@@ -16,7 +16,7 @@ Current development branch: `initial-architecture`
 - Database migrations: Flyway
 - Local infrastructure: Docker Compose
 - CI: GitHub Actions
-- Production target: Docker on a VPS, with Cloudflare in front
+- Deployment target: Docker Desktop on Windows 11
 
 ## Local development
 
@@ -49,9 +49,15 @@ The development UI runs on port 5173.
 
 ## Architecture status
 
-The repository currently contains the project foundation and initial database schema. The next implementation step is the domain model and APIs for animals, treatment plans and medication administrations, followed by authentication, vaccinations, deworming, veterinary visits and attachments.
+The MVP application, medical workflows, authentication, role-based access control, task/reminder flows and containerized deployment stack are implemented.
 
-No VPS or domain is required during development. Production infrastructure will be added later without changing the application architecture.
+The supported local deployment target is Windows 11 with Docker Desktop and Docker Compose:
+- Nginx serves the PWA and reverse-proxies `/api/*` to the backend.
+- Spring Boot provides the API and stores medical documents on persistent filesystem storage.
+- PostgreSQL 16 provides persistent application data.
+- The backend and PostgreSQL ports are bound to localhost; the frontend is exposed through the configured frontend port (80 by default).
+
+No VPS or public domain is required for the Windows 11 deployment.
 
 
 ## Current MVP modules
@@ -61,14 +67,10 @@ No VPS or domain is required during development. Production infrastructure will 
 - Treatment plans and generated administration schedules
 - Treatment administration audit trail using the authenticated user
 - Medical history, vaccinations and deworming
-- Medical document records linked to external file URLs
+- Medical document records with authenticated filesystem-backed uploads
 - Operational dashboard with treatment administration queue
 - Tasks/reminders with priorities, due dates, assignment and completion/skip tracking
 - Responsive PWA-oriented frontend
-
-### Current document storage note
-
-Documents currently store a URL rather than binary file content. This keeps PostgreSQL focused on metadata and leaves object/file storage to the future VPS/Cloudflare deployment layer.
 
 ### Current task/reminder note
 
@@ -107,8 +109,15 @@ Restore is deliberately destructive and requires an explicit confirmation:
 
 Stop the application before restore. The restore replaces the database contents and document directory. Keep backups outside the VPS whenever possible and periodically perform a test restore.
 
-### Docker Compose production shape
+### Docker Compose deployment shape
 
-docker compose up -d --build starts PostgreSQL and the Spring Boot backend. PostgreSQL persists to shelter-postgres-data; uploaded documents persist to shelter-documents-data.
+`docker compose up -d --build` starts the Nginx frontend, Spring Boot backend and PostgreSQL.
 
-For a VPS, these volumes should be backed by reliable persistent storage and included in the disaster-recovery plan. Cloudflare can later sit in front of the VPS without changing the application storage model.
+- Frontend: `http://localhost/` by default; change `FRONTEND_PORT` if required.
+- Backend API: bound to `127.0.0.1:${BACKEND_PORT:-8080}` for local administration/troubleshooting.
+- PostgreSQL: bound to `127.0.0.1:${POSTGRES_PORT:-5432}`.
+- PostgreSQL data persists in `shelter-postgres-data`.
+- Uploaded documents persist in `shelter-documents-data`.
+- Backup output defaults to `./backups` and is mounted into the backend at `/app/data/backups`.
+
+For the Windows 11 deployment, keep the Docker volumes and backup directory on reliable local storage and copy completed backups to a separate location such as OneDrive. The PowerShell wrapper in `scripts/windows-shelter-backup.ps1` provides the Windows backup/restore workflow.
