@@ -15,16 +15,32 @@ fi
 export BACKUP_DIR="$ONEDRIVE_BACKUP_DIR"
 "$(dirname "$0")/backup.sh"
 
-latest="$(find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%T@ %p\n' | sort -nr | head -n 1 | cut -d' ' -f2-)"
-if [ -z "$latest" ] || [ ! -f "$latest/SHA256SUMS" ]; then
+latest=""
+while IFS= read -r backup_name; do
+  if [[ "$backup_name" =~ ^[0-9]{8}T[0-9]{6}Z$ ]]; then
+    if [ -z "$latest" ] || [[ "$backup_name" > "$latest" ]]; then
+      latest="$backup_name"
+    fi
+  fi
+done < <(find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%f\n')
+
+if [ -z "$latest" ] || [ ! -f "$BACKUP_DIR/$latest/SHA256SUMS" ]; then
   echo "Backup completed but no checksum manifest was found."
   exit 1
 fi
 
-echo "Verifying backup integrity: $latest"
-(cd "$latest" && sha256sum --check SHA256SUMS)
+echo "Verifying backup integrity: $BACKUP_DIR/$latest"
+(cd "$BACKUP_DIR/$latest" && sha256sum --check SHA256SUMS)
 
-echo "Removing backup folders older than ${RETENTION_DAYS} days..."
-find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -mtime +"$RETENTION_DAYS" -print -exec rm -rf {} +
+echo "Removing generated backup folders older than ${RETENTION_DAYS} days..."
+while IFS= read -r backup_path; do
+  backup_name="$(basename "$backup_path")"
+  if [[ "$backup_name" =~ ^[0-9]{8}T[0-9]{6}Z$ ]]; then
+    if [ "$(find "$backup_path" -prune -mtime +"$RETENTION_DAYS" -print)" ]; then
+      echo "$backup_path"
+      rm -rf -- "$backup_path"
+    fi
+  fi
+done < <(find "$BACKUP_DIR" -mindepth 1 -maxdepth 1 -type d -printf '%p\n')
 
 echo "OneDrive backup completed and verified with ${RETENTION_DAYS}-day retention."
