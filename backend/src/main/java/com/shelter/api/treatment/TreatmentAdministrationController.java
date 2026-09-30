@@ -110,8 +110,12 @@ public class TreatmentAdministrationController {
 
     private List<TreatmentAdministration> generateForTreatment(Treatment treatment, int days) {
         Duration interval = parseFrequency(treatment.getFrequency());
-        LocalDate end = treatment.getEndDate() != null ? treatment.getEndDate() : treatment.getStartDate().plusDays(days - 1);
-        OffsetDateTime cursor = treatment.getStartDate().atStartOfDay(zone).toOffsetDateTime();
+        LocalDate today = LocalDate.now(zone);
+        LocalDate start = treatment.getStartDate().isAfter(today) ? treatment.getStartDate() : today;
+        LocalDate end = treatment.getEndDate() != null
+                ? treatment.getEndDate()
+                : start.plusDays(days - 1);
+        OffsetDateTime cursor = start.atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime limit = end.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
         var existingTimes = administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(treatment.getId(), cursor, limit).stream()
                 .map(TreatmentAdministration::getScheduledAt).collect(java.util.stream.Collectors.toSet());
