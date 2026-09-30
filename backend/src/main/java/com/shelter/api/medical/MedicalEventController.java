@@ -2,6 +2,7 @@ package com.shelter.api.medical;
 import com.shelter.api.animal.AnimalRepository; import com.shelter.api.audit.AuditLogService;
 import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException; import java.time.LocalDate; import java.util.List;
 import org.springframework.data.domain.PageRequest; import java.util.UUID;
 @RestController @RequestMapping("/api/animals/{animalId}/medical-events")
@@ -10,7 +11,7 @@ public class MedicalEventController {
  private final MedicalEventRepository repo; private final AnimalRepository animals; private final AuditLogService audit;
  public MedicalEventController(MedicalEventRepository r,AnimalRepository a,AuditLogService audit){repo=r;animals=a;this.audit=audit;}
  @GetMapping public List<MedicalEvent> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByEventDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
- @PostMapping public MedicalEvent create(@PathVariable UUID animalId,@Valid @RequestBody Request r,org.springframework.security.core.Authentication auth){
+ @PostMapping @Transactional public MedicalEvent create(@PathVariable UUID animalId,@Valid @RequestBody Request r,org.springframework.security.core.Authentication auth){
         validateUtf8(r.eventType(), 160, "eventType");
         validateUtf8(r.title(), 800, "title");
         validateUtf8(r.diagnosis(), 1020, "diagnosis");

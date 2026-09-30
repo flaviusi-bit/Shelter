@@ -4,6 +4,7 @@ import com.shelter.api.animal.AnimalRepository;
 import com.shelter.api.audit.AuditLogService;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -31,6 +32,7 @@ public class TaskController {
     }
 
     @PostMapping
+    @Transactional
     public Task create(@jakarta.validation.Valid @RequestBody TaskRequest request, Authentication auth){
         Task input=new Task();
         if(request.animalId()!=null){
@@ -67,6 +69,7 @@ public class TaskController {
     public java.util.Map<String,Integer> syncMedicalReminders(Authentication auth){ int created=reminders.syncAll(); audit.record(auth.getName(),"SYNC_MEDICAL_REMINDERS","TASK",null,"created="+created); return java.util.Map.of("created", created); }
 
     @PostMapping("/{id}/complete")
+    @Transactional
     public Task complete(@PathVariable UUID id, Authentication auth){
         Task task=tasks.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Task not found"));
         if (!"OPEN".equals(task.getStatus())) throw new IllegalStateException("Only open tasks can be completed");
@@ -79,6 +82,7 @@ public class TaskController {
     }
 
     @PostMapping("/{id}/skip")
+    @Transactional
     public Task skip(@PathVariable UUID id, Authentication auth){
         Task task=tasks.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Task not found"));
         if (!"OPEN".equals(task.getStatus())) throw new IllegalStateException("Only open tasks can be skipped");

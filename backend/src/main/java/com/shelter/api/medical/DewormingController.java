@@ -1,6 +1,7 @@
 package com.shelter.api.medical;
 import com.shelter.api.animal.AnimalRepository; import com.shelter.api.audit.AuditLogService; import com.shelter.api.task.TaskReminderService; import jakarta.validation.Valid; import jakarta.validation.constraints.*; import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException; import java.time.LocalDate; import java.util.*;
 import org.springframework.data.domain.PageRequest; import org.springframework.security.core.Authentication;
 @RestController @RequestMapping("/api/animals/{animalId}/dewormings") public class DewormingController {
@@ -8,7 +9,7 @@ import org.springframework.data.domain.PageRequest; import org.springframework.s
  private final DewormingRepository repo; private final AnimalRepository animals; private final TaskReminderService reminders; private final AuditLogService audit;
  public DewormingController(DewormingRepository r,AnimalRepository a,TaskReminderService s,AuditLogService audit){repo=r;animals=a;reminders=s;this.audit=audit;}
  @GetMapping public List<Deworming> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByAdministeredDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
- @PostMapping public Deworming create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){
+ @PostMapping @Transactional public Deworming create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){
         validateUtf8(r.productName(), 640, "productName");
         validateUtf8(r.treatmentType(), 400, "treatmentType");
         validateUtf8(r.dose(), 400, "dose");

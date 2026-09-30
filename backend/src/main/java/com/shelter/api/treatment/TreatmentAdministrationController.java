@@ -9,6 +9,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -142,6 +143,7 @@ public class TreatmentAdministrationController {
     }
 
     @PostMapping("/{administrationId}/administer")
+    @Transactional
     public TreatmentAdministration administer(
             @PathVariable UUID animalId,
             @PathVariable UUID treatmentId,
@@ -169,6 +171,7 @@ public class TreatmentAdministrationController {
     }
 
     @PostMapping("/{administrationId}/status")
+    @Transactional
     public TreatmentAdministration setStatus(
             @PathVariable UUID animalId,
             @PathVariable UUID treatmentId,
