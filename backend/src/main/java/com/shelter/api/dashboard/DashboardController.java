@@ -44,7 +44,7 @@ public class DashboardController {
         long administered = administrations.countByStatusAndScheduledAtGreaterThanEqualAndScheduledAtLessThan("ADMINISTERED", start, end);
         long remaining = administrations.countByStatusAndScheduledAtGreaterThanEqualAndScheduledAtLessThan("SCHEDULED", now, end);
 
-        List<TreatmentAdministration> rows = administrations.findByScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(start, end, PageRequest.of(0, 500));
+        List<TreatmentAdministration> rows = administrations.findByScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAscIdAsc(start, end, PageRequest.of(0, 500));
 
         var items = rows.stream().map(a -> new DashboardItem(
             a.getId(), a.getTreatment().getAnimal().getId(), a.getTreatment().getAnimal().getName(),
