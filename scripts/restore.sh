@@ -15,6 +15,13 @@ if [ ! -d "${BACKUP_DIR}" ] || [ ! -f "${BACKUP_DIR}/database.dump" ] || [ ! -f 
 fi
 
 DOCUMENTS_PATH="${SHELTER_DOCUMENTS_PATH:-./data/documents}"
+mkdir -p "${DOCUMENTS_PATH}"
+if [ -L "${DOCUMENTS_PATH}" ] || [ ! -d "${DOCUMENTS_PATH}" ]; then
+  echo "Document directory must be a real directory and must not be a symlink." >&2
+  exit 2
+fi
+DOCUMENTS_PATH="$(cd -- "${DOCUMENTS_PATH}" && pwd -P)"
+
 PGHOST="${PGHOST:-localhost}"
 PGPORT="${PGPORT:-5432}"
 PGDATABASE="${PGDATABASE:-${POSTGRES_DB:-shelter}}"
@@ -52,7 +59,6 @@ if [ "${confirmation}" != "RESTORE" ]; then echo "Restore cancelled."; exit 1; f
 
 pg_restore --clean --if-exists --no-owner --host="${PGHOST}" --port="${PGPORT}" --username="${PGUSER}" --dbname="${PGDATABASE}" "${BACKUP_DIR}/database.dump"
 
-mkdir -p "${DOCUMENTS_PATH}"
 find "${DOCUMENTS_PATH}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 tar -C "${DOCUMENTS_PATH}" -xzf "${BACKUP_DIR}/documents.tar.gz"
 
