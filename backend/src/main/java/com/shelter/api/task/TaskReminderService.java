@@ -57,8 +57,7 @@ public class TaskReminderService {
             for (Vaccination v : vaccinationPage) {
                 String key = "VACCINATION_DUE:" + v.getId();
                 if (v.getNextDueDate() != null && !existingKeys.contains(key)) {
-                    syncVaccination(v);
-                    created++;
+                    if (syncVaccination(v)) created++;
                 }
             }
             pageNumber++;
@@ -75,8 +74,7 @@ public class TaskReminderService {
             for (Deworming d : dewormingPage) {
                 String key = "DEWORMING_DUE:" + d.getId();
                 if (d.getNextDueDate() != null && !existingKeys.contains(key)) {
-                    syncDeworming(d);
-                    created++;
+                    if (syncDeworming(d)) created++;
                 }
             }
             pageNumber++;
@@ -84,20 +82,20 @@ public class TaskReminderService {
         return created;
     }
 
-    public void syncVaccination(Vaccination v) {
-        if (v.getNextDueDate() == null) return;
-        createIfMissing("VACCINATION_DUE:" + v.getId(), v.getAnimal(), "VACCINATION_DUE",
+    public boolean syncVaccination(Vaccination v) {
+        if (v.getNextDueDate() == null) return false;
+        return createIfMissing("VACCINATION_DUE:" + v.getId(), v.getAnimal(), "VACCINATION_DUE",
             "Vaccination due: " + v.getVaccineName(), v.getNextDueDate(), v.getNotes());
     }
 
-    public void syncDeworming(Deworming d) {
-        if (d.getNextDueDate() == null) return;
-        createIfMissing("DEWORMING_DUE:" + d.getId(), d.getAnimal(), "DEWORMING_DUE",
+    public boolean syncDeworming(Deworming d) {
+        if (d.getNextDueDate() == null) return false;
+        return createIfMissing("DEWORMING_DUE:" + d.getId(), d.getAnimal(), "DEWORMING_DUE",
             "Deworming due: " + d.getProductName(), d.getNextDueDate(), d.getNotes());
     }
 
-    private void createIfMissing(String key, Animal animal, String type, String title, LocalDate date, String notes) {
-        if (tasks.findBySourceKey(key).isPresent()) return;
+    private boolean createIfMissing(String key, Animal animal, String type, String title, LocalDate date, String notes) {
+        if (tasks.findBySourceKey(key).isPresent()) return false;
         Task t = new Task();
         t.setAnimal(animal);
         t.setTaskType(type);
@@ -110,9 +108,11 @@ public class TaskReminderService {
         t.setStatus("OPEN");
         try {
             tasks.save(t);
+            return true;
         } catch (DataIntegrityViolationException e) {
             // A concurrent sync may have created the same source key; the DB unique constraint wins.
             if (tasks.findBySourceKey(key).isEmpty()) throw e;
+            return false;
         }
     }
 }
