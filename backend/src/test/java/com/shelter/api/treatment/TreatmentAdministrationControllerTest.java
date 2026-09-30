@@ -14,8 +14,8 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import org.springframework.dao.DataIntegrityViolationException;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class TreatmentAdministrationControllerTest {
@@ -24,6 +24,7 @@ class TreatmentAdministrationControllerTest {
     private AnimalRepository animals;
     private TreatmentAdministrationController controller;
     private AuditLogService auditLog;
+    private TreatmentAdministrationScheduleService scheduleService;
     private UUID animalId;
     private UUID treatmentId;
     private UUID administrationId;
@@ -36,7 +37,7 @@ class TreatmentAdministrationControllerTest {
         treatments = mock(TreatmentRepository.class);
         animals = mock(AnimalRepository.class);
         auditLog = mock(AuditLogService.class);
-        var scheduleService = mock(TreatmentAdministrationScheduleService.class);
+        scheduleService = mock(TreatmentAdministrationScheduleService.class);
         controller = new TreatmentAdministrationController(administrations, treatments, animals, auditLog, scheduleService, "Europe/Bucharest");
 
         animalId = UUID.randomUUID();
@@ -73,7 +74,7 @@ class TreatmentAdministrationControllerTest {
             .thenReturn(java.util.List.of());
         when(administrations.existsByTreatmentIdAndScheduledAt(eq(treatmentId), eq(scheduled)))
             .thenReturn(true);
-        when(administrations.save(any(TreatmentAdministration.class)))
+        when(scheduleService.createAndAudit(eq(treatment), eq(scheduled), anyString()))
             .thenThrow(new DataIntegrityViolationException("duplicate schedule"));
 
         var result = controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class));
@@ -141,6 +142,7 @@ class TreatmentAdministrationControllerTest {
         org.junit.jupiter.api.Assertions.assertEquals("SKIPPED", result.getStatus());
         verify(administrations).save(administration);
     }
+
     @Test
     void actionRequestRejectsInvalidStatus() {
         var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
@@ -156,5 +158,4 @@ class TreatmentAdministrationControllerTest {
         var violations = validator.validate(request);
         org.junit.jupiter.api.Assertions.assertEquals(1, violations.size());
     }
-
 }
