@@ -6,5 +6,5 @@ import org.springframework.data.domain.Pageable;
 import java.util.UUID;
 
 public interface MedicalDocumentRepository extends JpaRepository<MedicalDocument, UUID> {
-    List<MedicalDocument> findByAnimalIdOrderByDocumentDateDescCreatedAtDesc(UUID animalId, Pageable pageable);
+    List<MedicalDocument> findByAnimalIdOrderByDocumentDateDescCreatedAtDescIdAsc(UUID animalId, Pageable pageable);
 }
