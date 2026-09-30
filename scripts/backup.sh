@@ -25,6 +25,11 @@ while :; do
 done
 
 export PGPASSWORD
+if [ -L "${DOCUMENTS_PATH}" ] || [ ! -d "${DOCUMENTS_PATH}" ]; then
+  echo "Document directory must exist and must not be a symlink." >&2
+  exit 2
+fi
+DOCUMENTS_PATH="$(cd -- "${DOCUMENTS_PATH}" && pwd -P)"
 echo "Backing up PostgreSQL database '${PGDATABASE}'..."
 pg_dump --format=custom --file="${target}/database.dump" --host="${PGHOST}" --port="${PGPORT}" --username="${PGUSER}" "${PGDATABASE}"
 
