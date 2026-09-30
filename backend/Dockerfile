@@ -15,6 +15,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 RUN useradd --system --uid 10001 --create-home shelter
 WORKDIR /app
+RUN mkdir -p /app/data/documents /app/data/backups \
+    && chown -R shelter:shelter /app/data
 
 COPY --from=build --chown=shelter:shelter /workspace/target/shelter-api-0.1.0-SNAPSHOT.jar app.jar
 USER shelter
