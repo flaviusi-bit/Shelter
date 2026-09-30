@@ -32,17 +32,20 @@ public class TreatmentAdministrationController {
     private final AnimalRepository animals;
     private final ZoneId zone;
     private final AuditLogService auditLog;
+    private final TreatmentAdministrationScheduleService scheduleService;
 
     public TreatmentAdministrationController(
             TreatmentAdministrationRepository administrations,
             TreatmentRepository treatments,
             AnimalRepository animals,
             AuditLogService auditLog,
+            TreatmentAdministrationScheduleService scheduleService,
             @Value("${shelter.timezone:Europe/Bucharest}") String timezone) {
         this.administrations = administrations;
         this.treatments = treatments;
         this.animals = animals;
         this.auditLog = auditLog;
+        this.scheduleService = scheduleService;
         this.zone = ZoneId.of(timezone);
     }
 
@@ -82,20 +85,14 @@ public class TreatmentAdministrationController {
         java.util.ArrayList<TreatmentAdministration> created = new java.util.ArrayList<>();
         while (cursor.isBefore(limit) && created.size() < 1000) {
             if (!existingTimes.contains(cursor)) {
-                var a = new TreatmentAdministration();
-                a.setTreatment(treatment);
-                a.setScheduledAt(cursor);
                 try {
-                    created.add(administrations.save(a));
+                    created.add(scheduleService.createAndAudit(treatment, cursor, authentication.getName()));
                     existingTimes.add(cursor);
                 } catch (DataIntegrityViolationException e) {
                     if (!scheduleExists(treatmentId, cursor)) throw e;
                 }
             }
             cursor = cursor.plus(interval);
-        }
-        if (!created.isEmpty()) {
-            auditLog.record(authentication.getName(), "GENERATE_TREATMENT_SCHEDULE", "TREATMENT", treatmentId, "created=" + created.size());
         }
         return created;
     }
@@ -121,18 +118,14 @@ public class TreatmentAdministrationController {
         java.util.ArrayList<TreatmentAdministration> created = new java.util.ArrayList<>();
         while (cursor.isBefore(limit) && created.size() < 1000) {
             if (!existingTimes.contains(cursor)) {
-                var a = new TreatmentAdministration(); a.setTreatment(treatment); a.setScheduledAt(cursor);
                 try {
-                    created.add(administrations.save(a));
+                    created.add(scheduleService.createAndAudit(treatment, cursor, "SYSTEM"));
                     existingTimes.add(cursor);
                 } catch (DataIntegrityViolationException e) {
                     if (!scheduleExists(treatment.getId(), cursor)) throw e;
                 }
             }
             cursor = cursor.plus(interval);
-        }
-        if (!created.isEmpty()) {
-            auditLog.record("SYSTEM", "AUTO_GENERATE_TREATMENT_SCHEDULE", "TREATMENT", treatment.getId(), "created=" + created.size());
         }
         return created;
     }
