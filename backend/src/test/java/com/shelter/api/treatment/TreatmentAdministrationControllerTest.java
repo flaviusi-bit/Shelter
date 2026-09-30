@@ -64,6 +64,9 @@ class TreatmentAdministrationControllerTest {
     void concurrentScheduleGenerationTreatsDuplicateAsAlreadyExisting() {
         when(treatment.getFrequency()).thenReturn("daily");
         when(treatment.getStartDate()).thenReturn(java.time.LocalDate.of(2026, 9, 30));
+        OffsetDateTime scheduled = java.time.LocalDate.of(2026, 9, 30)
+            .atStartOfDay(java.time.ZoneId.of("Europe/Bucharest")).toOffsetDateTime();
+        administration.setScheduledAt(scheduled);
         when(administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(
             eq(treatmentId), any(OffsetDateTime.class), any(OffsetDateTime.class)))
             .thenReturn(java.util.List.of())
