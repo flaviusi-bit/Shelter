@@ -14,9 +14,15 @@ if [ -z "${PGPASSWORD}" ]; then
   exit 1
 fi
 
-timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
-target="${BACKUP_DIR}/${timestamp}"
-mkdir -p "${target}"
+mkdir -p "${BACKUP_DIR}"
+while :; do
+  timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+  target="${BACKUP_DIR}/${timestamp}"
+  if mkdir "${target}" 2>/dev/null; then
+    break
+  fi
+  sleep 1
+done
 
 export PGPASSWORD
 echo "Backing up PostgreSQL database '${PGDATABASE}'..."
