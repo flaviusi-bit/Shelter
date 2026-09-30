@@ -69,8 +69,9 @@ class TreatmentAdministrationControllerTest {
         administration.setScheduledAt(scheduled);
         when(administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(
             eq(treatmentId), any(OffsetDateTime.class), any(OffsetDateTime.class)))
-            .thenReturn(java.util.List.of())
-            .thenReturn(java.util.List.of(administration));
+            .thenReturn(java.util.List.of());
+        when(administrations.existsByTreatmentIdAndScheduledAt(eq(treatmentId), eq(scheduled)))
+            .thenReturn(true);
         when(administrations.save(any(TreatmentAdministration.class)))
             .thenThrow(new DataIntegrityViolationException("duplicate schedule"));
 

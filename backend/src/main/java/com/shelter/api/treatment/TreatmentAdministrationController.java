@@ -137,9 +137,7 @@ public class TreatmentAdministrationController {
     }
 
     private boolean scheduleExists(UUID treatmentId, OffsetDateTime scheduledAt) {
-        return administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(
-                treatmentId, scheduledAt, scheduledAt.plusNanos(1)).stream()
-            .anyMatch(a -> scheduledAt.equals(a.getScheduledAt()));
+        return administrations.existsByTreatmentIdAndScheduledAt(treatmentId, scheduledAt);
     }
 
     @PostMapping("/{administrationId}/administer")
