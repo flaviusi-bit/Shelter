@@ -110,6 +110,23 @@ class TreatmentAdministrationControllerTest {
     }
 
     @Test
+    void manualScheduleGenerationStartsAtTodayForPastTreatment() {
+        when(treatment.getFrequency()).thenReturn("daily");
+        var today = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Bucharest"));
+        when(treatment.getStartDate()).thenReturn(today.minusDays(30));
+        when(treatment.getEndDate()).thenReturn(null);
+        when(administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(
+            eq(treatmentId), any(OffsetDateTime.class), any(OffsetDateTime.class)))
+            .thenReturn(java.util.List.of());
+
+        var scheduled = org.mockito.ArgumentCaptor.forClass(OffsetDateTime.class);
+        controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class));
+
+        verify(scheduleService, times(1)).createAndAudit(eq(treatment), scheduled.capture(), anyString());
+        assertEquals(today, scheduled.getValue().toLocalDate());
+    }
+
+    @Test
     void cannotGenerateScheduleForCompletedTreatment() {
         when(treatment.getStatus()).thenReturn("COMPLETED");
         when(treatment.getFrequency()).thenReturn("daily");
