@@ -4,6 +4,7 @@ import com.shelter.api.audit.AuditLogService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
@@ -36,6 +37,7 @@ public class UserController {
     }
 
     @PostMapping
+    @Transactional
     public UserView create(@RequestBody CreateUserRequest r, Authentication auth) {
         String username = r.username() == null ? "" : r.username().trim().toLowerCase(Locale.ROOT);
         String displayName = r.displayName() == null ? "" : r.displayName().trim();
@@ -68,6 +70,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
+    @Transactional
     public UserView update(@PathVariable java.util.UUID id, @RequestBody UpdateUserRequest r, Authentication auth) {
         AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
         String displayName = r.displayName() == null ? "" : r.displayName().trim();
@@ -94,6 +97,7 @@ public class UserController {
     }
 
     @PostMapping("/{id}/deactivate")
+    @Transactional
     public UserView deactivate(@PathVariable java.util.UUID id, Authentication auth) {
         AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
         if (!u.isActive()) throw new IllegalStateException("User is already inactive");
@@ -108,6 +112,7 @@ public class UserController {
     }
 
     @PostMapping("/{id}/reactivate")
+    @Transactional
     public UserView reactivate(@PathVariable java.util.UUID id, Authentication auth) {
         AppUser u = users.findById(id).orElseThrow(() -> new java.util.NoSuchElementException("User not found"));
         if (u.isActive()) throw new IllegalStateException("User is already active");
@@ -118,6 +123,7 @@ public class UserController {
     }
 
     @PostMapping("/me/password")
+    @Transactional
     public void changeMyPassword(@RequestBody ChangePasswordRequest r, Authentication auth) {
         String current = r.currentPassword() == null ? "" : r.currentPassword();
         String next = r.newPassword() == null ? "" : r.newPassword();
@@ -140,6 +146,7 @@ public class UserController {
     }
 
     @PostMapping("/{id}/password")
+    @Transactional
     public void resetPassword(@PathVariable java.util.UUID id, @RequestBody ResetPasswordRequest r, Authentication auth) {
         String next = r.newPassword() == null ? "" : r.newPassword();
         validatePassword(next);
