@@ -71,7 +71,7 @@ public class TreatmentAdministrationController {
         OffsetDateTime cursor = treatment.getStartDate().atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime limit = end.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
 
-        var existing = administrations.findByTreatmentIdOrderByScheduledAtAsc(treatmentId, PageRequest.of(0, 5000));
+        var existing = administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(treatmentId, cursor, limit);
         var existingTimes = existing.stream()
                 .map(TreatmentAdministration::getScheduledAt)
                 .collect(java.util.stream.Collectors.toSet());
@@ -108,7 +108,7 @@ public class TreatmentAdministrationController {
         LocalDate end = treatment.getEndDate() != null ? treatment.getEndDate() : treatment.getStartDate().plusDays(days - 1);
         OffsetDateTime cursor = treatment.getStartDate().atStartOfDay(zone).toOffsetDateTime();
         OffsetDateTime limit = end.plusDays(1).atStartOfDay(zone).toOffsetDateTime();
-        var existingTimes = administrations.findByTreatmentIdOrderByScheduledAtAsc(treatment.getId(), PageRequest.of(0, 5000)).stream()
+        var existingTimes = administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(treatment.getId(), cursor, limit).stream()
                 .map(TreatmentAdministration::getScheduledAt).collect(java.util.stream.Collectors.toSet());
         java.util.ArrayList<TreatmentAdministration> created = new java.util.ArrayList<>();
         while (cursor.isBefore(limit) && created.size() < 1000) {
