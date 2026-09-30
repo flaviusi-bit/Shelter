@@ -73,12 +73,11 @@ public class TreatmentAdministrationController {
         }
 
         Duration interval = parseFrequency(treatment.getFrequency());
-        LocalDate end = treatment.getEndDate() != null
-                ? treatment.getEndDate()
-                : treatment.getStartDate().plusDays(days - 1);
-
         LocalDate today = LocalDate.now(zone);
         LocalDate start = treatment.getStartDate().isAfter(today) ? treatment.getStartDate() : today;
+        LocalDate end = treatment.getEndDate() != null
+                ? treatment.getEndDate()
+                : start.plusDays(days - 1);
         if (end.isBefore(start)) {
             return List.of();
         }
