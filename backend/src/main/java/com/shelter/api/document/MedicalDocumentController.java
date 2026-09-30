@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -39,6 +40,7 @@ public class MedicalDocumentController {
 
 
     @PostMapping(value="/upload",consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Transactional
     public MedicalDocument upload(@PathVariable UUID animalId,@RequestPart("file") MultipartFile file,
                                   @RequestParam String documentType,@RequestParam String title,
                                   @RequestParam(required=false) String documentDate,
@@ -59,11 +61,11 @@ public class MedicalDocumentController {
                 doc = documents.save(doc);
                 doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
                 doc = documents.save(doc);
+                audit.record(auth.getName(),"UPLOAD_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
             }catch(RuntimeException e){
                 try{ storage.delete(stored.storageKey()); }catch(IOException cleanup){ e.addSuppressed(cleanup); }
                 throw e;
             }
-            audit.record(auth.getName(),"UPLOAD_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
             return doc;
         }catch(IOException|IllegalArgumentException e){
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid medical document upload");
