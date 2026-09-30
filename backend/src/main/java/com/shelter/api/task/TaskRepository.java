@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TaskRepository extends JpaRepository<Task, UUID> {
-    List<Task> findByStatusOrderByDueAtAsc(String status);
-    List<Task> findByStatusOrderByDueAtAsc(String status, Pageable pageable);
+    List<Task> findByStatusOrderByDueAtAscIdAsc(String status);
+    List<Task> findByStatusOrderByDueAtAscIdAsc(String status, Pageable pageable);
     List<Task> findByStatusAndDueAtBeforeOrderByDueAtAsc(String status, OffsetDateTime dueAt);
     long countByStatusAndDueAtBefore(String status, OffsetDateTime dueAt);
     long countByStatusAndDueAtGreaterThanEqualAndDueAtBefore(String status, OffsetDateTime from, OffsetDateTime to);

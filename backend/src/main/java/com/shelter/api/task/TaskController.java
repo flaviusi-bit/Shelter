@@ -28,7 +28,7 @@ public class TaskController {
         if (!java.util.Set.of("OPEN", "COMPLETED", "SKIPPED").contains(status)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid task status");
         }
-        return tasks.findByStatusOrderByDueAtAsc(status, PageRequest.of(0, 200));
+        return tasks.findByStatusOrderByDueAtAscIdAsc(status, PageRequest.of(0, 200));
     }
 
     @PostMapping

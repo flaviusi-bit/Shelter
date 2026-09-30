@@ -54,7 +54,7 @@ public class DashboardController {
 
         long overdueTasks = tasks.countByStatusAndDueAtBefore("OPEN", now);
         long remainingTasks = tasks.countByStatusAndDueAtGreaterThanEqualAndDueAtBefore("OPEN", now, end);
-        List<Task> openTasks = tasks.findByStatusOrderByDueAtAsc("OPEN", PageRequest.of(0, 50));
+        List<Task> openTasks = tasks.findByStatusOrderByDueAtAscIdAsc("OPEN", PageRequest.of(0, 50));
 
         var taskItems = openTasks.stream().map(t -> new TaskDue(
             t.getId(), t.getAnimal() == null ? null : t.getAnimal().getId(),

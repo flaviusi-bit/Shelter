@@ -61,6 +61,14 @@ function Dashboard({role,isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenU
   try { setData(await getDashboard()); setError('') }
   catch(e) { setError(e instanceof Error?e.message:'Could not load dashboard') }
  }
+ async function handleTaskAction(id:string, action:'complete'|'skip') {
+  try {
+   if(action==='complete') await completeTask(id); else await skipTask(id)
+   await load()
+  } catch(e) {
+   setError(e instanceof Error?e.message:'Could not update task')
+  }
+ }
 
  useEffect(()=>{ load(); const t=setInterval(load,60000); return()=>clearInterval(t) },[])
  const pending=data?.items.filter(x=>x.status==='SCHEDULED')||[]
@@ -79,7 +87,7 @@ function Dashboard({role,isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenU
   </section>
   <section className="panel dashboard-panel">
    <div className="section-head"><div><p className="eyebrow">TASKS & REMINDERS</p><h2>Open tasks</h2></div><div className="section-head-actions"><span className="muted">{(data?.taskItems||[]).length}</span>{['ADMIN','VETERINARIAN','COORDINATOR','VOLUNTEER'].includes(role)&&<button className="primary small" onClick={()=>setShowTask(true)}>+ New task</button>}</div></div>
-   {(data?.taskItems||[]).length===0?<p className="muted">No open tasks.</p>:<div className="dashboard-list">{(data?.taskItems||[]).slice(0,20).map(x=><div className="dashboard-item" key={x.id}><div><strong>{x.animalName||'Shelter task'}</strong><span>{x.title} · {x.priority}</span></div><div className="task-actions"><span className="dashboard-time">{new Date(x.dueAt).toLocaleString()}</span>{['ADMIN','VETERINARIAN','COORDINATOR','VOLUNTEER'].includes(role)&&<><button className="primary small" onClick={async()=>{await completeTask(x.id);load()}}>Complete</button><button className="secondary small" onClick={async()=>{await skipTask(x.id);load()}}>Skip</button></>}</div></div>)}</div>}
+   {(data?.taskItems||[]).length===0?<p className="muted">No open tasks.</p>:<div className="dashboard-list">{(data?.taskItems||[]).slice(0,20).map(x=><div className="dashboard-item" key={x.id}><div><strong>{x.animalName||'Shelter task'}</strong><span>{x.title} · {x.priority}</span></div><div className="task-actions"><span className="dashboard-time">{new Date(x.dueAt).toLocaleString()}</span>{['ADMIN','VETERINARIAN','COORDINATOR','VOLUNTEER'].includes(role)&&<><button className="primary small" onClick={()=>handleTaskAction(x.id,'complete')}>Complete</button><button className="secondary small" onClick={()=>handleTaskAction(x.id,'skip')}>Skip</button></>}</div></div>)}</div>}
   </section>
   <section className="panel dashboard-panel">
    <div className="section-head"><div><p className="eyebrow">TODAY</p><h2>Administration timeline</h2></div></div>
