@@ -67,7 +67,7 @@ public class TaskReminderService {
         pageNumber = 0;
         Page<Deworming> dewormingPage;
         do {
-            dewormingPage = dewormings.findAll(PageRequest.of(pageNumber, MEDICAL_PAGE_SIZE));
+            dewormingPage = dewormings.findAll(PageRequest.of(pageNumber, MEDICAL_PAGE_SIZE, Sort.by(Sort.Direction.ASC, "id")));
             java.util.Set<String> existingKeys = new java.util.HashSet<>(
                 tasks.findBySourceKeyIn(dewormingPage.getContent().stream()
                     .map(d -> "DEWORMING_DUE:" + d.getId()).toList())
