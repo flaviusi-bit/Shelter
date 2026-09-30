@@ -30,6 +30,21 @@ if [ -f "${BACKUP_DIR}/SHA256SUMS" ]; then
   (cd "${BACKUP_DIR}" && sha256sum --check SHA256SUMS)
 fi
 
+echo "Validating document archive contents..."
+while IFS= read -r archive_entry; do
+  archive_name="${archive_entry:1}"
+  case "${archive_entry:0:1}" in
+    l|h)
+      echo "Document archive contains an unsupported link entry: ${archive_name}" >&2
+      exit 2
+      ;;
+  esac
+  if [[ "${archive_name}" = /* || "${archive_name}" == ../* || "${archive_name}" == */../* || "${archive_name}" == */.. ]]; then
+    echo "Document archive contains an unsafe path: ${archive_name}" >&2
+    exit 2
+  fi
+done < <(tar -tvzf "${BACKUP_DIR}/documents.tar.gz")
+
 echo "WARNING: this replaces database '${PGDATABASE}' and document files in '${DOCUMENTS_PATH}'."
 echo "Stop the application before continuing."
 read -r -p "Type RESTORE to continue: " confirmation
