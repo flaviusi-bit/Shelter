@@ -36,7 +36,8 @@ class TreatmentAdministrationControllerTest {
         treatments = mock(TreatmentRepository.class);
         animals = mock(AnimalRepository.class);
         auditLog = mock(AuditLogService.class);
-        controller = new TreatmentAdministrationController(administrations, treatments, animals, auditLog, "Europe/Bucharest");
+        var scheduleService = mock(TreatmentAdministrationScheduleService.class);
+        controller = new TreatmentAdministrationController(administrations, treatments, animals, auditLog, scheduleService, "Europe/Bucharest");
 
         animalId = UUID.randomUUID();
         treatmentId = UUID.randomUUID();
