@@ -153,7 +153,8 @@ public class TreatmentAdministrationController {
             @PathVariable UUID administrationId,
             @Valid @RequestBody(required = false) ActionRequest request,
             Authentication authentication) {
-        ensureTreatment(animalId, treatmentId);
+        Treatment treatment = ensureTreatment(animalId, treatmentId);
+        ensureActive(treatment);
         TreatmentAdministration a = administrations.findById(administrationId)
                 .orElseThrow(() -> new IllegalArgumentException("Administration not found: " + administrationId));
         if (!a.getTreatment().getId().equals(treatmentId)) {
@@ -198,6 +199,12 @@ public class TreatmentAdministrationController {
         TreatmentAdministration saved = administrations.save(a);
         auditLog.record(authentication.getName(), "UPDATE_TREATMENT_ADMINISTRATION_STATUS", "TREATMENT_ADMINISTRATION", saved.getId(), "status=" + request.status());
         return saved;
+    }
+
+    private void ensureActive(Treatment treatment) {
+        if (!"ACTIVE".equalsIgnoreCase(treatment.getStatus())) {
+            throw new IllegalStateException("Only active treatments can update administrations");
+        }
     }
 
     private Treatment ensureTreatment(UUID animalId, UUID treatmentId) {
