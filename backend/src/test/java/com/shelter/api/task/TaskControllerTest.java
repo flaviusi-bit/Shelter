@@ -105,13 +105,13 @@ class TaskControllerTest {
     @Test
     void listRejectsInvalidStatus() {
         var ex = assertThrows(org.springframework.web.server.ResponseStatusException.class, () -> controller.list("DELETED")); assertEquals(org.springframework.http.HttpStatus.BAD_REQUEST, ex.getStatusCode());
-        verify(tasks, never()).findByStatusOrderByDueAtAsc(anyString());
+        verify(tasks, never()).findByStatusOrderByDueAtAscIdAsc(anyString(), any(org.springframework.data.domain.Pageable.class));
     }
 
     @Test
     void listAcceptsKnownStatus() {
         controller.list("COMPLETED");
-        verify(tasks).findByStatusOrderByDueAtAsc(eq("COMPLETED"), any(org.springframework.data.domain.Pageable.class));
+        verify(tasks).findByStatusOrderByDueAtAscIdAsc(eq("COMPLETED"), any(org.springframework.data.domain.Pageable.class));
     }
 
     @Test
