@@ -72,7 +72,7 @@ Documents currently store a URL rather than binary file content. This keeps Post
 
 ### Current task/reminder note
 
-Tasks can be created manually and completed or skipped from the dashboard. Automatic generation from vaccination/deworming due dates is a planned enhancement.
+Tasks can be created manually and completed or skipped from the dashboard. Automatic task generation from vaccination/deworming due dates is implemented and runs through the scheduled medical-reminder synchronization.
 
 
 ### Document file storage
