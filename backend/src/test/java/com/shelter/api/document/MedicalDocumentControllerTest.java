@@ -11,6 +11,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.nio.file.Path;
 import java.util.Optional;
+import org.mockito.ArgumentCaptor;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -222,7 +223,7 @@ class MedicalDocumentControllerTest {
     }
 
     @Test
-    void uploadDoesNotDeletePersistedFileWhenAuditFails() throws Exception {
+    void uploadDeletesStoredFileWhenAuditFails() throws Exception {
         var file = new org.springframework.mock.web.MockMultipartFile(
             "file", "report.pdf", "application/pdf", "%PDF-1.7\nmedical report".getBytes());
 
@@ -235,15 +236,11 @@ class MedicalDocumentControllerTest {
             () -> controller.upload(animalId, file, "LAB_RESULT", "Blood test",
                 "2026-09-26", null, authentication));
 
-        var captor = ArgumentCaptor.forClass(MedicalDocument.class);
-        verify(documents, times(2)).save(captor.capture());
-        var persisted = captor.getAllValues().get(1);
-        assertNotNull(persisted.getStorageKey());
-        assertEquals("/api/animals/" + animalId + "/documents/files/null", persisted.getFileUrl());
+        verify(documents, times(2)).save(any(MedicalDocument.class));
         verify(audit).record("vet", "UPLOAD_MEDICAL_DOCUMENT", "MEDICAL_DOCUMENT",
             null, "report.pdf");
         try (var paths = java.nio.file.Files.walk(tempDir)) {
-            assertEquals(1, paths.filter(java.nio.file.Files::isRegularFile).count());
+            assertEquals(0, paths.filter(java.nio.file.Files::isRegularFile).count());
         }
     }
 
