@@ -1,6 +1,7 @@
 export type Animal={id:string;animalCode:string;name:string;animalType:string;sex:string;dateOfBirth?:string;weightKg?:number;microchipNumber?:string;intakeDate:string;rescueSource?:string;location?:string;status:string;notes?:string;photoUrl?:string}
 export type AnimalInput=Omit<Animal,'id'|'animalCode'>
 export type Treatment={id:string;medication:string;dose:string;route:string;frequency:string;startDate:string;endDate?:string;status:string;instructions?:string;prescribedBy?:string}
+export type TreatmentInput=Omit<Treatment,'id'>
 export type Administration={id:string;scheduledAt:string;administeredAt?:string;administeredBy?:string;status:'SCHEDULED'|'ADMINISTERED'|'MISSED'|'SKIPPED';notes?:string}
 async function json<T=any>(r:Response):Promise<T>{if(r.status===401){localStorage.removeItem('shelterAuth');window.dispatchEvent(new Event('shelter-auth-required'));throw new Error('Authentication required')}if(!r.ok)throw new Error(await r.text());const body=await r.text();return (body?JSON.parse(body):undefined) as T}
 function headers():Record<string,string>{const auth=localStorage.getItem('shelterAuth');return auth?{Authorization:'Basic '+auth}:{} }
@@ -8,6 +9,7 @@ export async function getAnimals(q=''):Promise<Animal[]>{return json(await fetch
 export async function createAnimal(a:AnimalInput):Promise<Animal>{return json(await fetch('/api/animals',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
 export async function updateAnimal(id:string,a:AnimalInput):Promise<Animal>{return json(await fetch('/api/animals/'+id,{method:'PUT',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
 export async function getTreatments(animalId:string):Promise<Treatment[]>{return json(await fetch('/api/animals/'+animalId+'/treatments',{headers:headers()}))}
+export async function createTreatment(animalId:string,treatment:TreatmentInput):Promise<Treatment>{return json(await fetch('/api/animals/'+animalId+'/treatments',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(treatment)}))}
 export async function getAdministrations(animalId:string,treatmentId:string):Promise<Administration[]>{return json(await fetch('/api/animals/'+animalId+'/treatments/'+treatmentId+'/administrations',{headers:headers()}))}
 export async function generateAdministrations(animalId:string,treatmentId:string,days=14):Promise<Administration[]>{return json(await fetch('/api/animals/'+animalId+'/treatments/'+treatmentId+'/administrations/generate?days='+days,{method:'POST',headers:headers()}))}
 export async function administer(animalId:string,treatmentId:string,administrationId:string,notes?:string):Promise<Administration>{return json(await fetch('/api/animals/'+animalId+'/treatments/'+treatmentId+'/administrations/'+administrationId+'/administer',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify({notes})}))}
