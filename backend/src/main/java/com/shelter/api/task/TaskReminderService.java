@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import java.time.ZoneId;
 
 @Service
@@ -107,6 +108,11 @@ public class TaskReminderService {
         t.setCreatedBy("SYSTEM");
         t.setSourceKey(key);
         t.setStatus("OPEN");
-        tasks.save(t);
+        try {
+            tasks.save(t);
+        } catch (DataIntegrityViolationException e) {
+            // A concurrent sync may have created the same source key; the DB unique constraint wins.
+            if (tasks.findBySourceKey(key).isEmpty()) throw e;
+        }
     }
 }
