@@ -8,7 +8,7 @@ import org.springframework.data.domain.PageRequest; import org.springframework.s
  private static final int MAX_HISTORY_ENTRIES = 200;
  private final DewormingRepository repo; private final AnimalRepository animals; private final TaskReminderService reminders; private final AuditLogService audit;
  public DewormingController(DewormingRepository r,AnimalRepository a,TaskReminderService s,AuditLogService audit){repo=r;animals=a;reminders=s;this.audit=audit;}
- @GetMapping public List<Deworming> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByAdministeredDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
+ @GetMapping public List<Deworming> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByAdministeredDateDescIdAsc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
  @PostMapping @Transactional public Deworming create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){
         validateUtf8(r.productName(), 640, "productName");
         validateUtf8(r.treatmentType(), 400, "treatmentType");
