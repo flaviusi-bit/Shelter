@@ -1,6 +1,8 @@
 package com.shelter.api.error;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import java.util.UUID;
 import java.util.NoSuchElementException;
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -17,6 +19,14 @@ class ApiExceptionHandlerTest {
         var response = new ApiExceptionHandler().handleBadRequest(new IllegalArgumentException("Invalid role"));
         assertEquals(400, response.status());
         assertEquals("Invalid request", response.message());
+    }
+
+    @Test
+    void mapsOptimisticLockFailureToConflict() {
+        var response = new ApiExceptionHandler().handleOptimisticLock(
+            new ObjectOptimisticLockingFailureException("TreatmentAdministration", UUID.randomUUID()));
+        assertEquals(409, response.status());
+        assertEquals("Resource was modified by another request", response.message());
     }
 
     @Test

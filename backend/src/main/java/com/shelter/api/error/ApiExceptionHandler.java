@@ -1,6 +1,7 @@
 package com.shelter.api.error;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -24,6 +25,12 @@ public class ApiExceptionHandler {
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErrorResponse handleConflict(IllegalStateException ex) {
         return new ErrorResponse(HttpStatus.CONFLICT.value(), "Request conflicts with the current resource state");
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErrorResponse handleOptimisticLock(ObjectOptimisticLockingFailureException ex) {
+        return new ErrorResponse(HttpStatus.CONFLICT.value(), "Resource was modified by another request");
     }
 
     public record ErrorResponse(int status, String message) {}
