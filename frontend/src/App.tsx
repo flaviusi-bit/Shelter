@@ -15,7 +15,7 @@ export default function App(){
 }
 function Login({onLogin}:{onLogin:()=>void}){
  const [username,setUsername]=useState('admin'),[password,setPassword]=useState(''),[error,setError]=useState('')
- async function submit(e:FormEvent){e.preventDefault();setError('');const token=btoa(username+':'+password);try{const r=await fetch('/api/me',{headers:{Authorization:'Basic '+token}});if(r.status===401){setError('Invalid username or password');return}if(!r.ok){setError('Could not sign in. Please try again.');return}localStorage.setItem('shelterAuth',token);onLogin()}catch{setError('Could not sign in. Please try again.')}}
+ async function submit(e:FormEvent){e.preventDefault();const token=btoa(username+':'+password);const r=await fetch('/api/animals',{headers:{Authorization:'Basic '+token}});if(!r.ok){setError('Invalid username or password');return}localStorage.setItem('shelterAuth',token);onLogin()}
  return <main className="login-shell"><form className="login-card" onSubmit={submit}><p className="eyebrow">SHELTER MANAGEMENT</p><h1>Sign in</h1><p className="muted">Access the animal care system.</p><input value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username" autoComplete="username"/><input value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password" type="password" autoComplete="current-password"/>{error&&<div className="inline-error">{error}</div>}<button className="primary" type="submit">Sign in</button></form></main>
 }
 function ShelterApp({onLogout}:{onLogout:()=>void}){
