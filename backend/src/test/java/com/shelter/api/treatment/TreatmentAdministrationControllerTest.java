@@ -52,6 +52,7 @@ class TreatmentAdministrationControllerTest {
         treatment = mock(Treatment.class);
         when(treatment.getId()).thenReturn(treatmentId);
         when(treatment.getAnimal()).thenReturn(animal);
+        when(treatment.getStatus()).thenReturn("ACTIVE");
         when(treatments.findById(treatmentId)).thenReturn(Optional.of(treatment));
         when(animals.findById(animalId)).thenReturn(Optional.of(animal));
 
