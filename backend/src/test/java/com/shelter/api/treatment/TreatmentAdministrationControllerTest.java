@@ -86,6 +86,27 @@ class TreatmentAdministrationControllerTest {
     }
 
     @Test
+    void activeScheduleSyncStartsAtTodayForPastTreatment() {
+        when(treatment.getFrequency()).thenReturn("daily");
+        var today = java.time.LocalDate.now(java.time.ZoneId.of("Europe/Bucharest"));
+        when(treatment.getStartDate()).thenReturn(today.minusDays(30));
+        when(treatment.getEndDate()).thenReturn(null);
+        when(administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(
+            eq(treatmentId), any(OffsetDateTime.class), any(OffsetDateTime.class)))
+            .thenReturn(java.util.List.of());
+        when(treatments.findByStatusIgnoreCase(eq("ACTIVE"), any(Pageable.class)))
+            .thenReturn(java.util.List.of(treatment))
+            .thenReturn(java.util.List.of());
+
+        var scheduled = org.mockito.ArgumentCaptor.forClass(OffsetDateTime.class);
+        controller.generateActiveSchedules();
+
+        verify(scheduleService, times(14)).createAndAudit(eq(treatment), scheduled.capture(), eq("SYSTEM"));
+        assertEquals(today, scheduled.getAllValues().get(0).toLocalDate());
+        assertTrue(scheduled.getAllValues().stream().allMatch(x -> !x.toLocalDate().isBefore(today)));
+    }
+
+    @Test
     void rejectsZeroFrequencyInterval() {
         when(treatment.getFrequency()).thenReturn("every 0 hours");
         when(treatment.getStartDate()).thenReturn(java.time.LocalDate.now());
