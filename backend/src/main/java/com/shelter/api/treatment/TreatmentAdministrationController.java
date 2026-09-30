@@ -68,6 +68,9 @@ public class TreatmentAdministrationController {
         if (days < 1 || days > 90) {
             throw new IllegalArgumentException("days must be between 1 and 90");
         }
+        if (!"ACTIVE".equalsIgnoreCase(treatment.getStatus())) {
+            throw new IllegalStateException("Only active treatments can generate administrations");
+        }
 
         Duration interval = parseFrequency(treatment.getFrequency());
         LocalDate end = treatment.getEndDate() != null
