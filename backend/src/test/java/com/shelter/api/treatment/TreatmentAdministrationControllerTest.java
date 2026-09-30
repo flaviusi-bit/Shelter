@@ -109,6 +109,24 @@ class TreatmentAdministrationControllerTest {
     }
 
     @Test
+    void cannotGenerateScheduleForCompletedTreatment() {
+        when(treatment.getStatus()).thenReturn("COMPLETED");
+        when(treatment.getFrequency()).thenReturn("daily");
+        assertThrows(IllegalStateException.class, () ->
+            controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class)));
+        verifyNoInteractions(scheduleService);
+    }
+
+    @Test
+    void cannotGenerateScheduleForCancelledTreatment() {
+        when(treatment.getStatus()).thenReturn("CANCELLED");
+        when(treatment.getFrequency()).thenReturn("daily");
+        assertThrows(IllegalStateException.class, () ->
+            controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class)));
+        verifyNoInteractions(scheduleService);
+    }
+
+    @Test
     void rejectsZeroFrequencyInterval() {
         when(treatment.getFrequency()).thenReturn("every 0 hours");
         when(treatment.getStartDate()).thenReturn(java.time.LocalDate.now());
