@@ -15,6 +15,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import org.springframework.dao.DataIntegrityViolationException;
 import static org.mockito.Mockito.*;
 
 class TreatmentAdministrationControllerTest {
@@ -57,6 +58,22 @@ class TreatmentAdministrationControllerTest {
         when(administrations.findByTreatmentIdOrderByScheduledAtAsc(eq(treatmentId), any(Pageable.class))).thenReturn(java.util.List.of());
         when(treatments.findByStatusIgnoreCase(eq("ACTIVE"), any(Pageable.class))).thenReturn(java.util.List.of());
         when(administrations.save(any(TreatmentAdministration.class))).thenAnswer(i -> i.getArgument(0));
+    }
+
+    @Test
+    void concurrentScheduleGenerationTreatsDuplicateAsAlreadyExisting() {
+        when(treatment.getFrequency()).thenReturn("daily");
+        when(treatment.getStartDate()).thenReturn(java.time.LocalDate.of(2026, 9, 30));
+        when(administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(
+            eq(treatmentId), any(OffsetDateTime.class), any(OffsetDateTime.class)))
+            .thenReturn(java.util.List.of())
+            .thenReturn(java.util.List.of(administration));
+        when(administrations.save(any(TreatmentAdministration.class)))
+            .thenThrow(new DataIntegrityViolationException("duplicate schedule"));
+
+        var result = controller.generate(animalId, treatmentId, 1, Mockito.mock(Authentication.class));
+
+        org.junit.jupiter.api.Assertions.assertTrue(result.isEmpty());
     }
 
     @Test

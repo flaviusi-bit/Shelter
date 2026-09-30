@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -82,7 +83,12 @@ public class TreatmentAdministrationController {
                 var a = new TreatmentAdministration();
                 a.setTreatment(treatment);
                 a.setScheduledAt(cursor);
-                created.add(administrations.save(a));
+                try {
+                    created.add(administrations.save(a));
+                    existingTimes.add(cursor);
+                } catch (DataIntegrityViolationException e) {
+                    if (!scheduleExists(treatmentId, cursor)) throw e;
+                }
             }
             cursor = cursor.plus(interval);
         }
@@ -114,7 +120,12 @@ public class TreatmentAdministrationController {
         while (cursor.isBefore(limit) && created.size() < 1000) {
             if (!existingTimes.contains(cursor)) {
                 var a = new TreatmentAdministration(); a.setTreatment(treatment); a.setScheduledAt(cursor);
-                created.add(administrations.save(a));
+                try {
+                    created.add(administrations.save(a));
+                    existingTimes.add(cursor);
+                } catch (DataIntegrityViolationException e) {
+                    if (!scheduleExists(treatment.getId(), cursor)) throw e;
+                }
             }
             cursor = cursor.plus(interval);
         }
@@ -122,6 +133,12 @@ public class TreatmentAdministrationController {
             auditLog.record("SYSTEM", "AUTO_GENERATE_TREATMENT_SCHEDULE", "TREATMENT", treatment.getId(), "created=" + created.size());
         }
         return created;
+    }
+
+    private boolean scheduleExists(UUID treatmentId, OffsetDateTime scheduledAt) {
+        return administrations.findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(
+                treatmentId, scheduledAt, scheduledAt.plusNanos(1)).stream()
+            .anyMatch(a -> scheduledAt.equals(a.getScheduledAt()));
     }
 
     @PostMapping("/{administrationId}/administer")
