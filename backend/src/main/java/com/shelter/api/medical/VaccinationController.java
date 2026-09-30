@@ -8,7 +8,7 @@ import org.springframework.data.domain.PageRequest; import org.springframework.s
  private static final int MAX_HISTORY_ENTRIES = 200;
  private final VaccinationRepository repo; private final AnimalRepository animals; private final TaskReminderService reminders; private final AuditLogService audit;
  public VaccinationController(VaccinationRepository r,AnimalRepository a,TaskReminderService s,AuditLogService audit){repo=r;animals=a;reminders=s;this.audit=audit;}
- @GetMapping public List<Vaccination> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByAdministeredDateDesc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
+ @GetMapping public List<Vaccination> list(@PathVariable UUID animalId){animals.findById(animalId).orElseThrow();return repo.findByAnimalIdOrderByAdministeredDateDescIdAsc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
  @PostMapping @Transactional public Vaccination create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){
         validateUtf8(r.vaccineName(), 640, "vaccineName");
         validateUtf8(r.vaccineType(), 400, "vaccineType");

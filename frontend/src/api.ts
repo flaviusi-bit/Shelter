@@ -3,8 +3,7 @@ export type AnimalInput=Omit<Animal,'id'|'animalCode'>
 export type Treatment={id:string;medication:string;dose:string;route:string;frequency:string;startDate:string;endDate?:string;status:string;instructions?:string;prescribedBy?:string}
 export type TreatmentInput=Omit<Treatment,'id'>
 export type Administration={id:string;scheduledAt:string;administeredAt?:string;administeredBy?:string;status:'SCHEDULED'|'ADMINISTERED'|'MISSED'|'SKIPPED';notes?:string}
-async function responseError(r:Response):Promise<Error>{const body=await r.text();if(body){try{const parsed=JSON.parse(body) as {message?:string};if(parsed.message)return new Error(parsed.message)}catch{}}return new Error('Request failed ('+r.status+')')}
-async function json<T=any>(r:Response):Promise<T>{if(r.status===401){localStorage.removeItem('shelterAuth');window.dispatchEvent(new Event('shelter-auth-required'));throw new Error('Authentication required')}if(!r.ok)throw await responseError(r);const body=await r.text();return (body?JSON.parse(body):undefined) as T}
+async function json<T=any>(r:Response):Promise<T>{if(r.status===401){localStorage.removeItem('shelterAuth');window.dispatchEvent(new Event('shelter-auth-required'));throw new Error('Authentication required')}if(!r.ok)throw new Error(await r.text());const body=await r.text();return (body?JSON.parse(body):undefined) as T}
 function headers():Record<string,string>{const auth=localStorage.getItem('shelterAuth');return auth?{Authorization:'Basic '+auth}:{} }
 export async function getAnimals(q=''):Promise<Animal[]>{return json(await fetch('/api/animals'+(q?'?q='+encodeURIComponent(q):''),{headers:headers()}))}
 export async function createAnimal(a:AnimalInput):Promise<Animal>{return json(await fetch('/api/animals',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
