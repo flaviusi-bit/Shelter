@@ -54,7 +54,7 @@ public class TreatmentAdministrationController {
             @PathVariable UUID animalId,
             @PathVariable UUID treatmentId) {
         ensureTreatment(animalId, treatmentId);
-        return administrations.findByTreatmentIdOrderByScheduledAtAsc(treatmentId, PageRequest.of(0, MAX_ADMINISTRATIONS_PER_TREATMENT));
+        return administrations.findByTreatmentIdOrderByScheduledAtAscIdAsc(treatmentId, PageRequest.of(0, MAX_ADMINISTRATIONS_PER_TREATMENT));
     }
 
     @PostMapping("/generate")
