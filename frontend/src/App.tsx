@@ -64,6 +64,7 @@ function Dashboard({role,isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenU
  async function handleTaskAction(id:string, action:'complete'|'skip') {
   try {
    if(action==='complete') await completeTask(id); else await skipTask(id)
+   setData(current=>current?{...current,taskItems:current.taskItems.filter(task=>task.id!==id)}:current)
    await load()
   } catch(e) {
    setError(e instanceof Error?e.message:'Could not update task')
