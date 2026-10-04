@@ -16,6 +16,22 @@ import org.springframework.data.domain.PageRequest; import org.springframework.s
         validateUtf8(r.veterinarian(), 640, "veterinarian");
         validateUtf8(r.notes(), 40000, "notes");
 if(r.nextDueDate()!=null&&r.nextDueDate().isBefore(r.administeredDate()))throw new org.springframework.web.server.ResponseStatusException(org.springframework.http.HttpStatus.BAD_REQUEST,"Next due date cannot be before administered date"); Vaccination v=new Vaccination();v.setAnimal(animals.findById(animalId).orElseThrow());v.setVaccineName(r.vaccineName());v.setVaccineType(r.vaccineType());v.setAdministeredDate(r.administeredDate());v.setNextDueDate(r.nextDueDate());v.setBatchNumber(r.batchNumber());v.setVeterinarian(r.veterinarian());v.setNotes(r.notes());v.setCreatedBy(auth.getName());v=repo.save(v);reminders.syncVaccination(v);audit.record(auth.getName(),"CREATE_VACCINATION","VACCINATION",v.getId(),r.vaccineName());return toResponse(v);}
+ @PutMapping("/{vaccinationId}") @Transactional public Response update(@PathVariable UUID animalId,@PathVariable UUID vaccinationId,@Valid @RequestBody Request r,Authentication auth){
+        Vaccination v=repo.findById(vaccinationId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Vaccination not found"));
+        if(!v.getAnimal().getId().equals(animalId))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Vaccination not found");
+        validateRequest(r);
+        v.setVaccineName(r.vaccineName());v.setVaccineType(r.vaccineType());v.setAdministeredDate(r.administeredDate());v.setNextDueDate(r.nextDueDate());v.setBatchNumber(r.batchNumber());v.setVeterinarian(r.veterinarian());v.setNotes(r.notes());
+        v=repo.save(v);reminders.syncVaccination(v);audit.record(auth.getName(),"UPDATE_VACCINATION","VACCINATION",v.getId(),r.vaccineName());return toResponse(v);
+ }
+ @DeleteMapping("/{vaccinationId}") @Transactional public void delete(@PathVariable UUID animalId,@PathVariable UUID vaccinationId,Authentication auth){
+        Vaccination v=repo.findById(vaccinationId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Vaccination not found"));
+        if(!v.getAnimal().getId().equals(animalId))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Vaccination not found");
+        reminders.removeVaccinationReminder(v);repo.delete(v);audit.record(auth.getName(),"DELETE_VACCINATION","VACCINATION",v.getId(),v.getVaccineName());
+ }
+ private void validateRequest(Request r){
+        validateUtf8(r.vaccineName(),640,"vaccineName");validateUtf8(r.vaccineType(),400,"vaccineType");validateUtf8(r.batchNumber(),400,"batchNumber");validateUtf8(r.veterinarian(),640,"veterinarian");validateUtf8(r.notes(),40000,"notes");
+        if(r.nextDueDate()!=null&&r.nextDueDate().isBefore(r.administeredDate()))throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Next due date cannot be before administered date");
+ }
  private static Response toResponse(Vaccination v){return new Response(v.getId(),v.getVaccineName(),v.getVaccineType(),v.getAdministeredDate(),v.getNextDueDate(),v.getBatchNumber(),v.getVeterinarian(),v.getNotes());}
  private static void validateUtf8(String value,int maxBytes,String field){if(value!=null&&value.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>maxBytes)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,field+" is too long");}
  public record Request(@NotBlank @Size(max=160) String vaccineName,@Size(max=100) String vaccineType,@NotNull LocalDate administeredDate,LocalDate nextDueDate,@Size(max=100) String batchNumber,@Size(max=160) String veterinarian,@Size(max=10000) String notes){}
