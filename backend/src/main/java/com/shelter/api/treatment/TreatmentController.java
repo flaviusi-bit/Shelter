@@ -25,10 +25,12 @@ public class TreatmentController {
         var animal=ensureAnimal(animalId);
         var t=ensureTreatment(animalId,treatmentId);
         validateRequest(r);
+        if (r.endDate()!=null && r.endDate().isBefore(r.startDate())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Treatment end date cannot be before start date");
+        String nextStatus=r.status()==null?"ACTIVE":r.status();
         boolean scheduleChanged=!r.startDate().equals(t.getStartDate())
                 || !java.util.Objects.equals(r.endDate(),t.getEndDate())
                 || !r.frequency().trim().equalsIgnoreCase(t.getFrequency().trim())
-                || !r.status().equals(t.getStatus());
+                || !nextStatus.equals(t.getStatus());
         if(scheduleChanged) administrations.deleteByTreatmentIdAndStatus(treatmentId,"SCHEDULED");
         apply(t,r,animal);
         var saved=treatments.save(t);
@@ -42,11 +44,6 @@ public class TreatmentController {
  }
  @PostMapping @ResponseStatus(HttpStatus.CREATED) @Transactional public Treatment create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){
         validateRequest(r);
-        validateUtf8(r.dose(), 320, "dose");
-        validateUtf8(r.route(), 160, "route");
-        validateUtf8(r.frequency(), 320, "frequency");
-        validateUtf8(r.instructions(), 40000, "instructions");
-        validateUtf8(r.prescribedBy(), 480, "prescribedBy");
 
   var animal=ensureAnimal(animalId); if (r.endDate()!=null && r.endDate().isBefore(r.startDate())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Treatment end date cannot be before start date"); var t=new Treatment(); t.setAnimal(animal); t.setMedication(r.medication()); t.setDose(r.dose()); t.setRoute(r.route()); t.setFrequency(r.frequency()); t.setStartDate(r.startDate()); t.setEndDate(r.endDate()); t.setStatus(r.status()==null?"ACTIVE":r.status()); t.setInstructions(r.instructions()); t.setPrescribedBy(r.prescribedBy()); var saved=treatments.save(t); audit.record(auth.getName(),"CREATE_TREATMENT","TREATMENT",saved.getId(),saved.getMedication()); return saved;
  }
