@@ -37,6 +37,18 @@ public class TreatmentController {
         audit.record(auth.getName(),"UPDATE_TREATMENT","TREATMENT",saved.getId(),saved.getMedication());
         return saved;
  }
+ @PostMapping("/{treatmentId}/stop") @Transactional public Treatment stop(@PathVariable UUID animalId,@PathVariable UUID treatmentId,Authentication auth){
+        ensureAnimal(animalId);
+        var t=ensureTreatment(animalId,treatmentId);
+        if (!"ACTIVE".equals(t.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"Treatment is not active");
+        }
+        administrations.deleteByTreatmentIdAndStatus(treatmentId,"SCHEDULED");
+        t.setStatus("CANCELLED");
+        var saved=treatments.save(t);
+        audit.record(auth.getName(),"STOP_TREATMENT","TREATMENT",saved.getId(),saved.getMedication());
+        return saved;
+ }
  @DeleteMapping("/{treatmentId}") @Transactional @ResponseStatus(HttpStatus.NO_CONTENT) public void delete(@PathVariable UUID animalId,@PathVariable UUID treatmentId,Authentication auth){
         var t=ensureTreatment(animalId,treatmentId);
         treatments.delete(t);
