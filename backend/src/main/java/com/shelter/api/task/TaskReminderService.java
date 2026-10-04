@@ -84,15 +84,46 @@ public class TaskReminderService {
     }
 
     public boolean syncVaccination(Vaccination v) {
-        if (v.getNextDueDate() == null) return false;
-        return createIfMissing("VACCINATION_DUE:" + v.getId(), v.getAnimal(), "VACCINATION_DUE",
+        return syncOrUpdate("VACCINATION_DUE:" + v.getId(), v.getAnimal(), "VACCINATION_DUE",
             "Vaccination due: " + v.getVaccineName(), v.getNextDueDate(), v.getNotes());
     }
 
     public boolean syncDeworming(Deworming d) {
-        if (d.getNextDueDate() == null) return false;
-        return createIfMissing("DEWORMING_DUE:" + d.getId(), d.getAnimal(), "DEWORMING_DUE",
+        return syncOrUpdate("DEWORMING_DUE:" + d.getId(), d.getAnimal(), "DEWORMING_DUE",
             "Deworming due: " + d.getProductName(), d.getNextDueDate(), d.getNotes());
+    }
+
+    public void removeVaccinationReminder(Vaccination v) {
+        removeReminder("VACCINATION_DUE:" + v.getId());
+    }
+
+    public void removeDewormingReminder(Deworming d) {
+        removeReminder("DEWORMING_DUE:" + d.getId());
+    }
+
+    private boolean syncOrUpdate(String key, Animal animal, String type, String title, LocalDate date, String notes) {
+        var existing = tasks.findBySourceKey(key);
+        if (date == null) {
+            existing.ifPresent(tasks::delete);
+            return false;
+        }
+        if (existing.isPresent()) {
+            Task task = existing.get();
+            if ("OPEN".equals(task.getStatus())) {
+                task.setAnimal(animal);
+                task.setTaskType(type);
+                task.setTitle(title);
+                task.setDueAt(date.atStartOfDay(zone).plusHours(9).toOffsetDateTime());
+                task.setNotes(notes);
+                tasks.save(task);
+            }
+            return false;
+        }
+        return createIfMissing(key, animal, type, title, date, notes);
+    }
+
+    private void removeReminder(String key) {
+        tasks.findBySourceKey(key).ifPresent(tasks::delete);
     }
 
     private boolean createIfMissing(String key, Animal animal, String type, String title, LocalDate date, String notes) {
