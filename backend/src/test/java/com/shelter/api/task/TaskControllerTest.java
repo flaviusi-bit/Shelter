@@ -119,13 +119,13 @@ class TaskControllerTest {
         Authentication authentication = mock(Authentication.class);
         when(authentication.getName()).thenReturn("volunteer");
 
-        when(tasks.transitionOpenTask(eq(taskId), eq("COMPLETED"), any(java.time.OffsetDateTime.class), eq("volunteer")))
-            .thenAnswer(invocation -> { task.setStatus("COMPLETED"); return 1; });
+        when(tasks.save(any(Task.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         var result = controller.complete(taskId, authentication);
 
         assertEquals("COMPLETED", result.getStatus());
-        verify(tasks).transitionOpenTask(eq(taskId), eq("COMPLETED"), any(java.time.OffsetDateTime.class), eq("volunteer"));
+        assertEquals("volunteer", result.getCompletedBy());
+        verify(tasks).save(task);
         verify(audit).record("volunteer", "COMPLETE_TASK", "TASK", null, "Vaccination due");
     }
 

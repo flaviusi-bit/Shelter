@@ -1,5 +1,6 @@
 package com.shelter.api.document;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.shelter.api.animal.Animal;
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -13,6 +14,7 @@ public class MedicalDocument {
     @GeneratedValue(strategy=GenerationType.UUID)
     private UUID id;
 
+    @JsonIgnore
     @ManyToOne(fetch=FetchType.LAZY, optional=false)
     @JoinColumn(name="animal_id", nullable=false)
     private Animal animal;

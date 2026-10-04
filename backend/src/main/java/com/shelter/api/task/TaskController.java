@@ -84,9 +84,10 @@ public class TaskController {
         Task task=tasks.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Task not found"));
         if (!"OPEN".equals(task.getStatus())) throw new IllegalStateException("Only open tasks can be updated");
         OffsetDateTime completedAt=OffsetDateTime.now();
-        int updated=tasks.transitionOpenTask(id, newStatus, completedAt, auth.getName());
-        if(updated==0) throw new IllegalStateException("Only open tasks can be updated");
-        var saved=tasks.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Task not found"));
+        task.setStatus(newStatus);
+        task.setCompletedAt(completedAt);
+        task.setCompletedBy(auth.getName());
+        var saved=tasks.save(task);
         audit.record(auth.getName(),auditAction,"TASK",saved.getId(),saved.getTitle());
         return saved;
     }

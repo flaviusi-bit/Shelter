@@ -1,4 +1,5 @@
 package com.shelter.api.medical;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.shelter.api.animal.Animal;
 import jakarta.persistence.*;
 import java.time.LocalDate;
@@ -7,7 +8,7 @@ import java.util.UUID;
 @Entity @Table(name="medical_events")
 public class MedicalEvent {
  @Id private UUID id;
- @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="animal_id",nullable=false) private Animal animal;
+ @JsonIgnore @ManyToOne(fetch=FetchType.LAZY) @JoinColumn(name="animal_id",nullable=false) private Animal animal;
  @Column(name="event_type",nullable=false,length=30) private String eventType;
  @Column(name="event_date",nullable=false) private LocalDate eventDate;
  @Column(nullable=false,length=200) private String title;

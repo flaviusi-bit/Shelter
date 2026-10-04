@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.file.*;
 import java.nio.charset.CodingErrorAction;
+import java.nio.charset.CharsetDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -605,25 +606,28 @@ public class DocumentStorageService {
         }
     }
     private boolean isSafePlainText(MultipartFile file) throws IOException {
+        byte[] prefix;
         try (var input = file.getInputStream()) {
-            byte[] buffer = new byte[8192];
-            int read;
-            while ((read = input.read(buffer)) != -1) {
-                for (int i = 0; i < read; i++) {
-                    int value = buffer[i] & 0xFF;
-                    if ((value < 0x20 && value != '\t' && value != '\n' && value != '\r') || value == 0x7F) {
-                        return false;
-                    }
-                }
-            }
+            prefix = input.readNBytes(3);
         }
-        try (var input = new InputStreamReader(file.getInputStream(),
-                StandardCharsets.UTF_8.newDecoder()
-                        .onMalformedInput(CodingErrorAction.REPORT)
-                        .onUnmappableCharacter(CodingErrorAction.REPORT))) {
+        CharsetDecoder decoder;
+        if (prefix.length >= 2 && prefix[0] == (byte)0xFF && prefix[1] == (byte)0xFE) {
+            decoder = StandardCharsets.UTF_16LE.newDecoder();
+        } else if (prefix.length >= 2 && prefix[0] == (byte)0xFE && prefix[1] == (byte)0xFF) {
+            decoder = StandardCharsets.UTF_16BE.newDecoder();
+        } else if (prefix.length >= 3 && prefix[0] == (byte)0xEF && prefix[1] == (byte)0xBB && prefix[2] == (byte)0xBF) {
+            decoder = StandardCharsets.UTF_8.newDecoder();
+        } else {
+            decoder = StandardCharsets.UTF_8.newDecoder();
+        }
+        decoder.onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
+        try (var input = new InputStreamReader(file.getInputStream(), decoder)) {
             char[] buffer = new char[8192];
             while (input.read(buffer) != -1) {
-                // Decode incrementally to avoid buffering the entire upload in memory.
+                for (int i = 0; i < buffer.length; i++) {
+                    char value = buffer[i];
+                    if (value == 0) return false;
+                }
             }
         } catch (IOException e) {
             return false;

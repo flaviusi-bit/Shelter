@@ -1,5 +1,6 @@
 package com.shelter.api.task;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.shelter.api.animal.Animal;
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
@@ -11,6 +12,7 @@ public class Task {
     @Id
     @GeneratedValue(strategy=GenerationType.UUID)
     private UUID id;
+    @JsonIgnore
     @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name="animal_id")
     private Animal animal;
