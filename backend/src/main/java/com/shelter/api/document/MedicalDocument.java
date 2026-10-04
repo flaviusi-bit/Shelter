@@ -11,7 +11,6 @@ import java.util.UUID;
 @Table(name="medical_documents")
 public class MedicalDocument {
     @Id
-    @GeneratedValue(strategy=GenerationType.UUID)
     private UUID id;
 
     @JsonIgnore
@@ -37,9 +36,12 @@ public class MedicalDocument {
     @Column(name="content_type",length=120) private String contentType;
     @Column(name="file_size") private Long fileSize;
 
-    @PrePersist void prePersist(){ if(createdAt==null) createdAt=OffsetDateTime.now(); }
+    @PrePersist void prePersist(){
+        if(id==null) id=UUID.randomUUID();
+        if(createdAt==null) createdAt=OffsetDateTime.now();
+    }
 
-    public UUID getId(){return id;}
+    public UUID getId(){return id;} public void setId(UUID id){this.id=id;}
     public Animal getAnimal(){return animal;}
     public void setAnimal(Animal animal){this.animal=animal;}
     public String getDocumentType(){return documentType;}
