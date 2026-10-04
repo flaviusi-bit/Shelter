@@ -82,7 +82,7 @@ public class AnimalController {
             MediaType type=photoMediaType(path.getFileName().toString());
             return ResponseEntity.ok().cacheControl(CacheControl.noStore()).contentType(type).body(new PathResource(path));
         }catch(org.springframework.web.server.ResponseStatusException e){throw e;}
-        catch(IllegalArgumentException|IOException e){
+        catch(IllegalArgumentException e){
             throw new org.springframework.web.server.ResponseStatusException(HttpStatus.NOT_FOUND,"Animal photo not found");
         }
     }
