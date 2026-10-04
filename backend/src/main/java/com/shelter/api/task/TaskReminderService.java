@@ -16,6 +16,10 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.dao.DataIntegrityViolationException;
 import java.time.ZoneId;
+import java.util.UUID;
+import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class TaskReminderService {
@@ -91,6 +95,28 @@ public class TaskReminderService {
     public boolean syncDeworming(Deworming d) {
         return syncOrUpdate("DEWORMING_DUE:" + d.getId(), d.getAnimal(), "DEWORMING_DUE",
             "Deworming due: " + d.getProductName(), d.getNextDueDate(), d.getNotes());
+    }
+
+    @Transactional
+    public Task completeReminder(String key, UUID animalId, String actor) {
+        Task task = tasks.findBySourceKey(key)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Open medical reminder not found"));
+        if (task.getAnimal() == null || !task.getAnimal().getId().equals(animalId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Medical reminder not found");
+        }
+        if (!"OPEN".equals(task.getStatus())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Medical reminder is already " + task.getStatus());
+        }
+        task.setStatus("COMPLETED");
+        task.setCompletedAt(java.time.OffsetDateTime.now());
+        task.setCompletedBy(actor);
+        Task saved = tasks.save(task);
+        audit.record(actor, "COMPLETE_TASK", "TASK", saved.getId(), saved.getTitle());
+        return saved;
+    }
+
+    public String reminderStatus(String key) {
+        return tasks.findBySourceKey(key).map(Task::getStatus).orElse(null);
     }
 
     public void removeVaccinationReminder(Vaccination v) {
