@@ -65,7 +65,6 @@ class TreatmentControllerTest {
         var auth = mock(Authentication.class);
         when(auth.getName()).thenReturn("vet");
         var treatment = new Treatment();
-        treatment.setId(UUID.randomUUID());
         treatment.setAnimal(animal);
         treatment.setStatus("ACTIVE");
         when(treatments.findById(treatment.getId())).thenReturn(Optional.of(treatment));
