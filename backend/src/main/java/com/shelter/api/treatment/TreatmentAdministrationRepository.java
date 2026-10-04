@@ -12,6 +12,7 @@ public interface TreatmentAdministrationRepository extends JpaRepository<Treatme
     List<TreatmentAdministration> findByTreatmentIdAndScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAsc(UUID treatmentId, OffsetDateTime from, OffsetDateTime to);
     boolean existsByTreatmentIdAndScheduledAt(UUID treatmentId, OffsetDateTime scheduledAt);
     void deleteByTreatmentIdAndStatus(UUID treatmentId, String status);
+    List<TreatmentAdministration> findByTreatmentIdAndStatusOrderByScheduledAtAscIdAsc(UUID treatmentId, String status);
     @EntityGraph(attributePaths = {"treatment", "treatment.animal"})
     List<TreatmentAdministration> findByScheduledAtGreaterThanEqualAndScheduledAtLessThanOrderByScheduledAtAscIdAsc(OffsetDateTime from, OffsetDateTime to, org.springframework.data.domain.Pageable pageable);
     long countByStatusAndScheduledAtGreaterThanEqualAndScheduledAtLessThan(String status, OffsetDateTime from, OffsetDateTime to);
