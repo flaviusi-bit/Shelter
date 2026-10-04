@@ -220,9 +220,9 @@ public class TreatmentAdministrationController {
         String f = frequency.trim().toLowerCase();
         if (f.matches("once|single")) return Duration.ofDays(36500);
         if (f.matches("daily|once daily|q24h|every 24 hours?")) return Duration.ofHours(24);
-        if (f.matches("twice daily|two times daily|q12h|every 12 hours?")) return Duration.ofHours(12);
-        if (f.matches("three times daily|q8h|every 8 hours?")) return Duration.ofHours(8);
-        if (f.matches("four times daily|q6h|every 6 hours?")) return Duration.ofHours(6);
+        if (f.matches("twice daily|two times daily|2 times daily|2 daily|q12h|every 12 hours?")) return Duration.ofHours(12);
+        if (f.matches("three times daily|three daily|3 times daily|3 daily|q8h|every 8 hours?")) return Duration.ofHours(8);
+        if (f.matches("four times daily|four daily|4 times daily|4 daily|q6h|every 6 hours?")) return Duration.ofHours(6);
         var m = java.util.regex.Pattern.compile("every\\s+([1-9]\\d*)\\s+hours?").matcher(f);
         if (m.matches()) {
             long hours = parsePositiveInterval(m.group(1), "hours");
