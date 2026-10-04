@@ -10,13 +10,13 @@ const blankAnimal=():AnimalInput=>({name:'',animalType:'DOG',sex:'UNKNOWN',dateO
 
 type AppRoute={view:'dashboard'|'animals'|'backups'|'audit'|'users';animalId?:string;tab?:string}
 const animalTabs=['Overview','Medical','Treatments','Vaccines','Deworming','Vet visits','Documents']
-function parseRoute():AppRoute{
+ const path=window.location.pathname.replace(/\/+$/,'')||'/'
  const path=window.location.pathname.replace(/\\/+$/,'')||'/'
  if(path==='/dashboard'||path==='/')return {view:'dashboard'}
  if(path==='/backups')return {view:'backups'}
  if(path==='/audit')return {view:'audit'}
  if(path==='/users')return {view:'users'}
- const match=path.match(/^\\/animals\\/([^/]+)$/)
+ const match=path.match(/^\/animals\/([^/]+)$/)
  if(match){
   const tab=new URLSearchParams(window.location.search).get('tab')||'Overview'
   return {view:'animals',animalId:decodeURIComponent(match[1]),tab:animalTabs.includes(tab)?tab:'Overview'}
