@@ -25,6 +25,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.GET, "/api/**").authenticated()
                 .requestMatchers(HttpMethod.POST, "/api/animals").hasAnyRole("ADMIN", "VETERINARIAN", "COORDINATOR")
                 .requestMatchers(HttpMethod.PUT, "/api/animals/**").hasAnyRole("ADMIN", "VETERINARIAN", "COORDINATOR")
+                .requestMatchers(HttpMethod.POST, "/api/animals/*/photo").hasAnyRole("ADMIN", "VETERINARIAN", "COORDINATOR")
                 .requestMatchers(HttpMethod.POST, "/api/animals/*/vaccinations").hasAnyRole("ADMIN", "VETERINARIAN")
                 .requestMatchers(HttpMethod.POST, "/api/animals/*/dewormings").hasAnyRole("ADMIN", "VETERINARIAN")
                 .requestMatchers(HttpMethod.POST, "/api/animals/*/medical-events").hasAnyRole("ADMIN", "VETERINARIAN")
