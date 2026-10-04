@@ -29,7 +29,7 @@ if(r.nextDueDate()!=null&&r.nextDueDate().isBefore(r.administeredDate()))throw n
         reminders.completeReminder("VACCINATION_DUE:" + x.getId(), animalId, auth.getName());
         return toResponse(x, reminders.reminderStatus("VACCINATION_DUE:" + x.getId()));
  }
- @DeleteMapping("/${idName}") @Transactional public void delete(@PathVariable UUID animalId,@PathVariable UUID vaccinationId,Authentication auth){
+ @DeleteMapping("/{vaccinationId}") @Transactional public void delete(@PathVariable UUID animalId,@PathVariable UUID vaccinationId,Authentication auth){
         Vaccination v=repo.findById(vaccinationId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Vaccination not found"));
         if(!v.getAnimal().getId().equals(animalId))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Vaccination not found");
         reminders.removeVaccinationReminder(v);repo.delete(v);audit.record(auth.getName(),"DELETE_VACCINATION","VACCINATION",v.getId(),v.getVaccineName());
