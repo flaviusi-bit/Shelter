@@ -171,7 +171,19 @@ function AnimalProfile({role,animal,treatments,onEdit,onTreatmentSaved}:{role:st
  const [activeTab,setActiveTab]=useState('Overview')
  const [events,setEvents]=useState<MedicalEvent[]>([]),[vaccines,setVaccines]=useState<Vaccination[]>([]),[dewormings,setDewormings]=useState<Deworming[]>([]),[documents,setDocuments]=useState<MedicalDocument[]>([])
  const [showEvent,setShowEvent]=useState(false),[showVaccine,setShowVaccine]=useState(false),[showDeworm,setShowDeworm]=useState(false),[showDocument,setShowDocument]=useState(false),[showTreatment,setShowTreatment]=useState(false)
- async function loadMedical(){try{setEvents(await getMedicalEvents(animal.id));setVaccines(await getVaccinations(animal.id));setDewormings(await getDewormings(animal.id));setDocuments(await getDocuments(animal.id))}catch{}}
+ async function loadMedical(){
+  const results=await Promise.allSettled([
+    getMedicalEvents(animal.id),
+    getVaccinations(animal.id),
+    getDewormings(animal.id),
+    getDocuments(animal.id)
+  ]);
+  const [eventsResult,vaccinesResult,dewormingsResult,documentsResult]=results;
+  if(eventsResult.status==='fulfilled')setEvents(eventsResult.value);
+  if(vaccinesResult.status==='fulfilled')setVaccines(vaccinesResult.value);
+  if(dewormingsResult.status==='fulfilled')setDewormings(dewormingsResult.value);
+  if(documentsResult.status==='fulfilled')setDocuments(documentsResult.value);
+}
  useEffect(()=>{loadMedical()},[animal.id])
  return <div className="profile"><section className="profile-hero">{animal.photoUrl?<AnimalPhoto animalId={animal.id} className="big-avatar" alt=""/>:<div className="big-avatar">{animal.name.charAt(0).toUpperCase()}</div>}<div><p className="eyebrow">{animal.animalType} · {animal.animalCode}</p><h2>{animal.name}</h2><p className="muted">{animal.status} · {animal.location||'No location'}</p></div>{['ADMIN','VETERINARIAN','COORDINATOR'].includes(role)&&<button className="secondary edit-button" onClick={onEdit}>Edit animal</button>}</section>
  <nav className="tabs">{['Overview','Medical','Treatments','Vaccines','Deworming','Vet visits','Documents'].map(tab=><button key={tab} className={activeTab===tab?'active':''} onClick={()=>setActiveTab(tab)}>{tab}</button>)}</nav>
