@@ -1,6 +1,7 @@
 package com.shelter.api.treatment;
 
 import com.shelter.api.animal.Animal;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.util.UUID;
@@ -9,6 +10,7 @@ import java.util.UUID;
 @Table(name="treatments")
 public class Treatment {
  @Id private UUID id;
+ @JsonIgnore
  @ManyToOne(fetch=FetchType.LAZY,optional=false) @JoinColumn(name="animal_id") private Animal animal;
  @Column(nullable=false,length=160) private String medication;
  @Column(nullable=false,length=80) private String dose;
