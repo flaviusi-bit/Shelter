@@ -3,7 +3,7 @@ export type DashboardTask={id:string;animalId?:string;animalName?:string;taskTyp
 export type Dashboard={items:DashboardItem[];overdue:number;remaining:number;administered:number;overdueTasks:number;remainingTasks:number;taskItems:DashboardTask[]}
 export async function getDashboard():Promise<Dashboard>{
  const auth=localStorage.getItem('shelterAuth')
- const r=await fetch('/api/dashboard/today',{headers:auth?{Authorization:'Basic '+auth}:{}})
+ const r=await fetch('/api/dashboard/today',{headers:auth?{Authorization:'Basic '+auth}:{},cache:'no-store'})
  if(!r.ok)throw new Error(await r.text())
  return r.json()
 }
