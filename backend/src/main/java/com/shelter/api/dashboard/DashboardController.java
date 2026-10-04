@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -34,6 +35,7 @@ public class DashboardController {
     }
 
     @GetMapping("/today")
+    @Transactional(readOnly = true)
     public Dashboard today() {
         ZonedDateTime zonedNow = ZonedDateTime.now(zone);
         OffsetDateTime now = zonedNow.toOffsetDateTime();
