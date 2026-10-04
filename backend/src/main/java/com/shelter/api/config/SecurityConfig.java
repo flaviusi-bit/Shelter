@@ -33,6 +33,8 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.PUT, "/api/animals/*/dewormings/*").hasAnyRole("ADMIN", "VETERINARIAN")
                 .requestMatchers(HttpMethod.DELETE, "/api/animals/*/dewormings/*").hasAnyRole("ADMIN", "VETERINARIAN")
                 .requestMatchers(HttpMethod.POST, "/api/animals/*/medical-events").hasAnyRole("ADMIN", "VETERINARIAN")
+                .requestMatchers(HttpMethod.PUT, "/api/animals/*/medical-events/*").hasAnyRole("ADMIN", "VETERINARIAN")
+                .requestMatchers(HttpMethod.DELETE, "/api/animals/*/medical-events/*").hasAnyRole("ADMIN", "VETERINARIAN")
                 .requestMatchers(HttpMethod.POST, "/api/animals/*/treatments").hasAnyRole("ADMIN", "VETERINARIAN")
                 .requestMatchers(HttpMethod.POST, "/api/animals/*/treatments/*/stop").hasAnyRole("ADMIN", "VETERINARIAN")
                 .requestMatchers(HttpMethod.PUT, "/api/animals/*/treatments/*").hasAnyRole("ADMIN", "VETERINARIAN")
