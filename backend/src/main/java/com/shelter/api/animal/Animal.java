@@ -24,6 +24,7 @@ public class Animal {
     @Column(nullable=false,length=30) private String status="ACTIVE";
     @Column(columnDefinition="TEXT") private String notes;
     @Column(name="photo_url",length=1000) private String photoUrl;
+    @Column(name="photo_storage_key",length=1200) private String photoStorageKey;
     @Column(nullable=false) private OffsetDateTime createdAt;
     @Column(nullable=false) private OffsetDateTime updatedAt;
 
@@ -44,5 +45,6 @@ public class Animal {
     public String getStatus(){return status;} public void setStatus(String v){status=v;}
     public String getNotes(){return notes;} public void setNotes(String v){notes=v;}
     public String getPhotoUrl(){return photoUrl;} public void setPhotoUrl(String v){photoUrl=v;}
+    public String getPhotoStorageKey(){return photoStorageKey;} public void setPhotoStorageKey(String v){photoStorageKey=v;}
     public OffsetDateTime getCreatedAt(){return createdAt;} public OffsetDateTime getUpdatedAt(){return updatedAt;}
 }
