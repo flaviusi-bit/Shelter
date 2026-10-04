@@ -43,7 +43,9 @@ public class TreatmentController {
         if (!"ACTIVE".equals(t.getStatus())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,"Treatment is not active");
         }
-        administrations.deleteByTreatmentIdAndStatus(treatmentId,"SCHEDULED");
+        var scheduled = administrations.findByTreatmentIdAndStatusOrderByScheduledAtAscIdAsc(treatmentId, "SCHEDULED");
+        scheduled.forEach(a -> a.setStatus("CANCELLED"));
+        if (!scheduled.isEmpty()) administrations.saveAll(scheduled);
         t.setStatus("CANCELLED");
         var saved=treatments.save(t);
         audit.record(auth.getName(),"STOP_TREATMENT","TREATMENT",saved.getId(),saved.getMedication());
