@@ -198,10 +198,11 @@ class MedicalDocumentControllerTest {
         assertEquals(Long.valueOf("%PDF-1.7\nmedical report".getBytes().length), result.getFileSize());
         assertTrue(result.getStorageKey().startsWith(animalId + "/"));
         assertTrue(storage.resolve(result.getStorageKey()).toFile().isFile());
-        assertEquals("/api/animals/" + animalId + "/documents/files/null", result.getFileUrl());
-        verify(documents, times(2)).save(result);
+        assertNotNull(result.getId());
+        assertEquals("/api/animals/" + animalId + "/documents/files/" + result.getId(), result.getFileUrl());
+        verify(documents).save(result);
         verify(audit).record("vet", "UPLOAD_MEDICAL_DOCUMENT", "MEDICAL_DOCUMENT",
-            null, "report.pdf");
+            result.getId(), "report.pdf");
     }
 
     @Test
@@ -236,9 +237,9 @@ class MedicalDocumentControllerTest {
             () -> controller.upload(animalId, file, "LAB_RESULT", "Blood test",
                 "2026-09-26", null, authentication));
 
-        verify(documents, times(2)).save(any(MedicalDocument.class));
-        verify(audit).record("vet", "UPLOAD_MEDICAL_DOCUMENT", "MEDICAL_DOCUMENT",
-            null, "report.pdf");
+        verify(documents).save(any(MedicalDocument.class));
+        verify(audit).record(eq("vet"), eq("UPLOAD_MEDICAL_DOCUMENT"), eq("MEDICAL_DOCUMENT"),
+            any(UUID.class), eq("report.pdf"));
         try (var paths = java.nio.file.Files.walk(tempDir)) {
             assertEquals(0, paths.filter(java.nio.file.Files::isRegularFile).count());
         }
