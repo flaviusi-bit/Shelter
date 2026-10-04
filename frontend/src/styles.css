@@ -9,3 +9,6 @@
 .section-head-actions{display:flex;align-items:center;gap:10px}.task-actions{display:flex;align-items:center;gap:7px}.document-hint{margin-top:14px;font-size:12px}@media(max-width:700px){.section-head-actions,.task-actions{flex-wrap:wrap}.task-actions .dashboard-time{width:100%;align-items:flex-start}}
 
 .document-link{border:0;background:none;padding:0;font:inherit;color:inherit;text-align:left;text-decoration:underline;cursor:pointer}.document-link:disabled{opacity:.6;cursor:wait}
+
+.today-medications{margin-bottom:18px;padding:18px;background:#fff;border:1px solid #e2e8f0;border-radius:16px}.today-medication-list{display:grid;gap:7px}.today-medication{display:grid;grid-template-columns:70px minmax(0,1fr) auto;align-items:center;gap:14px;padding:11px 12px;background:#f8fafc;border-radius:11px}.today-time{font-size:13px;font-weight:700}.today-medication-main{display:grid;gap:3px}.today-medication-main span{font-size:13px;color:#64748b}.schedule-toggle{justify-self:start;border:0;background:transparent;padding:3px 0;color:#475569;font-size:12px;font-weight:600;cursor:pointer}.schedule-toggle:hover{text-decoration:underline}
+@media(max-width:700px){.today-medication{grid-template-columns:58px 1fr}.today-medication .actions{grid-column:1 / -1}.today-medication .actions button{flex:1}}
