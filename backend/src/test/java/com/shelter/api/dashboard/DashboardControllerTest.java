@@ -28,7 +28,6 @@ class DashboardControllerTest {
         animal.setName("Misha");
 
         Task task = new Task();
-        task.setId(UUID.randomUUID());
         task.setAnimal(animal);
         task.setTaskType("VET_VISIT");
         task.setTitle("Test reminder");
