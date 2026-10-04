@@ -18,6 +18,7 @@ import static org.mockito.Mockito.*;
 class TreatmentControllerTest {
     private TreatmentRepository treatments;
     private AnimalRepository animals;
+    private TreatmentAdministrationRepository administrations;
     private AuditLogService audit;
     private TreatmentController controller;
     private Animal animal;
@@ -27,8 +28,9 @@ class TreatmentControllerTest {
     void setUp() {
         treatments = mock(TreatmentRepository.class);
         animals = mock(AnimalRepository.class);
+        administrations = mock(TreatmentAdministrationRepository.class);
         audit = mock(AuditLogService.class);
-        controller = new TreatmentController(treatments, animals, audit);
+        controller = new TreatmentController(treatments, administrations, animals, audit);
         animalId = UUID.randomUUID();
         animal = new Animal();
         animal.setId(animalId);
