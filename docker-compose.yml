@@ -23,10 +23,6 @@ services:
     image: postgres:16-alpine
     container_name: shelter-postgres
     restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB must be set}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER must be set}
