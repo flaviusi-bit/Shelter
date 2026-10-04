@@ -58,4 +58,4 @@ export async function getCurrentUser():Promise<CurrentUser>{return json(await fe
 
 export async function changeMyPassword(currentPassword:string,newPassword:string):Promise<void>{await json(await fetch('/api/users/me/password',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify({currentPassword,newPassword})}));}
 
-export async function resetUserPassword(id:string,newPassword:string):Promise<void>{await json<void>(await fetch('/api/users/'+id+'/password',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify({newPassword}))));}
+export async function resetUserPassword(id:string,newPassword:string):Promise<void>{await json<void>(await fetch('/api/users/'+id+'/password',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify({newPassword})}));}
