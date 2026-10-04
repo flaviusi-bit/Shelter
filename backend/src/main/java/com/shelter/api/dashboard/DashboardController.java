@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.servlet.http.HttpServletResponse;
 
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -36,7 +37,10 @@ public class DashboardController {
 
     @GetMapping("/today")
     @Transactional(readOnly = true)
-    public Dashboard today() {
+    public Dashboard today(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
         ZonedDateTime zonedNow = ZonedDateTime.now(zone);
         OffsetDateTime now = zonedNow.toOffsetDateTime();
         OffsetDateTime start = zonedNow.toLocalDate().atStartOfDay(zone).toOffsetDateTime();
