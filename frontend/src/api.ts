@@ -8,6 +8,8 @@ function headers():Record<string,string>{const auth=localStorage.getItem('shelte
 export async function getAnimals(q=''):Promise<Animal[]>{return json(await fetch('/api/animals'+(q?'?q='+encodeURIComponent(q):''),{headers:headers()}))}
 export async function createAnimal(a:AnimalInput):Promise<Animal>{return json(await fetch('/api/animals',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
 export async function updateAnimal(id:string,a:AnimalInput):Promise<Animal>{return json(await fetch('/api/animals/'+id,{method:'PUT',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
+export async function uploadAnimalPhoto(id:string,file:File):Promise<Animal>{const form=new FormData();form.append('file',file);return json(await fetch('/api/animals/'+id+'/photo',{method:'POST',headers:headers(),body:form}))}
+export async function getAnimalPhoto(id:string):Promise<Blob>{const r=await fetch('/api/animals/'+id+'/photo',{headers:headers()});if(r.status===401){localStorage.removeItem('shelterAuth');window.dispatchEvent(new Event('shelter-auth-required'));throw new Error('Authentication required')}if(!r.ok)throw new Error(await r.text());return r.blob()}
 export async function getTreatments(animalId:string):Promise<Treatment[]>{return json(await fetch('/api/animals/'+animalId+'/treatments',{headers:headers()}))}
 export async function createTreatment(animalId:string,treatment:TreatmentInput):Promise<Treatment>{return json(await fetch('/api/animals/'+animalId+'/treatments',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(treatment)}))}
 export async function getAdministrations(animalId:string,treatmentId:string):Promise<Administration[]>{return json(await fetch('/api/animals/'+animalId+'/treatments/'+treatmentId+'/administrations',{headers:headers()}))}
@@ -24,7 +26,6 @@ export async function getVaccinations(id:string):Promise<Vaccination[]>{return j
 export async function createVaccination(id:string,a:Omit<Vaccination,'id'>):Promise<Vaccination>{return json(await fetch('/api/animals/'+id+'/vaccinations',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
 export async function getDewormings(id:string):Promise<Deworming[]>{return json(await fetch('/api/animals/'+id+'/dewormings',{headers:headers()}))}
 export async function createDeworming(id:string,a:Omit<Deworming,'id'>):Promise<Deworming>{return json(await fetch('/api/animals/'+id+'/dewormings',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
-
 
 export type MedicalDocument={id:string;documentType:string;title:string;fileUrl:string;documentDate?:string;notes?:string;uploadedBy?:string;createdAt?:string}
 export async function getDocuments(id:string):Promise<MedicalDocument[]>{return json(await fetch('/api/animals/'+id+'/documents',{headers:headers()}))}
@@ -45,7 +46,6 @@ export async function verifyBackup(name:string):Promise<BackupVerification>{retu
 export type AuditLog={id:string;actor:string;action:string;entityType:string;entityId?:string;occurredAt:string;details?:string}
 export async function getAuditLogs(limit=200):Promise<AuditLog[]>{return json(await fetch('/api/admin/audit?limit='+limit,{headers:headers()}))}
 
-
 export type ShelterUser={id:string;username:string;displayName:string;role:string;active:boolean}
 export async function getUsers():Promise<ShelterUser[]>{return json(await fetch('/api/users',{headers:headers()}))}
 export async function updateUser(id:string,a:{displayName:string;role:string}):Promise<ShelterUser>{return json(await fetch('/api/users/'+id,{method:'PUT',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
@@ -58,4 +58,4 @@ export async function getCurrentUser():Promise<CurrentUser>{return json(await fe
 
 export async function changeMyPassword(currentPassword:string,newPassword:string):Promise<void>{await json(await fetch('/api/users/me/password',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify({currentPassword,newPassword})}));}
 
-export async function resetUserPassword(id:string,newPassword:string):Promise<void>{await json<void>(await fetch('/api/users/'+id+'/password',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify({newPassword})}));}
+export async function resetUserPassword(id:string,newPassword:string):Promise<void>{await json<void>(await fetch('/api/users/'+id+'/password',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify({newPassword}))));}
