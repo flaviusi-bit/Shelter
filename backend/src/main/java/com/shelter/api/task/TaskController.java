@@ -71,26 +71,23 @@ public class TaskController {
     @PostMapping("/{id}/complete")
     @Transactional
     public Task complete(@PathVariable UUID id, Authentication auth){
-        Task task=tasks.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Task not found"));
-        if (!"OPEN".equals(task.getStatus())) throw new IllegalStateException("Only open tasks can be completed");
-        task.setStatus("COMPLETED");
-        task.setCompletedAt(OffsetDateTime.now());
-        task.setCompletedBy(auth.getName());
-        var saved=tasks.save(task);
-        audit.record(auth.getName(),"COMPLETE_TASK","TASK",saved.getId(),saved.getTitle());
-        return saved;
+        return transition(id, "COMPLETED", auth, "COMPLETE_TASK");
     }
 
     @PostMapping("/{id}/skip")
     @Transactional
     public Task skip(@PathVariable UUID id, Authentication auth){
+        return transition(id, "SKIPPED", auth, "SKIP_TASK");
+    }
+
+    private Task transition(UUID id, String newStatus, Authentication auth, String auditAction){
         Task task=tasks.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Task not found"));
-        if (!"OPEN".equals(task.getStatus())) throw new IllegalStateException("Only open tasks can be skipped");
-        task.setStatus("SKIPPED");
-        task.setCompletedAt(OffsetDateTime.now());
-        task.setCompletedBy(auth.getName());
-        var saved=tasks.save(task);
-        audit.record(auth.getName(),"SKIP_TASK","TASK",saved.getId(),saved.getTitle());
+        if (!"OPEN".equals(task.getStatus())) throw new IllegalStateException("Only open tasks can be updated");
+        OffsetDateTime completedAt=OffsetDateTime.now();
+        int updated=tasks.transitionOpenTask(id, newStatus, completedAt, auth.getName());
+        if(updated==0) throw new IllegalStateException("Only open tasks can be updated");
+        var saved=tasks.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Task not found"));
+        audit.record(auth.getName(),auditAction,"TASK",saved.getId(),saved.getTitle());
         return saved;
     }
 }
