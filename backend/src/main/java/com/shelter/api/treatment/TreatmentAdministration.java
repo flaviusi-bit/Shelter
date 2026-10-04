@@ -10,6 +10,7 @@ public class TreatmentAdministration {
     @Id
     private UUID id;
 
+    @com.fasterxml.jackson.annotation.JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "treatment_id")
     private Treatment treatment;
