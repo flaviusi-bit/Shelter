@@ -1,6 +1,7 @@
 package com.shelter.api.animal;
 
 import com.shelter.api.audit.AuditLogService;
+import com.shelter.api.document.DocumentStorageService;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
@@ -17,8 +18,9 @@ class AnimalControllerTest {
     void rejectsDateOfBirthInTheFuture() {
         AnimalRepository repository = mock(AnimalRepository.class);
         AuditLogService audit = mock(AuditLogService.class);
+        DocumentStorageService storage = mock(DocumentStorageService.class);
         Authentication authentication = mock(Authentication.class);
-        AnimalController controller = new AnimalController(repository, audit);
+        AnimalController controller = new AnimalController(repository, audit, storage);
 
         var request = new AnimalController.AnimalRequest(
             "Misha", "DOG", "FEMALE",
@@ -34,6 +36,7 @@ class AnimalControllerTest {
         verify(repository, never()).save(any(Animal.class));
         verifyNoInteractions(audit);
     }
+
     @Test
     void rejectsUnknownAnimalStatus() {
         var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
@@ -56,7 +59,7 @@ class AnimalControllerTest {
         var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
         var request = new AnimalController.AnimalRequest(
             "Misha", "HORSE", "FEMALE", LocalDate.of(2020, 1, 1), null, null,
-            LocalDate.of(2024, 1, 1), null, null, null, null, null);
+            LocalDate.of(2024, 1, 1), null, null, null, null);
         var violations = validator.validate(request);
         assertEquals(1, violations.size());
     }
@@ -66,9 +69,8 @@ class AnimalControllerTest {
         var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
         var request = new AnimalController.AnimalRequest(
             "Misha", "DOG", "UNKNOWN_SEX", LocalDate.of(2020, 1, 1), null, null,
-            LocalDate.of(2024, 1, 1), null, null, null, null, null);
+            LocalDate.of(2024, 1, 1), null, null, null, null);
         var violations = validator.validate(request);
         assertEquals(1, violations.size());
     }
-
 }
