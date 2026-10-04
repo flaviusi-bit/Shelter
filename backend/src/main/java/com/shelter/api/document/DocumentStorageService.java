@@ -623,10 +623,13 @@ public class DocumentStorageService {
         decoder.onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
         try (var input = new InputStreamReader(file.getInputStream(), decoder)) {
             char[] buffer = new char[8192];
-            while (input.read(buffer) != -1) {
-                for (int i = 0; i < buffer.length; i++) {
+            int read;
+            while ((read = input.read(buffer)) != -1) {
+                for (int i = 0; i < read; i++) {
                     char value = buffer[i];
-                    if (value == 0) return false;
+                    if ((value < 0x20 && value != '\t' && value != '\n' && value != '\r') || value == 0x7F) {
+                        return false;
+                    }
                 }
             }
         } catch (IOException e) {
