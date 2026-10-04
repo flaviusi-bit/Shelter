@@ -95,7 +95,8 @@ function Dashboard({role,isAdmin,onOpenAnimals,onOpenBackups,onOpenAudit,onOpenU
    <div className="dashboard-list">{(data?.items||[]).slice(0,30).map(x=><div className="dashboard-item" key={x.id}><div><strong>{x.animalName}</strong><span>{x.medication} · {x.dose}</span></div><span className={'status status-'+x.status.toLowerCase()}>{x.status}</span></div>)}</div>
   </section>
   {showTask&&<TaskForm onCancel={()=>setShowTask(false)} onSaved={()=>{setShowTask(false);load()}}/>}
-  {showPassword&&<ChangePasswordForm onCancel={()=>setShowPassword(false)} onChanged={onLogout}/>}\n </main>
+  {showPassword&&<ChangePasswordForm onCancel={()=>setShowPassword(false)} onChanged={onLogout}/>} 
+ </main>
 }
 function Users({currentUsername,onBack,onLogout}:{currentUsername:string;onBack:()=>void;onLogout:()=>void}){
  const [items,setItems]=useState<import('./api').ShelterUser[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(''),[showCreate,setShowCreate]=useState(false),[resetUser,setResetUser]=useState<import('./api').ShelterUser|null>(null),[editUser,setEditUser]=useState<import('./api').ShelterUser|null>(null)
