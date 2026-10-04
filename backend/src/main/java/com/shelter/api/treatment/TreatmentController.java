@@ -18,18 +18,56 @@ import java.util.UUID;
 @RequestMapping("/api/animals/{animalId}/treatments")
 public class TreatmentController {
  private static final int MAX_HISTORY_ENTRIES = 200;
- private final TreatmentRepository treatments; private final AnimalRepository animals; private final AuditLogService audit;
- public TreatmentController(TreatmentRepository treatments,AnimalRepository animals,AuditLogService audit){this.treatments=treatments;this.animals=animals;this.audit=audit;}
+ private final TreatmentRepository treatments; private final TreatmentAdministrationRepository administrations; private final AnimalRepository animals; private final AuditLogService audit;
+ public TreatmentController(TreatmentRepository treatments,TreatmentAdministrationRepository administrations,AnimalRepository animals,AuditLogService audit){this.treatments=treatments;this.administrations=administrations;this.animals=animals;this.audit=audit;}
  @GetMapping public List<Treatment> list(@PathVariable UUID animalId){ensureAnimal(animalId);return treatments.findByAnimalIdOrderByStartDateDescIdAsc(animalId, PageRequest.of(0, MAX_HISTORY_ENTRIES));}
+ @PutMapping("/{treatmentId}") @Transactional public Treatment update(@PathVariable UUID animalId,@PathVariable UUID treatmentId,@Valid @RequestBody Request r,Authentication auth){
+        var animal=ensureAnimal(animalId);
+        var t=ensureTreatment(animalId,treatmentId);
+        validateRequest(r);
+        boolean scheduleChanged=!r.startDate().equals(t.getStartDate())
+                || !java.util.Objects.equals(r.endDate(),t.getEndDate())
+                || !r.frequency().trim().equalsIgnoreCase(t.getFrequency().trim())
+                || !r.status().equals(t.getStatus());
+        if(scheduleChanged) administrations.deleteByTreatmentIdAndStatus(treatmentId,"SCHEDULED");
+        apply(t,r,animal);
+        var saved=treatments.save(t);
+        audit.record(auth.getName(),"UPDATE_TREATMENT","TREATMENT",saved.getId(),saved.getMedication());
+        return saved;
+ }
+ @DeleteMapping("/{treatmentId}") @Transactional @ResponseStatus(HttpStatus.NO_CONTENT) public void delete(@PathVariable UUID animalId,@PathVariable UUID treatmentId,Authentication auth){
+        var t=ensureTreatment(animalId,treatmentId);
+        treatments.delete(t);
+        audit.record(auth.getName(),"DELETE_TREATMENT","TREATMENT",t.getId(),t.getMedication());
+ }
  @PostMapping @ResponseStatus(HttpStatus.CREATED) @Transactional public Treatment create(@PathVariable UUID animalId,@Valid @RequestBody Request r,Authentication auth){
-        validateUtf8(r.medication(), 640, "medication");
+        validateRequest(r);
         validateUtf8(r.dose(), 320, "dose");
         validateUtf8(r.route(), 160, "route");
         validateUtf8(r.frequency(), 320, "frequency");
         validateUtf8(r.instructions(), 40000, "instructions");
         validateUtf8(r.prescribedBy(), 480, "prescribedBy");
 
-  var animal=ensureAnimal(animalId); validateFrequency(r.frequency()); if (r.endDate()!=null && r.endDate().isBefore(r.startDate())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Treatment end date cannot be before start date"); var t=new Treatment(); t.setAnimal(animal); t.setMedication(r.medication()); t.setDose(r.dose()); t.setRoute(r.route()); t.setFrequency(r.frequency()); t.setStartDate(r.startDate()); t.setEndDate(r.endDate()); t.setStatus(r.status()==null?"ACTIVE":r.status()); t.setInstructions(r.instructions()); t.setPrescribedBy(r.prescribedBy()); var saved=treatments.save(t); audit.record(auth.getName(),"CREATE_TREATMENT","TREATMENT",saved.getId(),saved.getMedication()); return saved;
+  var animal=ensureAnimal(animalId); if (r.endDate()!=null && r.endDate().isBefore(r.startDate())) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Treatment end date cannot be before start date"); var t=new Treatment(); t.setAnimal(animal); t.setMedication(r.medication()); t.setDose(r.dose()); t.setRoute(r.route()); t.setFrequency(r.frequency()); t.setStartDate(r.startDate()); t.setEndDate(r.endDate()); t.setStatus(r.status()==null?"ACTIVE":r.status()); t.setInstructions(r.instructions()); t.setPrescribedBy(r.prescribedBy()); var saved=treatments.save(t); audit.record(auth.getName(),"CREATE_TREATMENT","TREATMENT",saved.getId(),saved.getMedication()); return saved;
+ }
+ private void validateRequest(Request r){
+        validateUtf8(r.medication(), 640, "medication");
+        validateUtf8(r.dose(), 320, "dose");
+        validateUtf8(r.route(), 160, "route");
+        validateUtf8(r.frequency(), 320, "frequency");
+        validateUtf8(r.instructions(), 40000, "instructions");
+        validateUtf8(r.prescribedBy(), 480, "prescribedBy");
+        validateFrequency(r.frequency());
+ }
+ private void apply(Treatment t,Request r,com.shelter.api.animal.Animal animal){
+        t.setAnimal(animal); t.setMedication(r.medication()); t.setDose(r.dose()); t.setRoute(r.route());
+        t.setFrequency(r.frequency()); t.setStartDate(r.startDate()); t.setEndDate(r.endDate());
+        t.setStatus(r.status()==null?"ACTIVE":r.status()); t.setInstructions(r.instructions()); t.setPrescribedBy(r.prescribedBy());
+ }
+ private Treatment ensureTreatment(UUID animalId,UUID treatmentId){
+        return treatments.findById(treatmentId)
+                .filter(t->t.getAnimal().getId().equals(animalId))
+                .orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Treatment not found"));
  }
  private static void validateUtf8(String value,int maxBytes,String field){if(value!=null&&value.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>maxBytes)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,field+" is too long");}
  private void validateFrequency(String frequency){
