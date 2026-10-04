@@ -37,7 +37,7 @@ class DashboardControllerTest {
         task.setAssignedTo("coordinator");
         task.setNotes("test");
 
-        when(tasks.findByStatusOrderByDueAtAscIdAsc("OPEN", any(Pageable.class)))
+        when(tasks.findByStatusOrderByDueAtAscIdAsc(org.mockito.ArgumentMatchers.eq("OPEN"), any(Pageable.class)))
             .thenReturn(List.of(task));
 
         DashboardController.Dashboard dashboard = controller.today(mock(jakarta.servlet.http.HttpServletResponse.class));
