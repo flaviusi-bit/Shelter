@@ -53,12 +53,12 @@ public class MedicalDocumentController {
             MedicalDocument doc;
             try{
                 doc=new MedicalDocument();
+                doc.setId(UUID.randomUUID());
                 doc.setAnimal(animal);doc.setDocumentType(documentType);doc.setTitle(title);
                 doc.setStorageKey(stored.storageKey());doc.setOriginalFileName(stored.originalFileName());
                 doc.setContentType(stored.contentType());doc.setFileSize(stored.size());
                 doc.setDocumentDate(parsedDocumentDate);
                 doc.setNotes(notes);doc.setUploadedBy(auth.getName());
-                doc = documents.save(doc);
                 doc.setFileUrl("/api/animals/"+animalId+"/documents/files/"+doc.getId());
                 doc = documents.save(doc);
                 audit.record(auth.getName(),"UPLOAD_MEDICAL_DOCUMENT","MEDICAL_DOCUMENT",doc.getId(),doc.getOriginalFileName());
