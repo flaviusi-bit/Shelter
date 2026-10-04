@@ -61,6 +61,37 @@ class TreatmentControllerTest {
         verify(treatments).save(any(Treatment.class));
     }
     @Test
+    void stoppingTreatmentPreservesAdministrationHistory() {
+        var auth = mock(Authentication.class);
+        when(auth.getName()).thenReturn("vet");
+        var treatment = new Treatment();
+        treatment.setId(UUID.randomUUID());
+        treatment.setAnimal(animal);
+        treatment.setStatus("ACTIVE");
+        when(treatments.findById(treatment.getId())).thenReturn(Optional.of(treatment));
+
+        var administered = new TreatmentAdministration();
+        administered.setTreatment(treatment);
+        administered.setStatus("ADMINISTERED");
+        var skipped = new TreatmentAdministration();
+        skipped.setTreatment(treatment);
+        skipped.setStatus("SKIPPED");
+        var scheduled = new TreatmentAdministration();
+        scheduled.setTreatment(treatment);
+        scheduled.setStatus("SCHEDULED");
+        when(administrations.findByTreatmentIdAndStatusOrderByScheduledAtAscIdAsc(treatment.getId(), "SCHEDULED"))
+            .thenReturn(java.util.List.of(scheduled));
+
+        var result = controller.stop(animalId, treatment.getId(), auth);
+
+        assertEquals("CANCELLED", result.getStatus());
+        assertEquals("CANCELLED", scheduled.getStatus());
+        verify(administrations).saveAll(java.util.List.of(scheduled));
+        verify(administrations, never()).deleteByTreatmentIdAndStatus(any(), eq("SCHEDULED"));
+        verify(treatments).save(treatment);
+    }
+
+    @Test
     void rejectsUnsupportedFrequency() {
         var request = new TreatmentController.Request(
             "Amoxicillin", "10 mg", "ORAL", "every week",
