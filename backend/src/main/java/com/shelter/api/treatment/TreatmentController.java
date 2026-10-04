@@ -34,7 +34,7 @@ public class TreatmentController {
  private static void validateUtf8(String value,int maxBytes,String field){if(value!=null&&value.getBytes(java.nio.charset.StandardCharsets.UTF_8).length>maxBytes)throw new ResponseStatusException(HttpStatus.BAD_REQUEST,field+" is too long");}
  private void validateFrequency(String frequency){
   String f=frequency.trim().toLowerCase();
-  if(f.matches("once|single|daily|once daily|q24h|every 24 hours?|twice daily|two times daily|q12h|every 12 hours?|three times daily|q8h|every 8 hours?|four times daily|q6h|every 6 hours?")) return;
+  if(f.matches("once|single|daily|once daily|q24h|every 24 hours?|twice daily|two times daily|2 times daily|2 daily|q12h|every 12 hours?|three times daily|three daily|3 times daily|3 daily|q8h|every 8 hours?|four times daily|four daily|4 times daily|4 daily|q6h|every 6 hours?")) return;
   var hours=java.util.regex.Pattern.compile("every\\s+([1-9]\\d*)\\s+hours?").matcher(f);
   if(hours.matches()){
    long value;
