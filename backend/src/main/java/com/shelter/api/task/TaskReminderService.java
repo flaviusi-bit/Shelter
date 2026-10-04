@@ -109,12 +109,19 @@ public class TaskReminderService {
         }
         if (existing.isPresent()) {
             Task task = existing.get();
-            if ("OPEN".equals(task.getStatus())) {
-                task.setAnimal(animal);
-                task.setTaskType(type);
-                task.setTitle(title);
-                task.setDueAt(date.atStartOfDay(zone).plusHours(9).toOffsetDateTime());
-                task.setNotes(notes);
+            var dueAt = date.atStartOfDay(zone).plusHours(9).toOffsetDateTime();
+            boolean dueDateChanged = task.getDueAt() == null || !task.getDueAt().isEqual(dueAt);
+            task.setAnimal(animal);
+            task.setTaskType(type);
+            task.setTitle(title);
+            task.setDueAt(dueAt);
+            task.setNotes(notes);
+            if ("OPEN".equals(task.getStatus()) || dueDateChanged) {
+                if (dueDateChanged && !"OPEN".equals(task.getStatus())) {
+                    task.setStatus("OPEN");
+                    task.setCompletedAt(null);
+                    task.setCompletedBy(null);
+                }
                 tasks.save(task);
             }
             return false;
