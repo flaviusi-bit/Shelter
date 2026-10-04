@@ -10,6 +10,8 @@ services:
       - ALL
     cap_add:
       - CHOWN
+      - SETGID
+      - SETUID
     ports:
       - "127.0.0.1:${FRONTEND_PORT:-80}:8080"
     healthcheck:
@@ -57,7 +59,7 @@ services:
       SHELTER_ADMIN_PASSWORD: ${SHELTER_ADMIN_PASSWORD:?SHELTER_ADMIN_PASSWORD must be set}
       SHELTER_DOCUMENTS_PATH: /app/data/documents
       SHELTER_TIMEZONE: ${SHELTER_TIMEZONE:-Europe/Bucharest}
-      SHELTER_BACKUP_PATH: /app/data/backups
+      SHELTER_BACKUP_PATH: ${SHELTER_BACKUP_PATH:-/app/data/backups}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8080}:8080"
     healthcheck:
