@@ -29,7 +29,7 @@ if(r.nextDueDate()!=null&&r.nextDueDate().isBefore(r.administeredDate()))throw n
         reminders.completeReminder("DEWORMING_DUE:" + x.getId(), animalId, auth.getName());
         return toResponse(x, reminders.reminderStatus("DEWORMING_DUE:" + x.getId()));
  }
- @DeleteMapping("/${idName}") @Transactional public void delete(@PathVariable UUID animalId,@PathVariable UUID dewormingId,Authentication auth){
+ @DeleteMapping("/{dewormingId}") @Transactional public void delete(@PathVariable UUID animalId,@PathVariable UUID dewormingId,Authentication auth){
         Deworming d=repo.findById(dewormingId).orElseThrow(()->new ResponseStatusException(HttpStatus.NOT_FOUND,"Deworming not found"));
         if(!d.getAnimal().getId().equals(animalId))throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Deworming not found");
         reminders.removeDewormingReminder(d);repo.delete(d);audit.record(auth.getName(),"DELETE_DEWORMING","DEWORMING",d.getId(),d.getProductName());
