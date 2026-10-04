@@ -8,6 +8,38 @@ import {getAnimals,getTreatments,createTreatment,updateTreatment,deleteTreatment
 const today=()=>new Date().toISOString().slice(0,10)
 const blankAnimal=():AnimalInput=>({name:'',animalType:'DOG',sex:'UNKNOWN',dateOfBirth:'',weightKg:undefined,microchipNumber:'',intakeDate:today(),rescueSource:'',location:'',status:'ACTIVE',notes:'',photoUrl:''})
 
+type AppRoute={view:'dashboard'|'animals'|'backups'|'audit'|'users';animalId?:string;tab?:string}
+const animalTabs=['Overview','Medical','Treatments','Vaccines','Deworming','Vet visits','Documents']
+function parseRoute():AppRoute{
+ const path=window.location.pathname.replace(/\\/+$/,'')||'/'
+ if(path==='/dashboard'||path==='/')return {view:'dashboard'}
+ if(path==='/backups')return {view:'backups'}
+ if(path==='/audit')return {view:'audit'}
+ if(path==='/users')return {view:'users'}
+ const match=path.match(/^\\/animals\\/([^/]+)$/)
+ if(match){
+  const tab=new URLSearchParams(window.location.search).get('tab')||'Overview'
+  return {view:'animals',animalId:decodeURIComponent(match[1]),tab:animalTabs.includes(tab)?tab:'Overview'}
+ }
+ return {view:'animals'}
+}
+function useAppRoute(){
+ const [route,setRoute]=useState<AppRoute>(()=>parseRoute())
+ useEffect(()=>{
+  const onPop=()=>setRoute(parseRoute())
+  window.addEventListener('popstate',onPop)
+  const current=parseRoute()
+  if(window.location.pathname==='/'||window.location.pathname==='')window.history.replaceState(null,'','/dashboard')
+  else setRoute(current)
+  return()=>window.removeEventListener('popstate',onPop)
+ },[])
+ function navigate(path:string){
+  window.history.pushState(null,'',path)
+  setRoute(parseRoute())
+ }
+ return [route,navigate] as const
+}
+
 export default function App(){
  const [authenticated,setAuthenticated]=useState(!!localStorage.getItem('shelterAuth'))
  useEffect(()=>{const h=()=>setAuthenticated(false);window.addEventListener('shelter-auth-required',h);return()=>window.removeEventListener('shelter-auth-required',h)},[])
@@ -20,17 +52,18 @@ function Login({onLogin}:{onLogin:()=>void}){
 }
 function ShelterApp({onLogout}:{onLogout:()=>void}){
  const [role,setRole]=useState('VIEWER'),[username,setUsername]=useState('')
+ const [route,navigate]=useAppRoute()
  useEffect(()=>{getCurrentUser().then(u=>{setRole(u.role);setUsername(u.username)}).catch(()=>setRole('VIEWER'))},[])
  const isAdmin=role==='ADMIN'
- const [view,setView]=useState<'dashboard'|'animals'|'backups'|'audit'|'users'>('dashboard')
- if(view==='dashboard')return <Dashboard role={role} isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
- if(view==='backups'&&!isAdmin)return <Dashboard role={role} isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
- if(view==='backups')return <Backups onBack={()=>setView('dashboard')} onLogout={onLogout}/>
- if(view==='users'&&!isAdmin)return <Dashboard role={role} isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
- if(view==='users')return <Users currentUsername={username} onBack={()=>setView('dashboard')} onLogout={onLogout}/>
- if(view==='audit'&&!isAdmin)return <Dashboard role={role} isAdmin={isAdmin} onOpenAnimals={()=>setView('animals')} onOpenBackups={()=>setView('backups')} onOpenAudit={()=>setView('audit')} onOpenUsers={()=>setView('users')} onLogout={onLogout}/>
- if(view==='audit')return <Audit onBack={()=>setView('dashboard')} onLogout={onLogout}/>
- return <Animals role={role} onBack={()=>setView('dashboard')} onLogout={onLogout}/>
+ const go=(path:string)=>navigate(path)
+ if(route.view==='dashboard')return <Dashboard role={role} isAdmin={isAdmin} onOpenAnimals={()=>go('/animals')} onOpenBackups={()=>go('/backups')} onOpenAudit={()=>go('/audit')} onOpenUsers={()=>go('/users')} onLogout={onLogout}/>
+ if(route.view==='backups'&&!isAdmin)return <Dashboard role={role} isAdmin={isAdmin} onOpenAnimals={()=>go('/animals')} onOpenBackups={()=>go('/backups')} onOpenAudit={()=>go('/audit')} onOpenUsers={()=>go('/users')} onLogout={onLogout}/>
+ if(route.view==='backups')return <Backups onBack={()=>go('/dashboard')} onLogout={onLogout}/>
+ if(route.view==='users'&&!isAdmin)return <Dashboard role={role} isAdmin={isAdmin} onOpenAnimals={()=>go('/animals')} onOpenBackups={()=>go('/backups')} onOpenAudit={()=>go('/audit')} onOpenUsers={()=>go('/users')} onLogout={onLogout}/>
+ if(route.view==='users')return <Users currentUsername={username} onBack={()=>go('/dashboard')} onLogout={onLogout}/>
+ if(route.view==='audit'&&!isAdmin)return <Dashboard role={role} isAdmin={isAdmin} onOpenAnimals={()=>go('/animals')} onOpenBackups={()=>go('/backups')} onOpenAudit={()=>go('/audit')} onOpenUsers={()=>go('/users')} onLogout={onLogout}/>
+ if(route.view==='audit')return <Audit onBack={()=>go('/dashboard')} onLogout={onLogout}/>
+ return <Animals role={role} initialAnimalId={route.animalId} initialTab={route.tab||'Overview'} onNavigate={go} onBack={()=>go('/dashboard')} onLogout={onLogout}/>
 }
 function Backups({onBack,onLogout}:{onBack:()=>void;onLogout:()=>void}){
  const [items,setItems]=useState<import('./api').BackupInfo[]>([]),[error,setError]=useState(''),[busy,setBusy]=useState(''),[message,setMessage]=useState('')
@@ -140,16 +173,17 @@ function TaskForm({onCancel,onSaved}:{onCancel:()=>void;onSaved:()=>void}){const
 
 function Stat({label,value,danger=false}:{label:string;value:string|number;danger?:boolean}){return <article className={'stat '+(danger?'stat-danger':'')}><span>{label}</span><strong>{value}</strong></article>}
 
-function Animals({role,onBack,onLogout}:{role:string;onBack:()=>void;onLogout:()=>void}){
+function Animals({role,initialAnimalId,initialTab,onNavigate,onBack,onLogout}:{role:string;initialAnimalId?:string;initialTab:string;onNavigate:(path:string)=>void;onBack:()=>void;onLogout:()=>void}){
  const [animals,setAnimals]=useState<Animal[]>([]),[selected,setSelected]=useState<Animal|null>(null),[editing,setEditing]=useState(false),[creating,setCreating]=useState(false),[treatments,setTreatments]=useState<Treatment[]>([]),[query,setQuery]=useState(''),[error,setError]=useState('')
  async function load(){try{setAnimals(await getAnimals(query));setError('')}catch(e){if(e instanceof Error&&e.message!=='Authentication required')setError('Could not load animals')}}
  useEffect(()=>{load()},[]); useEffect(()=>{const t=setTimeout(load,250);return()=>clearTimeout(t)},[query])
- async function select(a:Animal){setSelected(a);setEditing(false);try{setTreatments(await getTreatments(a.id))}catch{setTreatments([])}}
- function saved(a:Animal){setAnimals(xs=>{const found=xs.some(x=>x.id===a.id);return found?xs.map(x=>x.id===a.id?a:x):[...xs,a].sort((x,y)=>x.name.localeCompare(y.name))});setSelected(a);setCreating(false);setEditing(false)}
- return <main className="shell"><header className="topbar"><div><p className="eyebrow">SHELTER MANAGEMENT</p><h1>{selected?selected.name:'Animals'}</h1><p className="muted">{selected?'Animal profile':'Every animal, its history and care.'}</p></div><div className="top-actions"><button className="secondary" onClick={onBack}>Dashboard</button>{selected&&!creating&&<button className="secondary" onClick={()=>setSelected(null)}>← All animals</button>}<button className="secondary" onClick={onLogout}>Sign out</button></div></header>
+ async function select(a:Animal){setSelected(a);setEditing(false);onNavigate('/animals/'+encodeURIComponent(a.id));try{setTreatments(await getTreatments(a.id))}catch{setTreatments([])}}
+ useEffect(()=>{if(!initialAnimalId){setSelected(null);setTreatments([]);setEditing(false);return}const a=animals.find(x=>x.id===initialAnimalId);if(a){setSelected(a);setEditing(false);getTreatments(a.id).then(setTreatments).catch(()=>setTreatments([]))}},[initialAnimalId,animals])
+ function saved(a:Animal){setAnimals(xs=>{const found=xs.some(x=>x.id===a.id);return found?xs.map(x=>x.id===a.id?a:x):[...xs,a].sort((x,y)=>x.name.localeCompare(y.name))});setSelected(a);setCreating(false);setEditing(false);onNavigate('/animals/'+encodeURIComponent(a.id))}
+ return <main className="shell"><header className="topbar"><div><p className="eyebrow">SHELTER MANAGEMENT</p><h1>{selected?selected.name:'Animals'}</h1><p className="muted">{selected?'Animal profile':'Every animal, its history and care.'}</p></div><div className="top-actions"><button className="secondary" onClick={onBack}>Dashboard</button>{selected&&!creating&&<button className="secondary" onClick={()=>{setSelected(null);onNavigate('/animals')}}>← All animals</button><button className="secondary" onClick={onLogout}>Sign out</button></div></header>
  {!selected&&!creating&&<><section className="toolbar"><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search by name, ID or microchip…"/><span className="muted">{animals.length} animals</span>{['ADMIN','VETERINARIAN','COORDINATOR'].includes(role)&&<button className="primary" onClick={()=>setCreating(true)}>+ Add animal</button>}</section>{error&&<div className="error">{error}</div>}<section className="animal-list">{animals.map(a=><button className="animal-card clickable" key={a.id} onClick={()=>select(a)}>{a.photoUrl?<AnimalPhoto animalId={a.id} className="avatar" alt=""/>:<div className="avatar">{a.name.charAt(0).toUpperCase()}</div>}<div className="animal-main"><h2>{a.name}</h2><p>{a.animalCode} · {a.animalType} · {a.sex} · {a.weightKg?a.weightKg+' kg':'weight not recorded'}</p><p className="muted">{a.location||'No location'} · {a.status}</p></div><span className="chip">{a.microchipNumber||'No chip'}</span></button>)}{animals.length===0&&<div className="empty">No animals registered yet.</div>}</section></>}
  {creating&&<AnimalForm onCancel={()=>setCreating(false)} onSaved={saved}/>}
- {selected&&!creating&&(editing?<AnimalForm animal={selected} onCancel={()=>setEditing(false)} onSaved={saved}/>:<AnimalProfile role={role} animal={selected} treatments={treatments} onEdit={()=>setEditing(true)} onTreatmentSaved={(treatment)=>setTreatments(xs=>[treatment,...xs.filter(x=>x.id!==treatment.id)])} onTreatmentDeleted={(id)=>setTreatments(xs=>xs.filter(x=>x.id!==id))}/>)}
+ {selected&&!creating&&(editing?<AnimalForm animal={selected} onCancel={()=>setEditing(false)} onSaved={saved}/>:<AnimalProfile role={role} animal={selected} treatments={treatments} initialTab={initialTab} onTabChange={tab=>onNavigate('/animals/'+encodeURIComponent(selected.id)+'?tab='+encodeURIComponent(tab))} onEdit={()=>setEditing(true)} onTreatmentSaved={(treatment)=>setTreatments(xs=>[treatment,...xs.filter(x=>x.id!==treatment.id)])} onTreatmentDeleted={(id)=>setTreatments(xs=>xs.filter(x=>x.id!==id))}/>)}
  </main>
 }
 
@@ -169,8 +203,9 @@ function AnimalForm({animal,onCancel,onSaved}:{animal?:Animal;onCancel:()=>void;
  <div className="form-grid"><label>Name *<input value={form.name} onChange={e=>set('name',e.target.value)} placeholder="e.g. Luna"/></label><label>Animal type *<select value={form.animalType} onChange={e=>set('animalType',e.target.value)}><option value="DOG">Dog</option><option value="CAT">Cat</option><option value="OTHER">Other</option></select></label><label>Sex *<select value={form.sex} onChange={e=>set('sex',e.target.value)}><option value="UNKNOWN">Unknown</option><option value="FEMALE">Female</option><option value="MALE">Male</option></select></label><label>Weight (kg)<input type="number" min="0.001" step="0.001" value={form.weightKg??''} onChange={e=>set('weightKg',e.target.value?Number(e.target.value):undefined)}/></label><label>Date of birth<input type="date" value={form.dateOfBirth||''} onChange={e=>set('dateOfBirth',e.target.value)}/></label><label>Intake date *<input type="date" value={form.intakeDate} onChange={e=>set('intakeDate',e.target.value)}/></label><label>Microchip<input value={form.microchipNumber||''} onChange={e=>set('microchipNumber',e.target.value)} placeholder="Microchip number"/></label><label>Location / kennel<input value={form.location||''} onChange={e=>set('location',e.target.value)} placeholder="Kennel A-12"/></label><label>Status<select value={form.status} onChange={e=>set('status',e.target.value)}><option value="ACTIVE">Active</option><option value="TREATMENT">Treatment</option><option value="HEALTHY">Healthy</option><option value="QUARANTINE">Quarantine</option><option value="FOSTER">Foster</option><option value="ADOPTED">Adopted</option></select></label><label>Rescue source<input value={form.rescueSource||''} onChange={e=>set('rescueSource',e.target.value)} placeholder="Street / shelter / owner surrender"/></label><label className="span-2">Photo *<input type="file" accept=".jpg,.jpeg,.png,.gif,.webp,.bmp" onChange={e=>setFile(e.target.files?.[0]||null)}/></label><label className="span-2">Notes<textarea rows={5} value={form.notes||''} onChange={e=>set('notes',e.target.value)} placeholder="Medical or operational notes…"/></label></div>{preview&&<div className="photo-preview"><img src={preview} alt="Selected animal"/></div>}{error&&<div className="inline-error">{error}</div>}</form>
 }
 
-function AnimalProfile({role,animal,treatments,onEdit,onTreatmentSaved,onTreatmentDeleted}:{role:string;animal:Animal;treatments:Treatment[];onEdit:()=>void;onTreatmentSaved:(treatment:Treatment)=>void;onTreatmentDeleted:(id:string)=>void}){
- const [activeTab,setActiveTab]=useState('Overview')
+function AnimalProfile({role,animal,treatments,initialTab,onTabChange,onEdit,onTreatmentSaved,onTreatmentDeleted}:{role:string;animal:Animal;treatments:Treatment[];initialTab:string;onTabChange:(tab:string)=>void;onEdit:()=>void;onTreatmentSaved:(treatment:Treatment)=>void;onTreatmentDeleted:(id:string)=>void}){
+ const [activeTab,setActiveTab]=useState(initialTab)
+ useEffect(()=>setActiveTab(initialTab),[initialTab])
  const [events,setEvents]=useState<MedicalEvent[]>([]),[vaccines,setVaccines]=useState<Vaccination[]>([]),[dewormings,setDewormings]=useState<Deworming[]>([]),[documents,setDocuments]=useState<MedicalDocument[]>([])
  const [showEvent,setShowEvent]=useState(false),[showVaccine,setShowVaccine]=useState(false),[showDeworm,setShowDeworm]=useState(false),[showDocument,setShowDocument]=useState(false),[showTreatment,setShowTreatment]=useState(false),[editingTreatment,setEditingTreatment]=useState<Treatment|null>(null)
  async function loadMedical(){
@@ -188,7 +223,7 @@ function AnimalProfile({role,animal,treatments,onEdit,onTreatmentSaved,onTreatme
 }
  useEffect(()=>{loadMedical()},[animal.id])
  return <div className="profile"><section className="profile-hero">{animal.photoUrl?<AnimalPhoto animalId={animal.id} className="big-avatar" alt=""/>:<div className="big-avatar">{animal.name.charAt(0).toUpperCase()}</div>}<div><p className="eyebrow">{animal.animalType} · {animal.animalCode}</p><h2>{animal.name}</h2><p className="muted">{animal.status} · {animal.location||'No location'}</p></div>{['ADMIN','VETERINARIAN','COORDINATOR'].includes(role)&&<button className="secondary edit-button" onClick={onEdit}>Edit animal</button>}</section>
- <nav className="tabs">{['Overview','Medical','Treatments','Vaccines','Deworming','Vet visits','Documents'].map(tab=><button key={tab} className={activeTab===tab?'active':''} onClick={()=>setActiveTab(tab)}>{tab}</button>)}</nav>
+ <nav className="tabs">{animalTabs.map(tab=><button key={tab} className={activeTab===tab?'active':''} onClick={()=>{setActiveTab(tab);onTabChange(tab)}}>{tab}</button>)}</nav>
  {activeTab==='Overview'&&<section className="profile-grid"><article className="panel"><p className="eyebrow">IDENTITY</p><dl><dt>Animal ID</dt><dd>{animal.animalCode}</dd><dt>Sex</dt><dd>{animal.sex}</dd><dt>Weight</dt><dd>{animal.weightKg?animal.weightKg+' kg':'—'}</dd><dt>Microchip</dt><dd>{animal.microchipNumber||'—'}</dd><dt>Date of birth</dt><dd>{animal.dateOfBirth||'—'}</dd><dt>Intake</dt><dd>{animal.intakeDate}</dd><dt>Rescue source</dt><dd>{animal.rescueSource||'—'}</dd></dl></article><article className="panel"><p className="eyebrow">ACTIVE TREATMENTS</p>{treatments.filter(t=>t.status==='ACTIVE').length===0?<p className="muted">No active treatment plans.</p>:<div className="treatment-list">{treatments.filter(t=>t.status==='ACTIVE').map(t=><TreatmentCard key={t.id} animalId={animal.id} treatment={t} canManage={['ADMIN','VETERINARIAN'].includes(role)} onEdit={()=>setEditingTreatment(t)} onDelete={onTreatmentDeleted} onStopped={onTreatmentSaved}/>)}</div>}</article></section>}
  {activeTab==='Medical'&&<MedicalTab events={events} onAdd={()=>{if(['ADMIN','VETERINARIAN'].includes(role))setShowEvent(true)}} canEdit={['ADMIN','VETERINARIAN'].includes(role)}/>} 
  {activeTab==='Vaccines'&&<VaccineTab items={vaccines} animalId={animal.id} onAdd={()=>setShowVaccine(true)} canEdit={['ADMIN','VETERINARIAN'].includes(role)} onChanged={loadMedical}/>}
