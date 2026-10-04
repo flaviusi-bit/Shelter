@@ -10,8 +10,8 @@ const blankAnimal=():AnimalInput=>({name:'',animalType:'DOG',sex:'UNKNOWN',dateO
 
 type AppRoute={view:'dashboard'|'animals'|'backups'|'audit'|'users';animalId?:string;tab?:string}
 const animalTabs=['Overview','Medical','Treatments','Vaccines','Deworming','Vet visits','Documents']
+function parseRoute():AppRoute{
  const path=window.location.pathname.replace(/\/+$/,'')||'/'
- const path=window.location.pathname.replace(/\\/+$/,'')||'/'
  if(path==='/dashboard'||path==='/')return {view:'dashboard'}
  if(path==='/backups')return {view:'backups'}
  if(path==='/audit')return {view:'audit'}
