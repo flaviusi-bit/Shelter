@@ -22,9 +22,9 @@ export type Vaccination={id:string;vaccineName:string;vaccineType?:string;admini
 export type Deworming={id:string;productName:string;treatmentType?:string;administeredDate:string;nextDueDate?:string;dose?:string;veterinarian?:string;notes?:string}
 export async function getMedicalEvents(id:string):Promise<MedicalEvent[]>{return json(await fetch('/api/animals/'+id+'/medical-events',{headers:headers()}))}
 export async function createMedicalEvent(id:string,a:Omit<MedicalEvent,'id'>):Promise<MedicalEvent>{return json(await fetch('/api/animals/'+id+'/medical-events',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
-export async function getVaccinations(id:string):Promise<Vaccination[]>{return json(await fetch('/api/animals/'+id+'/vaccinations',{headers:headers()}))}
+export async function getVaccinations(id:string):Promise<Vaccination[]>{return json(await fetch('/api/animals/'+id+'/vaccinations',{headers:headers(),cache:'no-store'}))}
 export async function createVaccination(id:string,a:Omit<Vaccination,'id'>):Promise<Vaccination>{const payload={...a,nextDueDate:a.nextDueDate||undefined,vaccineType:a.vaccineType||undefined,batchNumber:a.batchNumber||undefined,veterinarian:a.veterinarian||undefined,notes:a.notes||undefined};return json(await fetch('/api/animals/'+id+'/vaccinations',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(payload)}))}
-export async function getDewormings(id:string):Promise<Deworming[]>{return json(await fetch('/api/animals/'+id+'/dewormings',{headers:headers()}))}
+export async function getDewormings(id:string):Promise<Deworming[]>{return json(await fetch('/api/animals/'+id+'/dewormings',{headers:headers(),cache:'no-store'}))}
 export async function createDeworming(id:string,a:Omit<Deworming,'id'>):Promise<Deworming>{const payload={...a,nextDueDate:a.nextDueDate||undefined,treatmentType:a.treatmentType||undefined,dose:a.dose||undefined,veterinarian:a.veterinarian||undefined,notes:a.notes||undefined};return json(await fetch('/api/animals/'+id+'/dewormings',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(payload)}))}
 
 export type MedicalDocument={id:string;documentType:string;title:string;fileUrl:string;documentDate?:string;notes?:string;uploadedBy?:string;createdAt?:string}
