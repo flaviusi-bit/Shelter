@@ -7,7 +7,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -58,8 +57,11 @@ class AnimalControllerTest {
     void rejectsUnknownAnimalType() {
         var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
         var request = new AnimalController.AnimalRequest(
-            "Misha", "HORSE", "FEMALE", LocalDate.of(2020, 1, 1), null, null,
-            LocalDate.of(2024, 1, 1), null, null, null, null);
+            "Misha", "HORSE", "FEMALE",
+            LocalDate.of(2020, 1, 1),
+            null, null,
+            LocalDate.of(2024, 1, 1),
+            null, null, null, null, null);
         var violations = validator.validate(request);
         assertEquals(1, violations.size());
     }
@@ -68,8 +70,11 @@ class AnimalControllerTest {
     void rejectsUnknownAnimalSex() {
         var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
         var request = new AnimalController.AnimalRequest(
-            "Misha", "DOG", "UNKNOWN_SEX", LocalDate.of(2020, 1, 1), null, null,
-            LocalDate.of(2024, 1, 1), null, null, null, null);
+            "Misha", "DOG", "UNKNOWN_SEX",
+            LocalDate.of(2020, 1, 1),
+            null, null,
+            LocalDate.of(2024, 1, 1),
+            null, null, null, null, null);
         var violations = validator.validate(request);
         assertEquals(1, violations.size());
     }
