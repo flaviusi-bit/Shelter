@@ -2,6 +2,7 @@ package com.shelter.api.animal;
 
 import com.shelter.api.audit.AuditLogService;
 import com.shelter.api.document.DocumentStorageService;
+import com.shelter.api.document.MedicalDocumentRepository;
 import org.springframework.core.io.PathResource;
 import org.springframework.security.core.Authentication;
 import jakarta.validation.Valid;
@@ -9,6 +10,7 @@ import jakarta.validation.constraints.*;
 import org.springframework.http.*;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -23,9 +25,10 @@ public class AnimalController {
     private final AnimalRepository repository;
     private final AuditLogService audit;
     private final DocumentStorageService storage;
+    private final MedicalDocumentRepository documents;
 
-    public AnimalController(AnimalRepository repository, AuditLogService audit, DocumentStorageService storage){
-        this.repository=repository;this.audit=audit;this.storage=storage;
+    public AnimalController(AnimalRepository repository, AuditLogService audit, DocumentStorageService storage, MedicalDocumentRepository documents){
+        this.repository=repository;this.audit=audit;this.storage=storage;this.documents=documents;
     }
 
     @GetMapping public List<Animal> list(@RequestParam(required=false) String q){
@@ -48,6 +51,21 @@ public class AnimalController {
     public Animal update(@PathVariable UUID id,@Valid @RequestBody AnimalRequest r, Authentication auth){
         validateDates(r); Animal a=repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id));
         apply(a,r); var saved=repository.save(a); audit.record(auth.getName(),"UPDATE_ANIMAL","ANIMAL",saved.getId(),saved.getName()); return saved;
+    }
+
+    @DeleteMapping("/{id}") @Transactional
+    public void delete(@PathVariable UUID id, Authentication auth){
+        Animal a=repository.findById(id).orElseThrow(()->new AnimalNotFoundException(id));
+        try{
+            if(a.getPhotoStorageKey()!=null&&!a.getPhotoStorageKey().isBlank()) storage.delete(a.getPhotoStorageKey());
+            for(var document: documents.findByAnimalId(id)){
+                if(document.getStorageKey()!=null&&!document.getStorageKey().isBlank()) storage.delete(document.getStorageKey());
+            }
+        }catch(IOException|IllegalArgumentException e){
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"Could not remove animal files",e);
+        }
+        repository.delete(a);
+        audit.record(auth.getName(),"DELETE_ANIMAL","ANIMAL",id,a.getName());
     }
 
     @PostMapping(value="/{id}/photo", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)

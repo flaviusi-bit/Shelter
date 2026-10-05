@@ -8,6 +8,7 @@ function headers():Record<string,string>{const auth=localStorage.getItem('shelte
 export async function getAnimals(q=''):Promise<Animal[]>{return json(await fetch('/api/animals'+(q?'?q='+encodeURIComponent(q):''),{headers:headers()}))}
 export async function createAnimal(a:AnimalInput):Promise<Animal>{return json(await fetch('/api/animals',{method:'POST',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
 export async function updateAnimal(id:string,a:AnimalInput):Promise<Animal>{return json(await fetch('/api/animals/'+id,{method:'PUT',headers:{'Content-Type':'application/json',...headers()},body:JSON.stringify(a)}))}
+export async function deleteAnimal(id:string):Promise<void>{await json<void>(await fetch('/api/animals/'+id,{method:'DELETE',headers:headers()}))}
 export async function uploadAnimalPhoto(id:string,file:File):Promise<Animal>{const form=new FormData();form.append('file',file);return json(await fetch('/api/animals/'+id+'/photo',{method:'POST',headers:headers(),body:form}))}
 export async function getAnimalPhoto(id:string):Promise<Blob>{const r=await fetch('/api/animals/'+id+'/photo',{headers:headers()});if(r.status===401){localStorage.removeItem('shelterAuth');window.dispatchEvent(new Event('shelter-auth-required'));throw new Error('Authentication required')}if(!r.ok)throw new Error(await r.text());return r.blob()}
 export async function getTreatments(animalId:string):Promise<Treatment[]>{return json(await fetch('/api/animals/'+animalId+'/treatments',{headers:headers(),cache:'no-store'}))}

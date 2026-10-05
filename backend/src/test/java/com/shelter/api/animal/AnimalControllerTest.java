@@ -2,6 +2,7 @@ package com.shelter.api.animal;
 
 import com.shelter.api.audit.AuditLogService;
 import com.shelter.api.document.DocumentStorageService;
+import com.shelter.api.document.MedicalDocumentRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.server.ResponseStatusException;
@@ -18,8 +19,9 @@ class AnimalControllerTest {
         AnimalRepository repository = mock(AnimalRepository.class);
         AuditLogService audit = mock(AuditLogService.class);
         DocumentStorageService storage = mock(DocumentStorageService.class);
+        MedicalDocumentRepository documents = mock(MedicalDocumentRepository.class);
         Authentication authentication = mock(Authentication.class);
-        AnimalController controller = new AnimalController(repository, audit, storage);
+        AnimalController controller = new AnimalController(repository, audit, storage, documents);
 
         var request = new AnimalController.AnimalRequest(
             "Misha", "DOG", "FEMALE",
