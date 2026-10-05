@@ -7,4 +7,5 @@ import java.util.UUID;
 
 public interface MedicalDocumentRepository extends JpaRepository<MedicalDocument, UUID> {
     List<MedicalDocument> findByAnimalIdOrderByDocumentDateDescCreatedAtDescIdAsc(UUID animalId, Pageable pageable);
+    List<MedicalDocument> findByAnimalId(UUID animalId);
 }
